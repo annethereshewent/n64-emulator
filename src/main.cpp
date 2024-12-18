@@ -2,15 +2,19 @@
 #include "cpu/CPU.cpp"
 #include <iterator>
 
-int main() {
+int main(int argc, char **argv) {
     CPU cpu;
 
-    cpu.helloWorld();
+    if (argc < 1) {
+        std::cout << "Please specify a filename.\n";
+        exit(1);
+    }
 
-    std::cout << "the value of register 1 is " << cpu.r[1] << "\n";
-    std::cout << "the value of register 0 is (should be 0): " << cpu.r[0] << "\n";
-    std::cout << "the PC is initialized to " << std::hex << cpu.pc << "\n";
-    std::cout << "the size of rdram is " << cpu.bus.rdram.size() << "\n";
+    cpu.loadRom(argv[1]);
+
+    while (true) {
+        cpu.step();
+    }
 
     return 0;
 }

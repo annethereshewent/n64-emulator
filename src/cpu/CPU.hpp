@@ -1,5 +1,11 @@
 #include <cstdint>
 #include "../bus/Bus.cpp"
+#include <vector>
+
+class COP0 {
+public:
+    uint32_t r[32];
+};
 
 class CPU {
 public:
@@ -7,11 +13,15 @@ public:
     uint64_t pc;
     Bus bus;
 
-    void helloWorld();
+    COP0 cop0;
+
+    std::vector<uint8_t> cartridge;
 
     CPU();
 
     void set(int i, uint64_t val);
 
     void step();
+
+    void loadRom(std::string filename);
 };

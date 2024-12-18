@@ -101,13 +101,9 @@ Bus::Bus() {
 uint32_t Bus::memRead32(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
-    std::cout << "reading from address " << std::hex << actualAddress << "\n";
-
     if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
 
         uint64_t pifAddress = actualAddress - 0x1FC00000;
-
-        std::cout << "reading from pifAddress " << std::hex << pifAddress << "\n";
 
         return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
     }

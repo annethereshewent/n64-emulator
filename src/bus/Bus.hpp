@@ -35,6 +35,7 @@ public:
     Bus();
 
     uint32_t memRead32(uint64_t address);
+    void memWrite32(uint64_t address, uint32_t value);
 
     static uint64_t translateAddress(uint64_t address);
 };

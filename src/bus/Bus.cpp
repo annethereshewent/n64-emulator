@@ -112,13 +112,32 @@ uint32_t Bus::memRead32(uint64_t address) {
         return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
     }
 
-    if (actualAddress == 0x4040010) {
-        // std::cout << "returning back " << spStatus.value << "\n";
-        return spStatus.value;
+    switch (actualAddress) {
+        case 0x4040010:
+            return spStatus.value;
+            break;
+        case 0x4040018:
+            return spStatus.dmaBusy;
+            break;
     }
 
     std::cout << "not yet implemented: " << std::hex << actualAddress << "\n";
     exit(1);
+}
+
+void Bus::memWrite32(uint64_t address, uint32_t value) {
+    std::cout << "ayy lmao\n";
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    switch (actualAddress) {
+        case 0x4040010:
+            spStatus.value = value;
+            break;
+        default:
+            std::cout << "not yet implemented: " << std::hex << address << "\n";
+            exit(1);
+            break;
+    }
 }
 
 uint64_t Bus::translateAddress(uint64_t address) {

@@ -37,7 +37,7 @@ public:
     uint64_t r[32];
 
     uint64_t pc;
-    uint64_t next_pc;
+    uint64_t nextPc;
 
     Bus bus;
 

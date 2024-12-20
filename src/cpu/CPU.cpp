@@ -4,6 +4,23 @@
 
 using namespace std;
 
+
+uint32_t getImmediate(uint32_t instruction) {
+    return instruction & 0xffff;
+}
+
+uint64_t getSignedImmediate(uint32_t instruction) {
+    return (int16_t)(int64_t)(uint64_t)(instruction & 0xffff);
+}
+
+uint32_t getRs(uint32_t instruction) {
+    return (instruction >> 21) & 0x1f;
+}
+
+uint32_t getRt(uint32_t instruction) {
+    return (instruction >> 16) & 0x1f;
+}
+
 void CPU::set(int i, uint64_t val) {
     if (i != 0) {
         r[i] = val;
@@ -51,7 +68,7 @@ CPU::CPU() {
     r[0] = 0;
 
     pc = 0xBFC00000;
-    next_pc = 0xBFC00004;
+    nextPc = 0xBFC00004;
 
     instructions = {
         CPU::reserved,
@@ -145,14 +162,17 @@ void CPU::step() {
 
     uint32_t command = opcode >> 26;
 
-    // std::cout << "received command " << std::hex << command << "\n";
+    std::cout << "received command " << std::hex << command << "\n";
 
     if (!discarded) {
-        pc = next_pc;
+        pc = nextPc;
+    } else {
+        nextPc += 4;
+        pc = nextPc;
     }
 
     discarded = false;
-    next_pc += 4;
+    nextPc += 4;
 
     switch(command) {
         case 0:
@@ -169,14 +189,14 @@ void CPU::step() {
 }
 
 void CPU::lui(CPU* cpu, uint32_t instruction) {
-    // std::cout << "the instruction we received is " << std::hex << instruction << "\n";
-    uint32_t immediate = instruction & 0xffff;
+    std::cout << "the instruction we received is " << std::hex << instruction << "\n";
+    uint32_t immediate = getImmediate(instruction);
 
     int reg = ((int)instruction >> 16) & 0x1f;
 
     cpu->r[reg] = immediate << 16;
 
-    // std::cout << "set register " << reg << " to value " << std::hex << cpu->r[reg] << "\n";
+    std::cout << "set register " << reg << " to value " << std::hex << cpu->r[reg] << "\n";
 }
 
 void CPU::addi(CPU* cpu, uint32_t instruction) {
@@ -185,10 +205,10 @@ void CPU::addi(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::addiu(CPU* cpu, uint32_t instruction) {
-    uint64_t immediate = (int16_t)(int64_t)(uint64_t)(instruction & 0xffff);
+    uint64_t immediate = getSignedImmediate(instruction);
 
-    uint32_t rs = (instruction >> 21) & 0x1f;
-    uint32_t rt = (instruction >> 16) & 0x1f;
+    uint32_t rs = getRs(immediate);
+    uint32_t rt = getRt(immediate);
 
     std::cout << "adding " << std::hex << immediate << " with " << cpu->r[rs] << "\n";
 
@@ -196,26 +216,26 @@ void CPU::addiu(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::andi(CPU* cpu, uint32_t instruction) {
-    uint32_t immediate = instruction & 0xffff;
+    uint32_t immediate = getImmediate(instruction);
 
-    uint32_t rs = (instruction >> 21) & 0x1f;
-    uint32_t rt = (instruction >> 16) & 0x1f;
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
 
-    // std::cout << "immediate = " << std::hex << immediate << ", rs = " << cpu->r[rs] << "\n";
+    std::cout << "immediate = " << std::hex << immediate << ", rs = " << cpu->r[rs] << "\n";
 
     cpu->r[rt] = cpu->r[rs] & immediate;
 
-    // std::cout << "set register " << rt << " to " << cpu->r[rt] << "\n";
+    std::cout << "set register " << rt << " to " << cpu->r[rt] << "\n";
 }
 void CPU::beq(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: beq\n";
     exit(1);
 }
 void CPU::beql(CPU* cpu, uint32_t instruction) {
-    uint32_t rs = (instruction >> 21) & 0x1f;
-    uint32_t rt = (instruction >> 16) & 0x1f;
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
 
-    uint32_t immediate = instruction & 0xffff;
+    uint32_t immediate = getImmediate(instruction);
 
     std::cout << "rs = " << rs << "\n";
 
@@ -230,12 +250,13 @@ void CPU::beql(CPU* cpu, uint32_t instruction) {
 
         std::cout << amount << "\n";
 
-        cpu->next_pc += amount;
+        cpu->nextPc += amount;
 
-        // std::cout << "next pc will be " << cpu->next_pc << "\n";
+        // std::cout << "next pc will be " << cpu->nextPc << "\n";
     } else {
-        std::cout << "discarding the delay slot, pc = " << cpu->next_pc << "\n";
-        cpu->pc = cpu->next_pc;
+        cpu->pc = cpu->nextPc;
+        std::cout << "discarding the delay slot, pc = " << cpu->pc << ", nextPc = " << cpu->nextPc << "\n";
+
         cpu->discarded = true;
     }
 }
@@ -260,8 +281,20 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::bnel(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bnel\n";
-    exit(1);
+    uint32_t immediate = getImmediate(instruction);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    std::cout << "using registers " << rs << " and " << rt << " which = " << std::hex << cpu->r[rs] << ", " << cpu->r[rt] << " respectively\n";
+
+    if (cpu->r[rs] != cpu->r[rt]) {
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->nextPc += amount;
+    } else {
+        cpu->pc = cpu->nextPc;
+        cpu->discarded = true;
+    }
 }
 void CPU::cache(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cache\n";
@@ -321,9 +354,9 @@ void CPU::lld(CPU* cpu, uint32_t instruction) {
 }
 void CPU::lw(CPU* cpu, uint32_t instruction) {
     std::cout << "inside lw\n";
-    uint32_t immediate = instruction & 0xffff;
-    uint32_t base_reg = (instruction >> 21) & 0x1f;
-    uint32_t rt = (instruction >> 16) & 0x1f;
+    uint32_t immediate = getImmediate(instruction);
+    uint32_t base_reg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
 
     uint64_t address = cpu->r[base_reg] + immediate;
 
@@ -350,10 +383,10 @@ void CPU::lwu(CPU* cpu, uint32_t instruction) {
 void CPU::ori(CPU* cpu, uint32_t instruction) {
     // std::cout << "inside ori\n";
 
-    uint32_t imm = instruction & 0xffff;
+    uint32_t imm = getImmediate(instruction);
 
-    uint32_t rt = (instruction >> 16) & 0x1f;
-    uint32_t rs = (instruction >> 21) & 0x1f;
+    uint32_t rt = getRt(instruction);
+    uint32_t rs = getRs(instruction);
 
     cpu->r[rt] = cpu->r[rs] | imm;
 
@@ -400,8 +433,16 @@ void CPU::sltiu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sw(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sw\n";
-    exit(1);
+    uint32_t immediate = getImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = immediate + cpu->r[rs];
+
+    cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
+
+    std::cout << "wrote value " << std::hex << cpu->r[rt] << " to address " << address << "\n";
 }
 void CPU::swl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: swl\n";

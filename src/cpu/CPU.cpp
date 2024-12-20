@@ -29,38 +29,38 @@ void CPU::set(int i, uint64_t val) {
 
 COP0::COP0() {
     instructions = {
-        COP0::mfc0,
-        COP0::dmfc0,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::mtc0,
-        COP0::dmtc0,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::cp0,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
+        COP0::mfc0, // 0
+        COP0::dmfc0, // 1
+        COP0::reserved, // 2
+        COP0::reserved, // 3
+        COP0::mtc0, // 4
+        COP0::dmtc0, // 5
+        COP0::reserved, // 6
+        COP0::reserved, // 7
+        COP0::reserved, // 8
+        COP0::reserved, // 9
+        COP0::reserved, // a
+        COP0::reserved, // b
+        COP0::reserved, // c
+        COP0::reserved, // d
+        COP0::reserved, // e
+        COP0::reserved, // f
+        COP0::cp0, // 10
+        COP0::reserved, // 11
+        COP0::reserved, // 12
+        COP0::reserved, // 13
+        COP0::reserved, // 14
+        COP0::reserved, // 15
+        COP0::reserved, // 16
+        COP0::reserved, // 17
+        COP0::reserved, // 18
+        COP0::reserved, // 19
+        COP0::reserved, // 1a
+        COP0::reserved, // 1b
+        COP0::reserved, // 1c
+        COP0::reserved, // 1d
+        COP0::reserved, // 1e
+        COP0::reserved, // 1f
     };
 }
 
@@ -71,70 +71,70 @@ CPU::CPU() {
     nextPc = 0xBFC00004;
 
     instructions = {
-        CPU::reserved,
-        COP0::reserved,
-        CPU::j,
-        CPU::jal,
-        CPU::beq,
-        CPU::bne,
-        CPU::blez,
-        CPU::bgtz,
-        CPU::addi,
-        CPU::addiu,
-        CPU::slti,
-        CPU::sltiu,
-        CPU::andi,
-        CPU::ori,
-        CPU::xori,
-        CPU::lui,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        CPU::beql,
-        CPU::bnel,
-        CPU::blezl,
-        CPU::bgtzl,
-        CPU::daddi,
-        CPU::daddiu,
-        CPU::ldl,
-        CPU::ldr,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        COP0::reserved,
-        CPU::lb,
-        CPU::lh,
-        CPU::lwl,
-        CPU::lw,
-        CPU::lbu,
-        CPU::lhu,
-        CPU::lwr,
-        CPU::lwu,
-        CPU::sb,
-        CPU::sh,
-        CPU::swl,
-        CPU::sw,
-        CPU::sdl,
-        CPU::sdr,
-        CPU::swr,
-        CPU::cache,
-        CPU::ll,
-        COP1::lwc1,
-        COP0::reserved,
-        COP0::reserved,
-        CPU::lld,
-        COP1::ldc1,
-        COP0::reserved,
-        CPU::ld,
-        CPU::sc,
-        COP1::swc1,
-        COP0::reserved,
-        COP0::reserved,
-        CPU::scd,
-        COP1::sdc1,
-        COP0::reserved,
-        CPU::sd,
+        CPU::reserved, // 0
+        COP0::reserved, // 1
+        CPU::j, // 2
+        CPU::jal, // 3
+        CPU::beq, // 4
+        CPU::bne, // 5
+        CPU::blez, // 6
+        CPU::bgtz, // 7
+        CPU::addi, // 8
+        CPU::addiu, // 9
+        CPU::slti, // a
+        CPU::sltiu, // b
+        CPU::andi, // c
+        CPU::ori, // d
+        CPU::xori, // e
+        CPU::lui, // f
+        COP0::reserved, // 10
+        COP0::reserved, // 11
+        COP0::reserved, // 12
+        COP0::reserved, // 13
+        CPU::beql, // 14
+        CPU::bnel, // 15
+        CPU::blezl, // 16
+        CPU::bgtzl, // 17
+        CPU::daddi, // 18
+        CPU::daddiu, // 19
+        CPU::ldl, // 1a
+        CPU::ldr, // 1b
+        COP0::reserved, // 1c
+        COP0::reserved, // 1d
+        COP0::reserved, // 1e
+        COP0::reserved, // 1f
+        CPU::lb, // 20
+        CPU::lh, // 21
+        CPU::lwl, // 22
+        CPU::lw, // 23
+        CPU::lbu, // 24
+        CPU::lhu, // 25
+        CPU::lwr, // 26
+        CPU::lwu, // 27
+        CPU::sb, // 28
+        CPU::sh, // 29
+        CPU::swl, // 2a
+        CPU::sw, // 2b
+        CPU::sdl, // 2c
+        CPU::sdr, // 2d
+        CPU::swr, // 2e
+        CPU::cache, // 2f
+        CPU::ll, // 30
+        COP1::lwc1, // 31
+        COP0::reserved, // 32
+        COP0::reserved, // 33
+        CPU::lld, // 34
+        COP1::ldc1, // 35
+        COP0::reserved, // 36
+        CPU::ld, // 37
+        CPU::sc, // 38
+        COP1::swc1, // 39
+        COP0::reserved, // 3a
+        COP0::reserved, // 3b
+        CPU::scd, // 3c
+        COP1::sdc1, // 3d
+        COP0::reserved, // 3e
+        CPU::sd, // 3f
     };
 }
 
@@ -164,12 +164,16 @@ void CPU::step() {
 
     std::cout << "received command " << std::hex << command << "\n";
 
+    uint64_t oldPc = pc;
+
     if (!discarded) {
         pc = nextPc;
     } else {
         nextPc += 4;
         pc = nextPc;
     }
+
+    uint64_t oldR0 = r[0];
 
     discarded = false;
     nextPc += 4;
@@ -186,17 +190,23 @@ void CPU::step() {
             instructions[command](this, opcode);
             break;
     }
+
+    if (oldR0 != r[0] && r[0] == 0xa) {
+        cout << "the pc is " << std::hex << oldPc << "\n";
+    }
 }
 
 void CPU::lui(CPU* cpu, uint32_t instruction) {
     std::cout << "the instruction we received is " << std::hex << instruction << "\n";
     uint32_t immediate = getImmediate(instruction);
 
-    int reg = ((int)instruction >> 16) & 0x1f;
+    int reg = (instruction >> 16) & 0x1f;
 
-    cpu->r[reg] = immediate << 16;
+    uint32_t value = immediate << 16;
 
-    std::cout << "set register " << reg << " to value " << std::hex << cpu->r[reg] << "\n";
+    cpu->r[reg] = value;
+
+    std::cout << "register " << reg << " is now " << cpu->r[reg] << "\n";
 }
 
 void CPU::addi(CPU* cpu, uint32_t instruction) {
@@ -205,12 +215,15 @@ void CPU::addi(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::addiu(CPU* cpu, uint32_t instruction) {
+    std::cout << "instruction = " << std::hex << instruction << "\n";
     uint64_t immediate = getSignedImmediate(instruction);
 
-    uint32_t rs = getRs(immediate);
-    uint32_t rt = getRt(immediate);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
 
     std::cout << "adding " << std::hex << immediate << " with " << cpu->r[rs] << "\n";
+
+    std::cout << "rt = " << rt << "\n";
 
     cpu->r[rt] = cpu->r[rs] + immediate;
 }
@@ -221,7 +234,7 @@ void CPU::andi(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
-    std::cout << "immediate = " << std::hex << immediate << ", rs = " << cpu->r[rs] << "\n";
+    std::cout << "immediate = " << std::hex << immediate << ", rs = " << rs << " value = " << cpu->r[rs] << "\n";
 
     cpu->r[rt] = cpu->r[rs] & immediate;
 
@@ -288,6 +301,8 @@ void CPU::bnel(CPU* cpu, uint32_t instruction) {
     std::cout << "using registers " << rs << " and " << rt << " which = " << std::hex << cpu->r[rs] << ", " << cpu->r[rt] << " respectively\n";
 
     if (cpu->r[rs] != cpu->r[rt]) {
+        std::cout << "shouldn't happen\n";
+        exit(1);
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         cpu->nextPc += amount;
@@ -354,9 +369,11 @@ void CPU::lld(CPU* cpu, uint32_t instruction) {
 }
 void CPU::lw(CPU* cpu, uint32_t instruction) {
     std::cout << "inside lw\n";
-    uint32_t immediate = getImmediate(instruction);
+    uint32_t immediate = getSignedImmediate(instruction);
     uint32_t base_reg = getRs(instruction);
     uint32_t rt = getRt(instruction);
+
+    std::cout << "immediate = " << std::hex << immediate << "\n";
 
     uint64_t address = cpu->r[base_reg] + immediate;
 
@@ -504,12 +521,12 @@ void COP0::mfc0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::mtc0(CPU* cpu, uint32_t instruction) {
-    // std::cout << "inside mtc0\n";
+    std::cout << "inside mtc0\n";
 
     uint32_t rd = (instruction >> 10) & 0x1f;
     uint32_t rt = (instruction >> 15) & 0x1f;
 
     cpu->cop0.r[rd] = cpu->r[rt];
 
-    // std::cout << "set cop0 register " << rd << " to " << std::hex << cpu->cop0.r[rd] << "\n";
+    std::cout << "set cop0 register " << rd << " to " << std::hex << cpu->cop0.r[rd] << "\n";
 }

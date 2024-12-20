@@ -104,6 +104,7 @@ Bus::Bus() {
 
 uint32_t Bus::memRead32(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
+    std::cout << "masked address = " << actualAddress << "\n";
 
     if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
 
@@ -131,7 +132,20 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
 
     switch (actualAddress) {
         case 0x4040010:
+            std::cout << "setting spStatus to " << std::hex << value << "\n";
             spStatus.value = value;
+            break;
+        case 0x4400010:
+            // TODO: clear interrupt
+            break;
+        case 0x4400024:
+            hVideo = value & 0x3ff;
+            break;
+        case 0x440000c:
+            vInterrupt = value & 0x3ff;
+            break;
+        case 0x4600010:
+            piStatus.value = value & 0xf;
             break;
         default:
             std::cout << "not yet implemented: " << std::hex << address << "\n";
@@ -141,13 +155,12 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
 }
 
 uint64_t Bus::translateAddress(uint64_t address) {
-    if (address >= 0x80000000 && address <= 0x9FFFFFFF) {
-        return address - 0x80000000;
-    }
-    if (address >= 0xA0000000 && address <= 0xBFFFFFFF) {
-        return address - 0xA0000000;
-    }
+    // if (address >= 0x80000000 && address <= 0x9FFFFFFF) {
+    //     return address - 0x80000000;
+    // }
+    // if (address >= 0xA0000000 && address <= 0xBFFFFFFF) {
+    //     return address - 0xA0000000;
+    // }
 
-    std::cout << "TLB not yet implemented\n";
-    exit(1);
+    return address & 0x1FFFFFFF;
 }

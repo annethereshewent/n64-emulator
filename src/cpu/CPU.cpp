@@ -290,8 +290,18 @@ void CPU::blezl(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::bne(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bne\n";
-    exit(1);
+    std::cout << "inside bne\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint32_t immediate = getImmediate(instruction);
+
+    if (cpu->r[rs] != cpu->r[rt]) {
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->nextPc += amount;
+    }
 }
 void CPU::bnel(CPU* cpu, uint32_t instruction) {
     uint32_t immediate = getImmediate(instruction);
@@ -301,8 +311,6 @@ void CPU::bnel(CPU* cpu, uint32_t instruction) {
     std::cout << "using registers " << rs << " and " << rt << " which = " << std::hex << cpu->r[rs] << ", " << cpu->r[rt] << " respectively\n";
 
     if (cpu->r[rs] != cpu->r[rt]) {
-        std::cout << "shouldn't happen\n";
-        exit(1);
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         cpu->nextPc += amount;
@@ -450,12 +458,14 @@ void CPU::sltiu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sw(CPU* cpu, uint32_t instruction) {
-    uint32_t immediate = getImmediate(instruction);
+    uint32_t immediate = getSignedImmediate(instruction);
 
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
     uint64_t address = immediate + cpu->r[rs];
+
+    std::cout << "rs = " << cpu->r[rs] << "\n";
 
     cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
 

@@ -1,8 +1,9 @@
 #include <cstdint>
 #include <vector>
-#include "SPStatus.cpp"
-#include "PIStatus.cpp"
-
+#include "PeripheralInterface.hpp"
+#include "RSP.cpp"
+#include "VideoInterface.hpp"
+#include "AudioInterface.hpp"
 
 class Bus {
 public:
@@ -11,12 +12,12 @@ public:
 
     std::vector<uint8_t> spdmem;
 
-    uint16_t vInterrupt;
-    uint16_t hVideo;
-
-    SPStatus spStatus;
-    PIStatus piStatus;
     Bus();
+
+    PeripheralInterface peripheralInterface;
+    RSP rsp;
+    AudioInterface audioInterface;
+    VideoInterface videoInterface;
 
     uint32_t memRead32(uint64_t address);
     void memWrite32(uint64_t address, uint32_t value);

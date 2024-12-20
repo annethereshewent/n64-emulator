@@ -97,9 +97,9 @@ Bus::Bus() {
     rdram9.resize(0x800000);
     spdmem.resize(0x1000);
 
-    spStatus.value = 1;
+    rsp.spStatus.value = 1;
 
-    std::cout << "spStatus halted = " << spStatus.halted << "\n";
+    std::cout << "spStatus halted = " << rsp.spStatus.halted << "\n";
 }
 
 uint32_t Bus::memRead32(uint64_t address) {
@@ -115,10 +115,10 @@ uint32_t Bus::memRead32(uint64_t address) {
 
     switch (actualAddress) {
         case 0x4040010:
-            return spStatus.value;
+            return rsp.spStatus.value;
             break;
         case 0x4040018:
-            return spStatus.dmaBusy;
+            return rsp.spStatus.dmaBusy;
             break;
     }
 
@@ -133,22 +133,52 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
     switch (actualAddress) {
         case 0x4040010:
             std::cout << "setting spStatus to " << std::hex << value << "\n";
-            spStatus.value = value;
+            rsp.spStatus.value = value;
             break;
         case 0x4400010:
             // TODO: clear interrupt
             break;
         case 0x4400024:
-            hVideo = value & 0x3ff;
+            videoInterface.hVideo = value & 0x3ff;
             break;
         case 0x440000c:
-            vInterrupt = value & 0x3ff;
+            videoInterface.vInterrupt = value & 0x3ff;
+            break;
+        case 0x4500000:
+            audioInterface.dramAddress = value & 0xffffff;
+            break;
+        case 0x4500004:
+            audioInterface.audioLength = value & 0x3ffff;
             break;
         case 0x4600010:
-            piStatus.value = value & 0xf;
+            peripheralInterface.piStatus.value = value & 0xf;
             break;
         default:
-            std::cout << "not yet implemented: " << std::hex << address << "\n";
+            if (actualAddress >= 0x4001000 && actualAddress <= 0x4001FFF) {
+                std::cout << "value = " << std::hex << value << "\n";
+
+                uint32_t offset = actualAddress - 0x4001000;
+
+                std::cout << "offset = " << offset << "\n";
+
+                for (int i = 3; i >= 0; i--) {
+                    int shift = 3 - i;
+
+                    std::cout << "shift = " << shift << "\n";
+
+                    uint8_t byte = (value >> shift * 8) & 0xff;
+
+                    std::cout << "byte = " << std::hex << +byte << "\n";
+
+                    rsp.imem[offset + i] = byte;
+                    std::cout << std::hex << +rsp.imem[offset + i] << "\n";
+                }
+
+                std::cout << "\n";
+
+                return;
+            }
+            std::cout << "not yet implemented: " << std::hex << actualAddress << "\n";
             exit(1);
             break;
     }

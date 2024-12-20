@@ -35,10 +35,15 @@ public:
 class CPU {
 public:
     uint64_t r[32];
+
     uint64_t pc;
+    uint64_t next_pc;
+
     Bus bus;
 
     COP0 cop0;
+
+    bool discarded;
 
     std::vector<uint8_t> cartridge;
 

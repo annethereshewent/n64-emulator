@@ -96,6 +96,10 @@ Bus::Bus() {
     rdram.resize(0x800000);
     rdram9.resize(0x800000);
     spdmem.resize(0x1000);
+
+    spStatus.value = 1;
+
+    std::cout << "spStatus halted = " << spStatus.halted << "\n";
 }
 
 uint32_t Bus::memRead32(uint64_t address) {
@@ -106,6 +110,11 @@ uint32_t Bus::memRead32(uint64_t address) {
         uint64_t pifAddress = actualAddress - 0x1FC00000;
 
         return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
+    }
+
+    if (actualAddress == 0x4040010) {
+        // std::cout << "returning back " << spStatus.value << "\n";
+        return spStatus.value;
     }
 
     std::cout << "not yet implemented: " << std::hex << actualAddress << "\n";

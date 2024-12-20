@@ -51,6 +51,7 @@ CPU::CPU() {
     r[0] = 0;
 
     pc = 0xBFC00000;
+    next_pc = 0xBFC00004;
 
     instructions = {
         CPU::reserved,
@@ -138,11 +139,20 @@ void CPU::loadRom(std::string filename) {
 }
 
 void CPU::step() {
+    std::cout << "pc is now = " << std::hex << pc << "\n";
+
     uint32_t opcode = bus.memRead32(pc);
 
     uint32_t command = opcode >> 26;
 
-    std::cout << "received command " << std::hex << command << "\n";
+    // std::cout << "received command " << std::hex << command << "\n";
+
+    if (!discarded) {
+        pc = next_pc;
+    }
+
+    discarded = false;
+    next_pc += 4;
 
     switch(command) {
         case 0:
@@ -159,16 +169,14 @@ void CPU::step() {
 }
 
 void CPU::lui(CPU* cpu, uint32_t instruction) {
-    std::cout << "the instruction we received is " << std::hex << instruction << "\n";
+    // std::cout << "the instruction we received is " << std::hex << instruction << "\n";
     uint32_t immediate = instruction & 0xffff;
 
     int reg = ((int)instruction >> 16) & 0x1f;
 
     cpu->r[reg] = immediate << 16;
 
-    std::cout << "set register " << reg << " to value " << std::hex << cpu->r[reg] << "\n";
-
-    cpu->pc += 4;
+    // std::cout << "set register " << reg << " to value " << std::hex << cpu->r[reg] << "\n";
 }
 
 void CPU::addi(CPU* cpu, uint32_t instruction) {
@@ -177,21 +185,59 @@ void CPU::addi(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::addiu(CPU* cpu, uint32_t instruction) {
-    std::cout << "not yet implemented: addiu\n";
-    exit(1);
+    uint64_t immediate = (int16_t)(int64_t)(uint64_t)(instruction & 0xffff);
+
+    uint32_t rs = (instruction >> 21) & 0x1f;
+    uint32_t rt = (instruction >> 16) & 0x1f;
+
+    std::cout << "adding " << std::hex << immediate << " with " << cpu->r[rs] << "\n";
+
+    cpu->r[rt] = cpu->r[rs] + immediate;
 }
 
 void CPU::andi(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: andi\n";
-    exit(1);
+    uint32_t immediate = instruction & 0xffff;
+
+    uint32_t rs = (instruction >> 21) & 0x1f;
+    uint32_t rt = (instruction >> 16) & 0x1f;
+
+    // std::cout << "immediate = " << std::hex << immediate << ", rs = " << cpu->r[rs] << "\n";
+
+    cpu->r[rt] = cpu->r[rs] & immediate;
+
+    // std::cout << "set register " << rt << " to " << cpu->r[rt] << "\n";
 }
 void CPU::beq(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: beq\n";
     exit(1);
 }
 void CPU::beql(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: beql\n";
-    exit(1);
+    uint32_t rs = (instruction >> 21) & 0x1f;
+    uint32_t rt = (instruction >> 16) & 0x1f;
+
+    uint32_t immediate = instruction & 0xffff;
+
+    std::cout << "rs = " << rs << "\n";
+
+    std::cout << "comparing " << std::hex << cpu->r[rs] << " with " << cpu->r[rt] << "\n";
+
+    if (cpu->r[rs] == cpu->r[rt]) {
+        // std::cout << "yes it did the jump!\n";
+
+        // std::cout << "immediate = " << std::hex << immediate << "\n";
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        std::cout << amount << "\n";
+
+        cpu->next_pc += amount;
+
+        // std::cout << "next pc will be " << cpu->next_pc << "\n";
+    } else {
+        std::cout << "discarding the delay slot, pc = " << cpu->next_pc << "\n";
+        cpu->pc = cpu->next_pc;
+        cpu->discarded = true;
+    }
 }
 void CPU::bgtz(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bgtz\n";
@@ -274,8 +320,20 @@ void CPU::lld(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::lw(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lw\n";
-    exit(1);
+    std::cout << "inside lw\n";
+    uint32_t immediate = instruction & 0xffff;
+    uint32_t base_reg = (instruction >> 21) & 0x1f;
+    uint32_t rt = (instruction >> 16) & 0x1f;
+
+    uint64_t address = cpu->r[base_reg] + immediate;
+
+    std::cout << "address = " << std::hex << address << "\n";
+
+    uint32_t value = cpu->bus.memRead32(address);
+
+    cpu->r[rt] = (int64_t)(uint64_t)value;
+
+    std::cout << "set " << rt << " to " << cpu->r[rt] << "\n";
 }
 void CPU::lwl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lwl\n";
@@ -290,8 +348,16 @@ void CPU::lwu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::ori(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ori\n";
-    exit(1);
+    // std::cout << "inside ori\n";
+
+    uint32_t imm = instruction & 0xffff;
+
+    uint32_t rt = (instruction >> 16) & 0x1f;
+    uint32_t rs = (instruction >> 21) & 0x1f;
+
+    cpu->r[rt] = cpu->r[rs] | imm;
+
+    // std::cout << "register " << rt << " is now " << std::hex << cpu->r[rs] << "\n";
 }
 void CPU::reserved(CPU* cpu, uint32_t instruction) {
     std::cout << "Error: opcode reserved\n";
@@ -397,10 +463,12 @@ void COP0::mfc0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::mtc0(CPU* cpu, uint32_t instruction) {
-    std::cout << "inside mtc0\n";
+    // std::cout << "inside mtc0\n";
 
     uint32_t rd = (instruction >> 10) & 0x1f;
     uint32_t rt = (instruction >> 15) & 0x1f;
 
     cpu->cop0.r[rd] = cpu->r[rt];
+
+    // std::cout << "set cop0 register " << rd << " to " << std::hex << cpu->cop0.r[rd] << "\n";
 }

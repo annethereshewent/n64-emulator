@@ -248,7 +248,11 @@ void CPU::step() {
         pc = nextPc;
     }
 
-    uint64_t oldR0 = r[0];
+    if (pc == 0xbfc00ac) {
+        std::cout << "yeah it's going here\n";
+    }
+
+    uint64_t oldR9 = r[9];
 
     discarded = false;
     nextPc += 4;
@@ -268,9 +272,9 @@ void CPU::step() {
             break;
     }
 
-    if (oldR0 != r[0] && r[0] == 0xa) {
-        cout << "the pc is " << std::hex << oldPc << "\n";
-    }
+    // if (oldR9 != r[9]) {
+    //     cout << "the pc is " << std::hex << oldPc << "\n";
+    // }
 }
 
 void CPU::lui(CPU* cpu, uint32_t instruction) {
@@ -318,14 +322,28 @@ void CPU::andi(CPU* cpu, uint32_t instruction) {
     std::cout << "set register " << rt << " to " << cpu->r[rt] << "\n";
 }
 void CPU::beq(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: beq\n";
-    exit(1);
+    std::cout << "inside beq\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint32_t immediate = getImmediate(instruction);
+
+    if (cpu->r[rs] == cpu->r[rt]) {
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        std::cout << "amount = " << std::hex << amount << "\n";
+
+        cpu->nextPc = cpu->pc + amount;
+
+        std::cout << "nextPc = " << std::hex << cpu->nextPc << "\n";
+    }
 }
 void CPU::beql(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
-    uint32_t immediate = getImmediate(instruction);
+    uint32_t immediate = getSignedImmediate(instruction);
 
     std::cout << "rs = " << rs << "\n";
 
@@ -336,7 +354,7 @@ void CPU::beql(CPU* cpu, uint32_t instruction) {
 
         // std::cout << "immediate = " << std::hex << immediate << "\n";
 
-        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+        uint64_t amount = immediate << 2;
 
         std::cout << amount << "\n";
 
@@ -377,20 +395,24 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
-        cpu->nextPc += amount;
+        std::cout << "amount = " << std::hex << amount << "\n";
+
+        cpu->nextPc = cpu->pc + amount;
+
+        std::cout << "nextPc = " << std::hex << cpu->nextPc << "\n";
     }
 }
 void CPU::bnel(CPU* cpu, uint32_t instruction) {
-    uint32_t immediate = getImmediate(instruction);
+    uint32_t immediate = getSignedImmediate(instruction);
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
     std::cout << "using registers " << rs << " and " << rt << " which = " << std::hex << cpu->r[rs] << ", " << cpu->r[rt] << " respectively\n";
 
     if (cpu->r[rs] != cpu->r[rt]) {
-        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+        uint64_t amount = immediate << 2;
 
-        cpu->nextPc += amount;
+        cpu->nextPc = cpu->pc + amount;
     } else {
         cpu->pc = cpu->nextPc;
         cpu->discarded = true;
@@ -466,7 +488,7 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
 
     uint32_t value = cpu->bus.memRead32(address);
 
-    cpu->r[rt] = (int64_t)(uint64_t)value;
+    cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
 
     std::cout << "set " << rt << " to " << cpu->r[rt] << "\n";
 }
@@ -542,7 +564,9 @@ void CPU::sw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
+    std::cout << "address = " << std::hex << address << "\n";
     std::cout << "rs = " << cpu->r[rs] << "\n";
+    std::cout << "rt = " << rt << ", whose value is " << cpu->r[rt] << "\n";
 
     cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
 
@@ -637,8 +661,15 @@ void CPU::sll(CPU* cpu, uint32_t instruction) {
 
 }
 void CPU::srl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: srl\n";
-    exit(1);
+    std::cout << "inside srl\n";
+
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+    uint32_t shift = shiftAmount(instruction);
+
+    cpu->r[rd] = (int32_t)(uint32_t)(uint64_t)(cpu->r[rt] >> shift);
+
+    cout << "set rd to " << std::hex << cpu->r[rd] << "\n";
 }
 void CPU::sra(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sra\n";
@@ -750,9 +781,14 @@ void CPU::and_(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::or_(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: or\n";
-    exit(1);
- }
+    std::cout << "inside or\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = cpu->r[rs] | cpu->r[rt];
+}
 void CPU::xor_(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: xor\n";
     exit(1);

@@ -12,6 +12,8 @@ public:
 
     std::vector<uint8_t> spdmem;
 
+    std::array<uint8_t, 0x3f> pifRam;
+
     Bus();
 
     PeripheralInterface peripheralInterface;
@@ -23,4 +25,6 @@ public:
     void memWrite32(uint64_t address, uint32_t value);
 
     static uint64_t translateAddress(uint64_t address);
+
+    static void writeWord(uint8_t* ptr, uint32_t address, uint32_t value);
 };

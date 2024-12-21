@@ -110,7 +110,20 @@ uint32_t Bus::memRead32(uint64_t address) {
         case 0x4040018:
             return rsp.spStatus.dmaBusy;
             break;
+        case 0x410000c:
+            return rdp.status.value;
+            break;
+        case 0x4800018:
+            return serialInterface.status.value;
+            break;
         default:
+            if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
+                uint32_t offset = actualAddress - 0x10000000;
+
+                std::cout << "reading from cartridge offset " << offset << "\n";
+
+                return std::byteswap(*(uint32_t*)&cartridge[offset]);
+            }
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
@@ -145,6 +158,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
         case 0x4040010:
             rsp.spStatus.value = value;
             break;
+        case 0x410000c:
+            rdp.status.value = value;
+            break;
         case 0x4400010:
             // TODO: clear interrupt
             break;
@@ -163,11 +179,30 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
         case 0x4600010:
             peripheralInterface.piStatus.value = value & 0xf;
             break;
+        case 0x4600014:
+            peripheralInterface.dom1Latch = value & 0xff;
+            break;
+        case 0x4600018:
+            peripheralInterface.dom1Pwd = value & 0xff;
+            break;
+        case 0x460001c:
+            peripheralInterface.dom1Pgs = value & 0xff;
+            break;
+        case 0x4600020:
+            peripheralInterface.dom1Rls = value & 0xff;
+            break;
         default:
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
                 Bus::writeWord(&pifRam[0], offset, value);
+
+                return;
+            }
+            if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
+                uint32_t offset = actualAddress - 0x4000000;
+
+                Bus::writeWord(&rsp.dmem[0], offset, value);
 
                 return;
             }
@@ -182,7 +217,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
 
                 return;
             }
-            // std::cout << "not yet implemented: " << std::hex << actualAddress << "\n";
+            std::cout << "not yet implemented: " << std::hex << actualAddress << "\n";
             exit(1);
             break;
     }

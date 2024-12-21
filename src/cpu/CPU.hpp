@@ -47,8 +47,6 @@ public:
 
     bool discarded;
 
-    std::vector<uint8_t> cartridge;
-
     CPU();
 
     std::array<CPUInstruction, 64> instructions;

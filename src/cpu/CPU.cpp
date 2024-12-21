@@ -227,7 +227,7 @@ void CPU::loadRom(std::string filename) {
 
     file.read(reinterpret_cast<char*>(rom.data()), fileSize);
 
-    // copy first 0x1000 bytes of rom to sp dmem
+    bus.cartridge = rom;
 }
 
 void CPU::step() {
@@ -291,8 +291,9 @@ void CPU::lui(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::addi(CPU* cpu, uint32_t instruction) {
-    std::cout << "not yet implemented: addi\n";
-    exit(1);
+    std::cout << "inside addi\n";
+
+    CPU::addiu(cpu, instruction);
 }
 
 void CPU::addiu(CPU* cpu, uint32_t instruction) {

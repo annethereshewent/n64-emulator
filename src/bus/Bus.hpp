@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <vector>
 #include "PeripheralInterface.hpp"
@@ -6,6 +8,7 @@
 #include "AudioInterface.hpp"
 #include "SerialInterface.hpp"
 #include "RDP.hpp"
+#include "PIF.cpp"
 
 class Bus {
 public:
@@ -14,7 +17,7 @@ public:
 
     std::vector<uint8_t> spdmem;
 
-    std::array<uint8_t, 0x3f> pifRam;
+    PIF pif;
 
     std::vector<uint8_t> cartridge;
 

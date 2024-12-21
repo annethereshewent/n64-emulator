@@ -1,5 +1,7 @@
+#pragma once
+
 #include <cstdint>
-#include "../bus/Bus.cpp"
+#include "../bus/Bus.hpp"
 #include <vector>
 
 class CPU;

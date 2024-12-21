@@ -40,9 +40,7 @@ uint32_t Bus::memRead32(uint64_t address) {
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
-
-
-                return std::byteswap(*(uint32_t*)&pif.pifRam[offset]);
+                return std::byteswap(*(uint32_t*)&pif.ram[offset]);
             }
             if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
 
@@ -113,7 +111,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
-                Bus::writeWord(&pif.pifRam[0], offset, value);
+                Bus::writeWord(&pif.ram[0], offset, value);
+
+                // TODO: add scheduler and schedule this for later
+                pif.executeCommand();
 
                 return;
             }

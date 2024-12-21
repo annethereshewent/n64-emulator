@@ -21,6 +21,14 @@ uint32_t getRt(uint32_t instruction) {
     return (instruction >> 16) & 0x1f;
 }
 
+uint32_t getRd(uint32_t instruction) {
+    return (instruction >> 11) & 0x1f;
+}
+
+uint32_t shiftAmount(uint32_t instruction) {
+    return (instruction >> 6) & 0x1f;
+}
+
 void CPU::set(int i, uint64_t val) {
     if (i != 0) {
         r[i] = val;
@@ -136,6 +144,73 @@ CPU::CPU() {
         COP0::reserved, // 3e
         CPU::sd, // 3f
     };
+
+    secondary = {
+        CPU::sll,    // 0
+        COP0::reserved,           // 1
+        CPU::srl,    // 2
+        CPU::sra,    // 3
+        CPU::sllv,   // 4
+        COP0::reserved,           // 5
+        CPU::srlv,   // 6
+        CPU::srav,   // 7
+        CPU::jr,     // 8
+        CPU::jalr,   // 9
+        COP0::reserved,           // 10
+        COP0::reserved,           // 11
+        COP0::syscall,            // 12
+        COP0::break_,             // 13
+        COP0::reserved,           // 14
+        CPU::sync,   // 15
+        CPU::mfhi,   // 16
+        CPU::mthi,   // 17
+        CPU::mflo,   // 18
+        CPU::mtlo,   // 19
+        CPU::dsllv,  // 20
+        COP0::reserved,           // 21
+        CPU::dsrlv,  // 22
+        CPU::dsrav,  // 23
+        CPU::mult,   // 24
+        CPU::multu,  // 25
+        CPU::div,    // 26
+        CPU::divu,   // 27
+        CPU::dmult,  // 28
+        CPU::dmultu, // 29
+        CPU::ddiv,   // 30
+        CPU::ddivu,  // 31
+        CPU::add,    // 32
+        CPU::addu,   // 33
+        CPU::sub,    // 34
+        CPU::subu,   // 35
+        CPU::and_,    // 36
+        CPU::or_,     // 37
+        CPU::xor_,    // 38
+        CPU::nor,    // 39
+        COP0::reserved,           // 40
+        COP0::reserved,           // 41
+        CPU::slt,    // 42
+        CPU::sltu,   // 43
+        CPU::dadd,   // 44
+        CPU::daddu,  // 45
+        CPU::dsub,   // 46
+        CPU::dsubu,  // 47
+        CPU::tge,    // 48
+        CPU::tgeu,   // 49
+        CPU::tlt,    // 50
+        CPU::tltu,   // 51
+        CPU::teq,    // 52
+        COP0::reserved,           // 53
+        CPU::tne,    // 54
+        COP0::reserved,           // 55
+        CPU::dsll,   // 56
+        COP0::reserved,           // 57
+        CPU::dsrl,   // 58
+        CPU::dsra,   // 59
+        CPU::dsll32, // 60
+        COP0::reserved,           // 61
+        CPU::dsrl32, // 62
+        CPU::dsra32, // 63
+    };
 }
 
 void CPU::loadRom(std::string filename) {
@@ -180,6 +255,8 @@ void CPU::step() {
 
     switch(command) {
         case 0:
+            secondary[opcode & 0x3f](this, opcode);
+            break;
         case 1:
         case 16:
             cop0.instructions[(opcode >> 21) & 0x1f](this, opcode);
@@ -539,4 +616,220 @@ void COP0::mtc0(CPU* cpu, uint32_t instruction) {
     cpu->cop0.r[rd] = cpu->r[rt];
 
     std::cout << "set cop0 register " << rd << " to " << std::hex << cpu->cop0.r[rd] << "\n";
+}
+
+void COP0::break_(CPU* cpu, uint32_t instruction) {
+
+}
+
+void COP0::syscall(CPU* cpu, uint32_t instruction) {
+
+}
+
+void CPU::sll(CPU* cpu, uint32_t instruction) {
+    std::cout << "inside sll\n";
+
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+    uint32_t shift = shiftAmount(instruction);
+
+    cpu->r[rd] = rt << shift;
+
+}
+void CPU::srl(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: srl\n";
+    exit(1);
+}
+void CPU::sra(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sra\n";
+    exit(1);
+}
+void CPU::sllv(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sllv\n";
+    exit(1);
+}
+void CPU::srlv(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: srlv\n";
+    exit(1);
+ }
+void CPU::srav(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: srav\n";
+    exit(1);
+}
+void CPU::jr(CPU* cpu, uint32_t instruction) {
+    uint32_t rs = getRs(instruction);
+
+    cpu->nextPc = cpu->r[rs];
+}
+void CPU::jalr(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: jalr\n";
+    exit(1);
+ }
+void CPU::sync(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sync\n";
+    exit(1);
+}
+void CPU::mfhi(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: mfhi\n";
+    exit(1);
+ }
+void CPU::mthi(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: mthi\n";
+    exit(1);
+}
+void CPU::mflo(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: mflo\n";
+    exit(1);
+ }
+void CPU::mtlo(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: mtlo\n";
+    exit(1);
+ }
+void CPU::dsllv(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsllv\n";
+    exit(1);
+ }
+void CPU::dsrlv(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsrlv\n";
+    exit(1);
+ }
+void CPU::dsrav(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsrav\n";
+    exit(1);
+ }
+void CPU::mult(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: mult\n";
+    exit(1);
+}
+void CPU::multu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: multu\n";
+    exit(1);
+ }
+void CPU::div(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: div\n";
+    exit(1);
+ }
+void CPU::divu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: divu\n";
+    exit(1);
+ }
+void CPU::dmult(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dmult\n";
+    exit(1);
+ }
+void CPU::dmultu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dmultu\n";
+    exit(1);
+}
+void CPU::ddiv(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ddiv\n";
+    exit(1);
+}
+void CPU::ddivu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ddivu\n";
+    exit(1);
+ }
+void CPU::add(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: add\n";
+    exit(1);
+}
+void CPU::addu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: addu\n";
+    exit(1);
+}
+void CPU::sub(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sub\n";
+    exit(1);
+}
+void CPU::subu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: subu\n";
+    exit(1);
+}
+void CPU::and_(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: and\n";
+    exit(1);
+}
+void CPU::or_(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: or\n";
+    exit(1);
+ }
+void CPU::xor_(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: xor\n";
+    exit(1);
+ }
+void CPU::nor(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: nor\n";
+    exit(1);
+ }
+void CPU::slt(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: slt\n";
+    exit(1);
+ }
+void CPU::sltu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sltu\n";
+    exit(1);
+ }
+void CPU::dadd(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dadd\n";
+    exit(1);
+}
+void CPU::daddu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: daddu\n";
+    exit(1);
+}
+void CPU::dsub(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsub\n";
+    exit(1);
+ }
+void CPU::dsubu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsubu\n";
+    exit(1);
+ }
+void CPU::tge(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tge\n";
+    exit(1);
+ }
+void CPU::tgeu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tgeu\n";
+    exit(1);
+ }
+void CPU::tlt(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tlt\n";
+    exit(1);
+ }
+void CPU::tltu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tltu\n";
+    exit(1);
+}
+void CPU::teq(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: teq\n";
+    exit(1);
+}
+void CPU::tne(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tne\n";
+    exit(1);
+}
+void CPU::dsll(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsll\n";
+    exit(1);
+ }
+void CPU::dsrl(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsrl\n";
+    exit(1);
+ }
+void CPU::dsra(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsra\n";
+    exit(1);
+}
+void CPU::dsll32(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsll32\n";
+    exit(1);
+}
+void CPU::dsrl32(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsrl32\n";
+    exit(1);
+ }
+void CPU::dsra32(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: dsra32\n";
+    exit(1);
 }

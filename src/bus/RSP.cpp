@@ -1,5 +1,5 @@
 #include "RSP.hpp"
 
 RSP::RSP() {
-    imem.resize(0xfff);
+    imem.resize(0x1000);
 }

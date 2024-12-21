@@ -120,10 +120,19 @@ uint32_t Bus::memRead32(uint64_t address) {
         case 0x4040018:
             return rsp.spStatus.dmaBusy;
             break;
-    }
+        default:
+            if (actualAddress >= 0x4001000 && actualAddress <= 0x4001FFF) {
+                uint64_t offset = actualAddress - 0x4001000;
 
-    std::cout << "not yet implemented: " << std::hex << actualAddress << "\n";
-    exit(1);
+                std::cout << "reading from offset " << std::hex << offset << "\n";
+
+                return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
+            }
+
+            std::cout << "not yet implemented: " << std::hex << actualAddress << "\n";
+            exit(1);
+            break;
+    }
 }
 
 void Bus::memWrite32(uint64_t address, uint32_t value) {

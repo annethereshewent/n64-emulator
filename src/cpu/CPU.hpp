@@ -16,6 +16,8 @@ public:
     static void mtc0(CPU* cpu, uint32_t instruction);
     static void dmtc0(CPU* cpu, uint32_t instruction);
     static void cp0(CPU* cpu, uint32_t instruction);
+    static void syscall(CPU* cpu, uint32_t instruction);
+    static void break_(CPU* cpu, uint32_t instruction);
 
 
     static void reserved(CPU* cpu, uint32_t instruction);
@@ -50,6 +52,7 @@ public:
     CPU();
 
     std::array<CPUInstruction, 64> instructions;
+    std::array<CPUInstruction, 64> secondary;
 
     void set(int i, uint64_t val);
 
@@ -103,4 +106,54 @@ public:
     static void sc(CPU* cpu, uint32_t instruction);
     static void scd(CPU* cpu, uint32_t instruction);
     static void sd(CPU* cpu, uint32_t instruction);
+    static void sll(CPU* cpu, uint32_t instruction);
+    static void srl(CPU* cpu, uint32_t instruction);
+    static void sra(CPU* cpu, uint32_t instruction);
+    static void sllv(CPU* cpu, uint32_t instruction);
+    static void srlv(CPU* cpu, uint32_t instruction);
+    static void srav(CPU* cpu, uint32_t instruction);
+    static void jr(CPU* cpu, uint32_t instruction);
+    static void jalr(CPU* cpu, uint32_t instruction);
+    static void sync(CPU* cpu, uint32_t instruction);
+    static void mfhi(CPU* cpu, uint32_t instruction);
+    static void mthi(CPU* cpu, uint32_t instruction);
+    static void mflo(CPU* cpu, uint32_t instruction);
+    static void mtlo(CPU* cpu, uint32_t instruction);
+    static void dsllv(CPU* cpu, uint32_t instruction);
+    static void dsrlv(CPU* cpu, uint32_t instruction);
+    static void dsrav(CPU* cpu, uint32_t instruction);
+    static void mult(CPU* cpu, uint32_t instruction);
+    static void multu(CPU* cpu, uint32_t instruction);
+    static void div(CPU* cpu, uint32_t instruction);
+    static void divu(CPU* cpu, uint32_t instruction);
+    static void dmult(CPU* cpu, uint32_t instruction);
+    static void dmultu(CPU* cpu, uint32_t instruction);
+    static void ddiv(CPU* cpu, uint32_t instruction);
+    static void ddivu(CPU* cpu, uint32_t instruction);
+    static void add(CPU* cpu, uint32_t instruction);
+    static void addu(CPU* cpu, uint32_t instruction);
+    static void sub(CPU* cpu, uint32_t instruction);
+    static void subu(CPU* cpu, uint32_t instruction);
+    static void and_(CPU* cpu, uint32_t instruction);
+    static void or_(CPU* cpu, uint32_t instruction);
+    static void xor_(CPU* cpu, uint32_t instruction);
+    static void nor(CPU* cpu, uint32_t instruction);
+    static void slt(CPU* cpu, uint32_t instruction);
+    static void sltu(CPU* cpu, uint32_t instruction);
+    static void dadd(CPU* cpu, uint32_t instruction);
+    static void daddu(CPU* cpu, uint32_t instruction);
+    static void dsub(CPU* cpu, uint32_t instruction);
+    static void dsubu(CPU* cpu, uint32_t instruction);
+    static void tge(CPU* cpu, uint32_t instruction);
+    static void tgeu(CPU* cpu, uint32_t instruction);
+    static void tlt(CPU* cpu, uint32_t instruction);
+    static void tltu(CPU* cpu, uint32_t instruction);
+    static void teq(CPU* cpu, uint32_t instruction);
+    static void tne(CPU* cpu, uint32_t instruction);
+    static void dsll(CPU* cpu, uint32_t instruction);
+    static void dsrl(CPU* cpu, uint32_t instruction);
+    static void dsra(CPU* cpu, uint32_t instruction);
+    static void dsll32(CPU* cpu, uint32_t instruction);
+    static void dsrl32(CPU* cpu, uint32_t instruction);
+    static void dsra32(CPU* cpu, uint32_t instruction);
 };

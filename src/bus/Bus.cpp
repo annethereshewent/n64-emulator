@@ -127,6 +127,8 @@ uint32_t Bus::memRead32(uint64_t address) {
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
+                std::cout << "lmao im reading from this guy\n";
+
                 return std::byteswap(*(uint32_t*)&pifRam[offset]);
             }
             if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
@@ -135,10 +137,13 @@ uint32_t Bus::memRead32(uint64_t address) {
 
                 return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
             }
+            if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
+                uint64_t offset = actualAddress - 0x4000000;
+
+                return std::byteswap(*(uint32_t*)&rsp.dmem[offset]);
+            }
             if (actualAddress >= 0x4001000 && actualAddress <= 0x4001FFF) {
                 uint64_t offset = actualAddress - 0x4001000;
-
-                // std::cout << "reading from offset " << std::hex << offset << "\n";
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
@@ -194,6 +199,8 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
         default:
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
+
+                std::cout << "lmao im writing to this guy value " << value << "\n";
 
                 Bus::writeWord(&pifRam[0], offset, value);
 

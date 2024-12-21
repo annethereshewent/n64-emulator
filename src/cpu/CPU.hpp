@@ -38,6 +38,9 @@ class CPU {
 public:
     uint64_t r[32];
 
+    uint64_t hi;
+    uint64_t lo;
+
     uint64_t pc;
     uint64_t nextPc;
 
@@ -51,6 +54,7 @@ public:
 
     std::array<CPUInstruction, 64> instructions;
     std::array<CPUInstruction, 64> secondary;
+    std::array<CPUInstruction, 32> registerInstructions;
 
     void set(int i, uint64_t val);
 
@@ -154,4 +158,23 @@ public:
     static void dsll32(CPU* cpu, uint32_t instruction);
     static void dsrl32(CPU* cpu, uint32_t instruction);
     static void dsra32(CPU* cpu, uint32_t instruction);
+
+    static void bltz(CPU* cpu, uint32_t instruction);
+    static void bgez(CPU* cpu, uint32_t instruction);
+    static void bltzl(CPU* cpu, uint32_t instruction);
+    static void bgezl(CPU* cpu, uint32_t instruction);
+
+    static void tgei(CPU* cpu, uint32_t instruction);
+    static void tgeiu(CPU* cpu, uint32_t instruction);
+    static void tlti(CPU* cpu, uint32_t instruction);
+    static void tltiu(CPU* cpu, uint32_t instruction);
+    static void teqi(CPU* cpu, uint32_t instruction);
+
+    static void tnei(CPU* cpu, uint32_t instruction);
+
+    static void bltzal(CPU* cpu, uint32_t instruction);
+    static void bgezal(CPU* cpu, uint32_t instruction);
+    static void bltzall(CPU* cpu, uint32_t instruction);
+    static void bgezall(CPU* cpu, uint32_t instruction);
+
 };

@@ -1,6 +1,7 @@
 #include "CPU.hpp"
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -211,6 +212,41 @@ CPU::CPU() {
         CPU::dsrl32, // 62
         CPU::dsra32, // 63
     };
+
+    registerInstructions = {
+        CPU::bltz,    // 0
+        CPU::bgez,    // 1
+        CPU::bltzl,   // 2
+        CPU::bgezl,   // 3
+        COP0::reserved,            // 4
+        COP0::reserved,            // 5
+        COP0::reserved,            // 6
+        COP0::reserved,            // 7
+        CPU::tgei,    // 8
+        CPU::tgeiu,   // 9
+        CPU::tlti,    // 10
+        CPU::tltiu,   // 11
+        CPU::teqi,    // 12
+        COP0::reserved,            // 13
+        CPU::tnei,    // 14
+        COP0::reserved,            // 15
+        CPU::bltzal,  // 16
+        CPU::bgezal,  // 17
+        CPU::bltzall, // 18
+        CPU::bgezall, // 19
+        COP0::reserved,            // 20
+        COP0::reserved,            // 21
+        COP0::reserved,            // 22
+        COP0::reserved,            // 23
+        COP0::reserved,            // 24
+        COP0::reserved,            // 25
+        COP0::reserved,            // 26
+        COP0::reserved,            // 27
+        COP0::reserved,            // 28
+        COP0::reserved,            // 29
+        COP0::reserved,            // 30
+        COP0::reserved,            // 31
+    };
 }
 
 void CPU::loadRom(std::string filename) {
@@ -231,9 +267,11 @@ void CPU::loadRom(std::string filename) {
 }
 
 void CPU::step() {
-    std::cout << "pc is now = " << std::hex << pc << "\n";
+    std::cout << "pc = " << std::hex << pc << "\n";
 
     uint32_t opcode = bus.memRead32(pc);
+
+    std::cout << "instruction = " << opcode << "\n";
 
     uint32_t command = opcode >> 26;
 
@@ -241,18 +279,14 @@ void CPU::step() {
 
     uint64_t oldPc = pc;
 
+    uint64_t oldR8 = r[8];
+
     if (!discarded) {
         pc = nextPc;
     } else {
         nextPc += 4;
         pc = nextPc;
     }
-
-    if (pc == 0xbfc00ac) {
-        std::cout << "yeah it's going here\n";
-    }
-
-    uint64_t oldR9 = r[9];
 
     discarded = false;
     nextPc += 4;
@@ -262,19 +296,28 @@ void CPU::step() {
             secondary[opcode & 0x3f](this, opcode);
             break;
         case 1:
+            registerInstructions[(opcode >> 16) & 0x1f](this, opcode);
+            break;
         case 16:
             cop0.instructions[(opcode >> 21) & 0x1f](this, opcode);
             break;
         case 17:
+            std::cout << "cop1 instructions not supported yet";
+            exit(1);
+            break;
         case 18:
+            std::cout << "cop2 instructions not supported yet";
+            exit(1);
+            break;
         default:
             instructions[command](this, opcode);
             break;
     }
 
-    // if (oldR9 != r[9]) {
-    //     cout << "the pc is " << std::hex << oldPc << "\n";
-    // }
+    if (oldR8 != r[8] && r[8] == 0x30) {
+        std::cout << "r8 changed to " << r[8] << " at " << oldPc << "\n";
+    }
+
 }
 
 void CPU::lui(CPU* cpu, uint32_t instruction) {
@@ -338,15 +381,16 @@ void CPU::beq(CPU* cpu, uint32_t instruction) {
         cpu->nextPc = cpu->pc + amount;
 
         std::cout << "nextPc = " << std::hex << cpu->nextPc << "\n";
-    }
+   }
 }
 void CPU::beql(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
-    uint32_t immediate = getSignedImmediate(instruction);
+    uint32_t immediate = getImmediate(instruction);
 
     std::cout << "rs = " << rs << "\n";
+    std::cout << "rt = " << rt << "\n";
 
     std::cout << "comparing " << std::hex << cpu->r[rs] << " with " << cpu->r[rt] << "\n";
 
@@ -355,19 +399,19 @@ void CPU::beql(CPU* cpu, uint32_t instruction) {
 
         // std::cout << "immediate = " << std::hex << immediate << "\n";
 
-        uint64_t amount = immediate << 2;
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         std::cout << amount << "\n";
 
-        cpu->nextPc += amount;
+        cpu->nextPc = cpu->pc + amount;
 
         // std::cout << "next pc will be " << cpu->nextPc << "\n";
-    } else {
+   } else {
         cpu->pc = cpu->nextPc;
         std::cout << "discarding the delay slot, pc = " << cpu->pc << ", nextPc = " << cpu->nextPc << "\n";
 
         cpu->discarded = true;
-    }
+   }
 }
 void CPU::bgtz(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bgtz\n";
@@ -393,6 +437,8 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
 
     uint32_t immediate = getImmediate(instruction);
 
+    std::cout << "rs = " << rs << " rt = " << rt << " which equal " << cpu->r[rs] << " and " << cpu->r[rt] << " respectively\n";
+
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
@@ -401,23 +447,26 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
         cpu->nextPc = cpu->pc + amount;
 
         std::cout << "nextPc = " << std::hex << cpu->nextPc << "\n";
-    }
+   }
 }
 void CPU::bnel(CPU* cpu, uint32_t instruction) {
-    uint32_t immediate = getSignedImmediate(instruction);
+    std::cout << "inside bnel\n";
+    uint32_t immediate = getImmediate(instruction);
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
     std::cout << "using registers " << rs << " and " << rt << " which = " << std::hex << cpu->r[rs] << ", " << cpu->r[rt] << " respectively\n";
 
     if (cpu->r[rs] != cpu->r[rt]) {
-        uint64_t amount = immediate << 2;
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         cpu->nextPc = cpu->pc + amount;
-    } else {
+
+        std::cout << "nextPc = " << cpu->nextPc << "\n";
+   } else {
         cpu->pc = cpu->nextPc;
         cpu->discarded = true;
-    }
+   }
 }
 void CPU::cache(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cache\n";
@@ -485,7 +534,7 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[base_reg] + immediate;
 
-    std::cout << "address = " << std::hex << address << "\n";
+    std::cout << "address = " << std::hex << address << " which we got from " << base_reg << "\n";
 
     uint32_t value = cpu->bus.memRead32(address);
 
@@ -628,8 +677,12 @@ void COP0::dmtc0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::mfc0(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mfc0\n";
-    exit(1);
+    std::cout << "inside mfc0\n";
+
+    uint32_t rd = getRd(instruction);
+    uint32_t rt = getRt(instruction);
+
+    cpu->r[rt] = cpu->cop0.r[rd];
 }
 
 void COP0::mtc0(CPU* cpu, uint32_t instruction) {
@@ -677,13 +730,27 @@ void CPU::sra(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sllv(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sllv\n";
-    exit(1);
+    std::cout << "inside sllv\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    uint32_t shift = std::min((uint64_t)31, cpu->r[rs]);
+
+    cpu->r[rd] = cpu->r[rt] << shift;
 }
 void CPU::srlv(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: srlv\n";
-    exit(1);
- }
+    std::cout << "inside srlv\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    uint32_t shift = std::min((uint64_t)31, cpu->r[rs]);
+
+    cpu->r[rd] = cpu->r[rt] >> shift;
+}
 void CPU::srav(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: srav\n";
     exit(1);
@@ -691,64 +758,83 @@ void CPU::srav(CPU* cpu, uint32_t instruction) {
 void CPU::jr(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
 
+    if (cpu->pc - 4 == 0xa400117c) {
+        std::cout << "jumping to " << cpu->r[rs] << " which comes from " << rs << "\n";
+    }
+
+    std::cout << "pc = " << std::hex << cpu->pc << "\n";
+
     cpu->nextPc = cpu->r[rs];
 }
 void CPU::jalr(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: jalr\n";
     exit(1);
- }
+}
 void CPU::sync(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sync\n";
     exit(1);
 }
 void CPU::mfhi(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mfhi\n";
-    exit(1);
- }
+    std::cout << "inside mfhi\n";
+
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = cpu->hi;
+}
 void CPU::mthi(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: mthi\n";
     exit(1);
 }
 void CPU::mflo(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mflo\n";
-    exit(1);
- }
+    std::cout << "inside mflo\n";
+
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = cpu->lo;
+}
 void CPU::mtlo(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: mtlo\n";
     exit(1);
- }
+}
 void CPU::dsllv(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsllv\n";
     exit(1);
- }
+}
 void CPU::dsrlv(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsrlv\n";
     exit(1);
- }
+}
 void CPU::dsrav(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsrav\n";
     exit(1);
- }
+}
 void CPU::mult(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: mult\n";
     exit(1);
 }
 void CPU::multu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: multu\n";
-    exit(1);
- }
+    std::cout << "inside multu\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t result = cpu->r[rs] * cpu->r[rt];
+
+    cpu->lo = result & 0xffffffff;
+    cpu->hi = (result >> 32);
+}
 void CPU::div(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: div\n";
     exit(1);
- }
+}
 void CPU::divu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: divu\n";
     exit(1);
- }
+}
 void CPU::dmult(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dmult\n";
     exit(1);
- }
+}
 void CPU::dmultu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dmultu\n";
     exit(1);
@@ -760,26 +846,41 @@ void CPU::ddiv(CPU* cpu, uint32_t instruction) {
 void CPU::ddivu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ddivu\n";
     exit(1);
- }
+}
 void CPU::add(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: add\n";
     exit(1);
 }
 void CPU::addu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: addu\n";
-    exit(1);
+    std::cout << "inside addu\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = cpu->r[rs] + cpu->r[rt];
 }
 void CPU::sub(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sub\n";
     exit(1);
 }
 void CPU::subu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: subu\n";
-    exit(1);
+    std::cout << "inside subu\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = cpu->r[rs] - cpu->r[rt];
 }
 void CPU::and_(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: and\n";
-    exit(1);
+    std::cout << "inside and\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = cpu->r[rs] & cpu->r[rt];
 }
 void CPU::or_(CPU* cpu, uint32_t instruction) {
     std::cout << "inside or\n";
@@ -788,24 +889,41 @@ void CPU::or_(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
 
+    std::cout << "rs = " << rs << ", rt = " << rt << ", which both equal " << cpu->r[rs] << " and " << cpu->r[rt] << " respectively\n";
+
     cpu->r[rd] = cpu->r[rs] | cpu->r[rt];
 }
 void CPU::xor_(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: xor\n";
-    exit(1);
- }
+    std::cout << "inside xor\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = cpu->r[rs] ^ cpu->r[rt];
+}
 void CPU::nor(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: nor\n";
     exit(1);
- }
+}
 void CPU::slt(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: slt\n";
     exit(1);
- }
+}
 void CPU::sltu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sltu\n";
-    exit(1);
- }
+    std::cout << "inside sltu\n";
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+
+    if (cpu->r[rs] < cpu->r[rt]) {
+        cpu->r[rd] = 1;
+    } else {
+        cpu->r[rd] = 0;
+    }
+}
 void CPU::dadd(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dadd\n";
     exit(1);
@@ -817,23 +935,23 @@ void CPU::daddu(CPU* cpu, uint32_t instruction) {
 void CPU::dsub(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsub\n";
     exit(1);
- }
+}
 void CPU::dsubu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsubu\n";
     exit(1);
- }
+}
 void CPU::tge(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tge\n";
     exit(1);
- }
+}
 void CPU::tgeu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tgeu\n";
     exit(1);
- }
+}
 void CPU::tlt(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tlt\n";
     exit(1);
- }
+}
 void CPU::tltu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tltu\n";
     exit(1);
@@ -849,11 +967,11 @@ void CPU::tne(CPU* cpu, uint32_t instruction) {
 void CPU::dsll(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsll\n";
     exit(1);
- }
+}
 void CPU::dsrl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsrl\n";
     exit(1);
- }
+}
 void CPU::dsra(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsra\n";
     exit(1);
@@ -865,8 +983,78 @@ void CPU::dsll32(CPU* cpu, uint32_t instruction) {
 void CPU::dsrl32(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsrl32\n";
     exit(1);
- }
+}
 void CPU::dsra32(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsra32\n";
+    exit(1);
+}
+
+void CPU::bltz(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: bltz\n";
+    exit(1);
+}
+void CPU::bgez(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: bgez\n";
+    exit(1);
+}
+void CPU::bltzl(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: bltzl\n";
+    exit(1);
+}
+void CPU::bgezl(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: bgezl\n";
+    exit(1);
+}
+
+void CPU::tgei(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tgei\n";
+    exit(1);
+}
+void CPU::tgeiu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tgeiu\n";
+    exit(1);
+}
+void CPU::tlti(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tlti\n";
+    exit(1);
+}
+void CPU::tltiu(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tltiu\n";
+    exit(1);
+}
+void CPU::teqi(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: teqi\n";
+    exit(1);
+}
+
+void CPU::tnei(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tnei\n";
+    exit(1);
+}
+
+void CPU::bltzal(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: bltzal\n";
+    exit(1);
+}
+void CPU::bgezal(CPU* cpu, uint32_t instruction) {
+    std::cout << "inside bgezal\n";
+
+    uint32_t rs = getRs(instruction);
+
+    if (cpu->r[rs] >= 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->r[31] = cpu->nextPc;
+        cpu->nextPc = cpu->pc + amount;
+    }
+}
+void CPU::bltzall(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: bltzall\n";
+    exit(1);
+}
+void CPU::bgezall(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: bgezall\n";
     exit(1);
 }

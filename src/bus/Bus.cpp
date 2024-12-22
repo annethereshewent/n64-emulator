@@ -46,21 +46,9 @@ uint32_t Bus::memRead32(uint64_t address) {
             return serialInterface.status.value;
             break;
         default:
-            if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
-                uint32_t offset = actualAddress - 0x10000000;
+            if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
+                // cartridge sram
 
-                return std::byteswap(*(uint32_t*)&cartridge[offset]);
-            }
-            if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
-                uint32_t offset = actualAddress - 0x1fc007c0;
-
-                return std::byteswap(*(uint32_t*)&pif.ram[offset]);
-            }
-            if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
-
-                uint64_t pifAddress = actualAddress - 0x1FC00000;
-
-                return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;
@@ -71,6 +59,22 @@ uint32_t Bus::memRead32(uint64_t address) {
                 uint64_t offset = actualAddress - 0x4001000;
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
+            }
+            if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
+                uint32_t offset = actualAddress - 0x10000000;
+
+                return std::byteswap(*(uint32_t*)&cartridge[offset]);
+            }
+            if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
+
+                uint64_t pifAddress = actualAddress - 0x1FC00000;
+
+                return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
+            }
+            if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
+                uint32_t offset = actualAddress - 0x1fc007c0;
+
+                return std::byteswap(*(uint32_t*)&pif.ram[offset]);
             }
 
             std::cout << "(memRead32) unsupported address received: " << std::hex << actualAddress << "\n";

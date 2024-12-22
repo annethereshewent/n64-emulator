@@ -264,11 +264,11 @@ void CPU::step() {
             cop0.instructions[(opcode >> 21) & 0x1f](this, opcode);
             break;
         case 17:
-
+            std::cout << "not yet implemented: 17\n";
             exit(1);
             break;
         case 18:
-
+            std::cout << "not yet implemented: 18\n";
             exit(1);
             break;
         default:

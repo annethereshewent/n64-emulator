@@ -21,6 +21,7 @@ uint8_t Bus::memRead8(uint64_t address) {
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint64_t offset = actualAddress - 0x10000000;
 
+                std::cout << "8 bit read from cartridge\n";
                 return cartridge[offset] & 0xff;
             }
             std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
@@ -31,6 +32,10 @@ uint8_t Bus::memRead8(uint64_t address) {
 
 uint32_t Bus::memRead32(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
+
+    if (address == 0xb0000050) {
+        std::cout << "actualAddress = " << std::hex << actualAddress << "\n";
+    }
 
     switch (actualAddress) {
         case 0x4040010:
@@ -159,15 +164,8 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
 void Bus::writeWord(uint8_t* ptr, uint32_t address, uint32_t value) {
     for (int i = 3; i >= 0; i--) {
         int shift = 3 - i;
-
-
-
         uint8_t byte = (value >> shift * 8) & 0xff;
-
-
-
         ptr[address + i] = byte;
-
     }
 }
 

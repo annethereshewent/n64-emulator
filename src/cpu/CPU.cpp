@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <bit>
 
 COP0::COP0() {
     instructions = {
@@ -235,13 +236,55 @@ void CPU::loadRom(std::string filename) {
 
     file.read(reinterpret_cast<char*>(rom.data()), fileSize);
 
-    bus.cartridge = rom;
+
+    std::vector<uint8_t> formattedRom;
+
+    formattedRom.resize(fileSize);
+
+    uint32_t cartridgeFormat = std::byteswap(*(uint32_t*)&rom[0]);
+
+    switch (cartridgeFormat) {
+        case 0x80371240:
+            formattedRom = rom;
+            break;
+        case 0x37804012:
+            for (int i = 0; i < rom.size(); i += 2) {
+                // TODO: refactor this to something more efficient (possibly use memcpy?)
+                uint16_t data = *(uint16_t*)&rom[i];
+
+                for (int j = 1; j >= 0; j--) {
+                    int shift = 1 - j;
+
+                    uint8_t byte = (data >> shift) & 0xff;
+
+                    formattedRom[i + j] = byte;
+                }
+            }
+            break;
+        case 0x40123780:
+            for (int i = 0; i < rom.size(); i += 4) {
+                // TODO: refactor this to something more efficient
+                uint32_t data = *(uint32_t*)&rom[i];
+
+                for (int j = 3; j >= 0; j--) {
+                    int shift = 1 - j;
+
+                    uint8_t byte = (data >> shift) & 0xff;
+
+                    formattedRom[i + j] = byte;
+                }
+            }
+            break;
+    }
+
+    bus.cartridge = formattedRom;
 }
 
 void CPU::step() {
-    uint32_t opcode = bus.memRead32(pc);
-    uint32_t command = opcode >> 26;
     uint64_t oldPc = pc;
+    uint32_t opcode = bus.memRead32(pc);
+    std::cout << "pc = " << std::hex << pc <<  "\n";
+    uint32_t command = opcode >> 26;
 
     if (!discarded) {
         pc = nextPc;
@@ -250,8 +293,14 @@ void CPU::step() {
         pc = nextPc;
     }
 
+    uint64_t oldR9 = r[9];
+
     discarded = false;
     nextPc += 4;
+
+    if (pc == 0xa4000050 || pc == 0xa4001100 || pc == 0xa4001104) {
+        std::cout << "instruction = " << std::hex << opcode << ", command = " << command << "\n";
+    }
 
     switch(command) {
         case 0:
@@ -274,5 +323,9 @@ void CPU::step() {
         default:
             instructions[command](this, opcode);
             break;
+    }
+
+    if (oldR9 != r[9]) {
+        std::cout << "r9 changed to " << std::hex << r[9] << " from " << oldR9 << " at pc = " << std::hex << oldPc << "\n";
     }
 }

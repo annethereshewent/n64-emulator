@@ -156,6 +156,8 @@ void CPU::j(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = (cpu->pc & 0xfffffffff0000000) | offset;
 
+    std::cout << "current pc = " << std::hex << cpu->pc << "\n";
+
     std::cout << "jumping to " << std::hex << address << "\n";
 
     cpu->nextPc = address;
@@ -218,6 +220,10 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
     uint64_t address = cpu->r[baseReg] + immediate;
 
     uint32_t value = cpu->bus.memRead32(address);
+
+    if (cpu->pc == 0xa4001104) {
+        std::cout << "address = " << std::hex << address << ", value = " << value << "\n";
+    }
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
 }
@@ -282,14 +288,23 @@ void CPU::sltiu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sw(CPU* cpu, uint32_t instruction) {
+    std::cout << "r9 = " << std::hex << cpu->r[9] << "\n";
     uint32_t immediate = getSignedImmediate(instruction);
+
+    std::cout << "r9 now = " << std::hex << cpu->r[9] << "\n";
 
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
+    std::cout << "r9 *now* = " << std::hex << cpu->r[9] << "\n";
+
     uint64_t address = immediate + cpu->r[rs];
 
+    std::cout << "pc = " <<  std::hex << cpu->pc << ", address = " << address << ", writing value " << (uint32_t)cpu->r[rt] << ", also rt = " << rt << "\n";
+
     cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
+
+    std::cout << "r9 *finally* = " << std::hex << cpu->r[9] << "\n";
 }
 void CPU::swl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: swl\n";

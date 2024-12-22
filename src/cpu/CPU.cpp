@@ -281,9 +281,7 @@ void CPU::loadRom(std::string filename) {
 }
 
 void CPU::step() {
-    uint64_t oldPc = pc;
     uint32_t opcode = bus.memRead32(pc);
-    std::cout << "pc = " << std::hex << pc <<  "\n";
     uint32_t command = opcode >> 26;
 
     if (!discarded) {
@@ -297,10 +295,6 @@ void CPU::step() {
 
     discarded = false;
     nextPc += 4;
-
-    if (pc == 0xa4000050 || pc == 0xa4001100 || pc == 0xa4001104) {
-        std::cout << "instruction = " << std::hex << opcode << ", command = " << command << "\n";
-    }
 
     switch(command) {
         case 0:
@@ -323,9 +317,5 @@ void CPU::step() {
         default:
             instructions[command](this, opcode);
             break;
-    }
-
-    if (oldR9 != r[9]) {
-        std::cout << "r9 changed to " << std::hex << r[9] << " from " << oldR9 << " at pc = " << std::hex << oldPc << "\n";
     }
 }

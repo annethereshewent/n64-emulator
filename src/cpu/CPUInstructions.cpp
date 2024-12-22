@@ -629,8 +629,17 @@ void CPU::bgezl(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::tgei(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tgei\n";
-    exit(1);
+    std::cout << "inside tgei\n";
+    uint32_t rs = getRs(instruction);
+
+    int64_t immediate = (int64_t)getSignedImmediate(instruction);
+    int64_t value = (int64_t)cpu->r[rs];
+
+    if (value > immediate) {
+        // throw an exception here!
+        std::cout << "TODO: throw exception\n";
+        exit(1);
+    }
 }
 void CPU::tgeiu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tgeiu\n";

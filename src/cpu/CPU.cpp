@@ -252,10 +252,10 @@ void CPU::loadRom(std::string filename) {
                 // TODO: refactor this to something more efficient (possibly use memcpy?)
                 uint16_t data = *(uint16_t*)&rom[i];
 
-                for (int j = 1; j >= 0; j--) {
+                for (int j = 0; j < 2; j++) {
                     int shift = 1 - j;
 
-                    uint8_t byte = (data >> shift) & 0xff;
+                    uint8_t byte = (data >> (shift * 8)) & 0xff;
 
                     formattedRom[i + j] = byte;
                 }
@@ -290,8 +290,6 @@ void CPU::step() {
         nextPc += 4;
         pc = nextPc;
     }
-
-    uint64_t oldR9 = r[9];
 
     discarded = false;
     nextPc += 4;

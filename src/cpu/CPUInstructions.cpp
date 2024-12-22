@@ -190,8 +190,16 @@ void CPU::ldr(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::lh(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lh\n";
-    exit(1);
+    std::cout << "inside lh\n";
+    uint32_t offset = getSignedImmediate(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t base = getRs(instruction);
+
+    uint32_t address = cpu->r[base] + offset;
+
+    uint64_t value = (int16_t)(uint16_t)(uint64_t)cpu->bus.memRead16(address);
+
+    cpu->r[rt] = value;
 }
 void CPU::lhu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lhu\n";

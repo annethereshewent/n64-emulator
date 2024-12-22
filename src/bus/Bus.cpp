@@ -29,6 +29,19 @@ uint8_t Bus::memRead8(uint64_t address) {
     }
 }
 
+uint16_t Bus::memRead16(uint64_t address) {
+    std::cout << "received address " << std::hex << address << "\n";
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    switch (actualAddress) {
+        default:
+
+            std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
+            exit(1);
+            break;
+    }
+}
+
 uint32_t Bus::memRead32(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
 

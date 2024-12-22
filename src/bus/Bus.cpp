@@ -55,6 +55,9 @@ uint32_t Bus::memRead32(uint64_t address) {
         case 0x410000c:
             return rdp.status.value;
             break;
+        case 0x470000C:
+            return rdInterface.select.value;
+            break;
         case 0x4800018:
             return serialInterface.status.value;
             break;
@@ -135,6 +138,18 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x4600020:
             peripheralInterface.dom1Rls = value & 0xff;
+            break;
+        case 0x4700000:
+            rdInterface.mode.value = value & 0xf;
+            break;
+        case 0x4700004:
+            rdInterface.config.value = value & 0x7f;
+            break;
+        case 0x4700008:
+            rdInterface.currentLoad = value;
+            break;
+        case 0x470000C:
+            rdInterface.select.value = value & 0xff;
             break;
         default:
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {

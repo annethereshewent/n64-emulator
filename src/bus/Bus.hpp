@@ -9,6 +9,7 @@
 #include "SerialInterface.hpp"
 #include "RDP.hpp"
 #include "PIF.cpp"
+#include "RDInterface.hpp"
 
 class Bus {
 public:
@@ -30,6 +31,8 @@ public:
     VideoInterface videoInterface;
 
     SerialInterface serialInterface;
+
+    RDInterface rdInterface;
 
     uint32_t memRead32(uint64_t address);
     uint16_t memRead16(uint64_t address);

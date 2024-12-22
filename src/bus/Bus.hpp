@@ -2,14 +2,15 @@
 
 #include <cstdint>
 #include <vector>
-#include "PeripheralInterface.hpp"
-#include "RSP.hpp"
-#include "VideoInterface.hpp"
-#include "AudioInterface.hpp"
-#include "SerialInterface.hpp"
-#include "RDP.hpp"
-#include "PIF.cpp"
-#include "RDInterface.hpp"
+#include "peripheral_interface/PeripheralInterface.hpp"
+#include "rsp/RSP.hpp"
+#include "video_interface/VideoInterface.hpp"
+#include "audio_interface/AudioInterface.hpp"
+#include "serial_interface/SerialInterface.hpp"
+#include "rdp/RDP.hpp"
+#include "pif/PIF.cpp"
+#include "rdram_interface/RDInterface.hpp"
+#include "mips_interface/MIPSInterface.cpp"
 
 class Bus {
 public:
@@ -33,6 +34,8 @@ public:
     SerialInterface serialInterface;
 
     RDInterface rdInterface;
+
+    MIPSInterface mips;
 
     uint32_t memRead32(uint64_t address);
     uint16_t memRead16(uint64_t address);

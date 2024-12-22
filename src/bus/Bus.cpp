@@ -3,7 +3,7 @@
 #include "Bus.hpp"
 #include <iostream>
 #include <bit>
-#include "PIF.cpp"
+#include "pif/PIF.cpp"
 
 Bus::Bus() {
     rdram.resize(0x800000);
@@ -111,6 +111,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x410000c:
             rdp.status.value = value;
+            break;
+        case 0x4300000:
+            mips.write(value);
+             // TODO: clear dp interrupt
             break;
         case 0x4400024:
             videoInterface.hVideo = value & 0x3ff;

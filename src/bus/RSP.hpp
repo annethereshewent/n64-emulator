@@ -3,7 +3,7 @@
 
 class RSP {
 public:
-    SPStatus spStatus;
+    SPStatus status;
     std::array<uint8_t, 0x1000> imem;
     std::array<uint8_t, 0x1000> dmem;
 };

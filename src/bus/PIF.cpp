@@ -16,6 +16,7 @@ void PIF::executeCommand() {
         std::cout << "received command 0x8\n";
     }
     if (commandByte & 0x10) {
+        // TODO: implement controllers command
         std::cout << "received command 0x10\n";
     }
     if (commandByte & 0x20) {

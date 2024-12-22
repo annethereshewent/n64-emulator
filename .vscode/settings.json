@@ -1,5 +1,7 @@
 {
   "editor.tabSize": 4,
+  "C_Cpp.default.cppStandard": "c++23",
+  "C_Cpp.default.cStandard": "c23",
   "files.associations": {
     "iosfwd": "cpp",
     "vector": "cpp",

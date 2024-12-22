@@ -10,7 +10,23 @@ Bus::Bus() {
     rdram9.resize(0x800000);
     spdmem.resize(0x1000);
 
-    rsp.spStatus.value = 1;
+    rsp.status.value = 1;
+}
+
+uint8_t Bus::memRead8(uint64_t address) {
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    switch (actualAddress) {
+        default:
+            if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
+                uint64_t offset = actualAddress - 0x10000000;
+
+                return cartridge[offset] & 0xff;
+            }
+            std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
+            exit(1);
+            break;
+    }
 }
 
 uint32_t Bus::memRead32(uint64_t address) {
@@ -18,10 +34,10 @@ uint32_t Bus::memRead32(uint64_t address) {
 
     switch (actualAddress) {
         case 0x4040010:
-            return rsp.spStatus.value;
+            return rsp.status.value;
             break;
         case 0x4040018:
-            return rsp.spStatus.dmaBusy;
+            return rsp.status.dmaBusy;
             break;
         case 0x410000c:
             return rdp.status.value;
@@ -32,8 +48,6 @@ uint32_t Bus::memRead32(uint64_t address) {
         default:
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint32_t offset = actualAddress - 0x10000000;
-
-
 
                 return std::byteswap(*(uint32_t*)&cartridge[offset]);
             }
@@ -59,7 +73,7 @@ uint32_t Bus::memRead32(uint64_t address) {
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
 
-
+            std::cout << "(memRead32) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
             break;
     }
@@ -68,17 +82,15 @@ uint32_t Bus::memRead32(uint64_t address) {
 void Bus::memWrite32(uint64_t address, uint32_t value) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
-
-
     switch (actualAddress) {
+        case 0x4400010:
+            // TODO: clear interrupt
+            break;
         case 0x4040010:
-            rsp.spStatus.value = value;
+            rsp.status.value = value;
             break;
         case 0x410000c:
             rdp.status.value = value;
-            break;
-        case 0x4400010:
-            // TODO: clear interrupt
             break;
         case 0x4400024:
             videoInterface.hVideo = value & 0x3ff;
@@ -134,6 +146,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
                 return;
             }
 
+            std::cout << "(memWrite32) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
             break;
     }
@@ -155,12 +168,5 @@ void Bus::writeWord(uint8_t* ptr, uint32_t address, uint32_t value) {
 }
 
 uint64_t Bus::translateAddress(uint64_t address) {
-    // if (address >= 0x80000000 && address <= 0x9FFFFFFF) {
-    //     return address - 0x80000000;
-    // }
-    // if (address >= 0xA0000000 && address <= 0xBFFFFFFF) {
-    //     return address - 0xA0000000;
-    // }
-
     return address & 0x1FFFFFFF;
 }

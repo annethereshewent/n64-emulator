@@ -150,16 +150,32 @@ void CPU::daddiu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::j(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: j\n";
-    exit(1);
+    std::cout << "inside j\n";
+
+    uint32_t offset = (instruction & 0x3ffffff) << 2;
+
+    uint32_t address = (cpu->pc & 0xfffffffff0000000) | offset;
+
+    std::cout << "jumping to " << std::hex << address << "\n";
+
+    cpu->nextPc = address;
 }
 void CPU::jal(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: jal\n";
     exit(1);
 }
 void CPU::lb(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lb\n";
-    exit(1);
+    std::cout << "inside lb\n";
+
+    uint32_t offset = getSignedImmediate(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t base = getRs(instruction);
+
+    uint32_t address = cpu->r[base] + offset;
+
+    uint64_t value = (int8_t)(uint8_t)(uint64_t)cpu->bus.memRead8(address);
+
+    cpu->r[rt] = value;
 }
 void CPU::lbu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lbu\n";
@@ -196,10 +212,10 @@ void CPU::lld(CPU* cpu, uint32_t instruction) {
 void CPU::lw(CPU* cpu, uint32_t instruction) {
 
     uint32_t immediate = getSignedImmediate(instruction);
-    uint32_t base_reg = getRs(instruction);
+    uint32_t baseReg = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
-    uint64_t address = cpu->r[base_reg] + immediate;
+    uint64_t address = cpu->r[baseReg] + immediate;
 
     uint32_t value = cpu->bus.memRead32(address);
 

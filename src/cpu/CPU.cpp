@@ -284,10 +284,6 @@ void CPU::step() {
     uint32_t opcode = bus.memRead32(pc);
     uint32_t command = opcode >> 26;
 
-    if (pc == 0xa4000054) {
-        std::cout << "command = " << std::hex << command << "\n";
-    }
-
     if (!discarded) {
         pc = nextPc;
     } else {

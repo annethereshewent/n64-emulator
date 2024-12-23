@@ -116,10 +116,6 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
 
     uint32_t immediate = getImmediate(instruction);
 
-    if (cpu->pc - 4 == 0xa4000058) {
-        std::cout << "rs = " << rs << ", rt = " << rt << ", values = " << cpu->r[rs] << " and " << cpu->r[rt] << " respectively\n";
-    }
-
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
@@ -168,9 +164,6 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
             bool isValid = (cpu->cop0.r[COP0_TAGLO_REG] >> 7 & 0b1) == 1;
             uint32_t tag = (cpu->cop0.r[COP0_TAGLO_REG] & 0xFFFFF00) << 4;
-
-            // std::cout << "COP0 taglo register = " << cpu->cop0.r[COP0_TAGLO_REG] << "\n";
-            // std::cout << "tag = " << std::hex << tag << ", valid = " << isValid << "\n";
 
             cpu->bus.icache[line].valid = isValid;
             cpu->bus.icache[line].tag = tag;

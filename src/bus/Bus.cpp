@@ -30,7 +30,6 @@ uint8_t Bus::memRead8(uint64_t address) {
 }
 
 uint16_t Bus::memRead16(uint64_t address) {
-    std::cout << "received address " << std::hex << address << "\n";
     uint64_t actualAddress = Bus::translateAddress(address);
 
     switch (actualAddress) {
@@ -163,10 +162,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             rdInterface.currentLoad = value;
             break;
         case 0x470000C:
-            std::cout << "im writing value " << std::hex << value << " to rdInterface.select" << "\n";
             rdInterface.select.value = value & 0xff;
-
-            std::cout << rdInterface.select.value << "\n";
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {

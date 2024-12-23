@@ -39,7 +39,7 @@ void CPU::lui(CPU* cpu, uint32_t instruction) {
 
     uint32_t immediate = getImmediate(instruction);
 
-    int reg = (instruction >> 16) & 0x1f;
+    int reg = getRt(instruction);
 
     uint32_t value = immediate << 16;
 
@@ -116,6 +116,10 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
 
     uint32_t immediate = getImmediate(instruction);
 
+    if (cpu->pc - 4 == 0xa4000058) {
+        std::cout << "rs = " << rs << ", rt = " << rt << ", values = " << cpu->r[rs] << " and " << cpu->r[rt] << " respectively\n";
+    }
+
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
@@ -138,8 +142,38 @@ void CPU::bnel(CPU* cpu, uint32_t instruction) {
    }
 }
 void CPU::cache(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cache\n";
-    exit(1);
+    uint32_t cacheOp = getRt(instruction);
+
+    uint64_t offset = getSignedImmediate(instruction);
+    uint32_t base = getRs(instruction);
+
+    uint64_t address = cpu->r[base] + offset;
+
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    switch (cacheOp) {
+        case 0x1: {
+            // write-back invalidate of dcachce
+
+            break;
+        }
+        case 0x8: {
+            uint64_t line = (actualAddress >> 5) & 0x1ff;
+            bool isValid = (cpu->cop0.r[COP0_TAGLO_REG] >> 7 & 0b1) == 1;
+            uint32_t tag = (cpu->cop0.r[COP0_TAGLO_REG] & 0xFFFFF00) << 4;
+
+            // std::cout << "COP0 taglo register = " << cpu->cop0.r[COP0_TAGLO_REG] << "\n";
+            // std::cout << "tag = " << std::hex << tag << ", valid = " << isValid << "\n";
+
+            cpu->bus.icache[line].valid = isValid;
+            cpu->bus.icache[line].tag = tag;
+            break;
+        }
+        default:
+            std::cout << "cache op not yet implemented: " << std::hex << cacheOp << "\n";
+            exit(1);
+            break;
+    }
 }
 void CPU::daddi(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: daddi\n";
@@ -163,7 +197,7 @@ void CPU::jal(CPU* cpu, uint32_t instruction) {
 void CPU::lb(CPU* cpu, uint32_t instruction) {
     std::cout << "inside lb\n";
 
-    uint32_t offset = getSignedImmediate(instruction);
+    uint64_t offset = getSignedImmediate(instruction);
     uint32_t rt = getRt(instruction);
     uint32_t base = getRs(instruction);
 
@@ -191,7 +225,7 @@ void CPU::ldr(CPU* cpu, uint32_t instruction) {
 }
 void CPU::lh(CPU* cpu, uint32_t instruction) {
     std::cout << "inside lh\n";
-    uint32_t offset = getSignedImmediate(instruction);
+    uint64_t offset = getSignedImmediate(instruction);
     uint32_t rt = getRt(instruction);
     uint32_t base = getRs(instruction);
 
@@ -215,11 +249,15 @@ void CPU::lld(CPU* cpu, uint32_t instruction) {
 }
 void CPU::lw(CPU* cpu, uint32_t instruction) {
 
-    uint32_t immediate = getSignedImmediate(instruction);
+    uint64_t immediate = getSignedImmediate(instruction);
     uint32_t baseReg = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
     uint64_t address = cpu->r[baseReg] + immediate;
+
+    if (cpu->pc - 4 == 0xa4000054) {
+        std::cout << "loading word from address " << std::hex << address << "\n";
+    }
 
     uint32_t value = cpu->bus.memRead32(address);
 
@@ -286,7 +324,7 @@ void CPU::sltiu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sw(CPU* cpu, uint32_t instruction) {
-    uint32_t immediate = getSignedImmediate(instruction);
+    uint64_t immediate = getSignedImmediate(instruction);
 
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
@@ -357,8 +395,10 @@ void COP0::mfc0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::mtc0(CPU* cpu, uint32_t instruction) {
-    uint32_t rd = (instruction >> 10) & 0x1f;
-    uint32_t rt = (instruction >> 15) & 0x1f;
+    uint32_t rd = getRd(instruction);
+    uint32_t rt = getRt(instruction);
+
+    std::cout << "moving to cop0 register " << rd << " value " << std::hex << cpu->r[rt] << "\n";
 
     cpu->cop0.r[rd] = cpu->r[rt];
 }

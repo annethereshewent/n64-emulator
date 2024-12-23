@@ -35,7 +35,6 @@ uint16_t Bus::memRead16(uint64_t address) {
 
     switch (actualAddress) {
         default:
-
             std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
             break;
@@ -67,7 +66,6 @@ uint32_t Bus::memRead32(uint64_t address) {
         default:
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
-
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;
@@ -156,7 +154,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             rdInterface.currentLoad = value;
             break;
         case 0x470000C:
+            std::cout << "im writing value " << std::hex << value << " to rdInterface.select" << "\n";
             rdInterface.select.value = value & 0xff;
+
+            std::cout << rdInterface.select.value << "\n";
             break;
         default:
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {

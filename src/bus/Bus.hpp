@@ -11,6 +11,7 @@
 #include "pif/PIF.cpp"
 #include "rdram_interface/RDInterface.hpp"
 #include "mips_interface/MIPSInterface.cpp"
+#include "cache/ICache.hpp"
 
 class Bus {
 public:
@@ -22,6 +23,9 @@ public:
     PIF pif;
 
     std::vector<uint8_t> cartridge;
+
+    std::array<ICache, 512> icache;
+
 
     Bus();
 

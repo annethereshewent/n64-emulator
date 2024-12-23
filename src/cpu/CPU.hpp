@@ -3,9 +3,10 @@
 #include <cstdint>
 #include "../bus/Bus.hpp"
 #include <vector>
+#include "CPUInstruction.hpp"
 
 class CPU;
-typedef void (*CPUInstruction)(CPU* cpu, uint32_t instruction);
+uint32_t COP0_TAGLO_REG = 28;
 
 class COP0 {
 public:
@@ -20,7 +21,6 @@ public:
     static void cp0(CPU* cpu, uint32_t instruction);
     static void syscall(CPU* cpu, uint32_t instruction);
     static void break_(CPU* cpu, uint32_t instruction);
-
 
     static void reserved(CPU* cpu, uint32_t instruction);
 

@@ -255,10 +255,6 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    if (cpu->pc - 4 == 0xa4000054) {
-        std::cout << "loading word from address " << std::hex << address << "\n";
-    }
-
     uint32_t value = cpu->bus.memRead32(address);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;

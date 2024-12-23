@@ -54,6 +54,9 @@ uint32_t Bus::memRead32(uint64_t address) {
         case 0x410000c:
             return rdp.status.value;
             break;
+        case 0x4600010:
+            return peripheralInterface.piStatus.value;
+            break;
         case 0x470000C:
             // just return 0x14 to skip the initialization process
             // TODO: actually implement rdInterface related stuff
@@ -64,6 +67,9 @@ uint32_t Bus::memRead32(uint64_t address) {
             return serialInterface.status.value;
             break;
         default:
+            if (actualAddress <= 0x03EFFFFF) {
+                return std::byteswap(*(uint32_t*)&rdram[actualAddress]);
+            }
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
             }
@@ -129,6 +135,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
         case 0x4500004:
             audioInterface.audioLength = value & 0x3ffff;
             break;
+        case 0x4600000:
+            peripheralInterface.dramAddress = (value >> 1) & 0x7fffff;
+            break;
         case 0x4600010:
             peripheralInterface.piStatus.value = value & 0xf;
             break;
@@ -160,6 +169,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             std::cout << rdInterface.select.value << "\n";
             break;
         default:
+            if (actualAddress <= 0x03EFFFFF) {
+                Bus::writeWord(&rdram[0], actualAddress, value);
+
+                return;
+            }
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 

@@ -14,4 +14,6 @@ public:
 
     uint8_t dom1Rls;
     uint8_t dom2Rls;
+
+    uint32_t dramAddress;
 };

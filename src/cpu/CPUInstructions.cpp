@@ -154,6 +154,13 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
     switch (cacheOp) {
         case 0x1: {
             // write-back invalidate of dcachce
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            if (cpu->bus.dcache[line].dirty && cpu->bus.dcache[line].valid) {
+                // do the writeback
+                cpu->bus.dcacheWriteback(line);
+            }
+            cpu->bus.dcache[line].valid = false;
 
             break;
         }

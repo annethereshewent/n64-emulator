@@ -200,6 +200,17 @@ void Bus::writeWord(uint8_t* ptr, uint32_t address, uint32_t value) {
     }
 }
 
+void Bus::dcacheWriteback(uint64_t line) {
+    dcache[line].dirty = false;
+
+    uint64_t cacheAddress = (dcache[line].tag | dcache[line].index) & 0x1ffffffc;
+
+    for (int i = 0; i < 4; i++) {
+        uint64_t currAddress = cacheAddress | (i * 4);
+        memWrite32(currAddress, dcache[line].words[i]);
+    }
+}
+
 uint64_t Bus::translateAddress(uint64_t address) {
     return address & 0x1FFFFFFF;
 }

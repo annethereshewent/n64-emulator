@@ -12,6 +12,7 @@
 #include "rdram_interface/RDInterface.hpp"
 #include "mips_interface/MIPSInterface.cpp"
 #include "cache/ICache.hpp"
+#include "cache/DCache.hpp"
 
 class Bus {
 public:
@@ -25,7 +26,7 @@ public:
     std::vector<uint8_t> cartridge;
 
     std::array<ICache, 512> icache;
-
+    std::array<DCache, 512> dcache;
 
     Bus();
 
@@ -46,6 +47,8 @@ public:
     uint8_t memRead8(uint64_t address);
 
     void memWrite32(uint64_t address, uint32_t value);
+
+    void dcacheWriteback(uint64_t line);
 
     static uint64_t translateAddress(uint64_t address);
 

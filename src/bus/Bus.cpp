@@ -56,7 +56,10 @@ uint32_t Bus::memRead32(uint64_t address) {
             return rdp.status.value;
             break;
         case 0x470000C:
-            return rdInterface.select.value;
+            // just return 0x14 to skip the initialization process
+            // TODO: actually implement rdInterface related stuff
+            return 0x14;
+            // return rdInterface.select.value;
             break;
         case 0x4800018:
             return serialInterface.status.value;

@@ -50,6 +50,8 @@ public:
 
     void dcacheWriteback(uint64_t line);
 
+    void dmaWrite();
+
     static uint64_t translateAddress(uint64_t address);
 
     static void writeWord(uint8_t* ptr, uint32_t address, uint32_t value);

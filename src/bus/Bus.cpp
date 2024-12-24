@@ -141,8 +141,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             peripheralInterface.cartAddress = value & 0xfffffe;
             break;
         case 0x460000c:
-            peripheralInterface.wrLen = value & 0xfffffe;
+            peripheralInterface.wrLen = value & 0xffffff;
             // TODO: start dma write transfer
+            dmaWrite();
             break;
         case 0x4600010:
             // TODO: clear interrupt and reset dma controller from doing transfer
@@ -231,4 +232,40 @@ void Bus::dcacheWriteback(uint64_t line) {
 
 uint64_t Bus::translateAddress(uint64_t address) {
     return address & 0x1FFFFFFF;
+}
+
+void Bus::dmaWrite() {
+    uint32_t currDramAddr = peripheralInterface.dramAddress;
+    uint32_t currCartAddr = peripheralInterface.cartAddress;
+    uint32_t length = peripheralInterface.wrLen + 1;
+
+    std::cout << "currDramAddr = " << std::hex << currDramAddr << ", length = " << length << "\n";
+
+
+
+    // while (currDramAddr < currDramAddr + length) {
+    //     if (currCartAddr >= cartridge.size()) {
+    //         rdram[currDramAddr] = 0;
+    //         currDramAddr++;
+    //     } else {
+    //         rdram[currDramAddr] = cartridge[currCartAddr];
+    //         currCartAddr++;
+    //         currDramAddr++;
+    //     }
+    // }
+
+    for (int i = 0; i < length; i++) {
+        if (currCartAddr + i >= cartridge.size()) {
+            rdram[currDramAddr + i] = 0;
+        } else {
+            rdram[currDramAddr + i] = cartridge[currCartAddr + i];
+        }
+    }
+
+    peripheralInterface.dramAddress += length;
+    peripheralInterface.cartAddress += length;
+
+
+    peripheralInterface.piStatus.dmaBusy = 1;
+    // TODO: calculate cycles
 }

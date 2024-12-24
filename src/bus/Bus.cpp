@@ -138,7 +138,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             peripheralInterface.dramAddress = (value >> 1) & 0x7fffff;
             break;
         case 0x4600010:
-            peripheralInterface.piStatus.value = value & 0xf;
+            // TODO: clear interrupt and reset dma controller from doing transfer
             break;
         case 0x4600014:
             peripheralInterface.dom1Latch = value & 0xff;

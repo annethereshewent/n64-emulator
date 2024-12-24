@@ -16,4 +16,8 @@ public:
     uint8_t dom2Rls;
 
     uint32_t dramAddress;
+    uint32_t cartAddress;
+
+    uint32_t wrLen;
+    uint32_t rdLen;
 };

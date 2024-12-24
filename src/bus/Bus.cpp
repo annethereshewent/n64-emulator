@@ -135,10 +135,18 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             audioInterface.audioLength = value & 0x3ffff;
             break;
         case 0x4600000:
-            peripheralInterface.dramAddress = (value >> 1) & 0x7fffff;
+            peripheralInterface.dramAddress = value & 0xfffffe;
+            break;
+        case 0x4600004:
+            peripheralInterface.cartAddress = value & 0xfffffe;
+            break;
+        case 0x460000c:
+            peripheralInterface.wrLen = value & 0xfffffe;
+            // TODO: start dma write transfer
             break;
         case 0x4600010:
             // TODO: clear interrupt and reset dma controller from doing transfer
+            std::cout << "it should clear interrupts and reset dma controller\n";
             break;
         case 0x4600014:
             peripheralInterface.dom1Latch = value & 0xff;

@@ -531,8 +531,13 @@ void CPU::ddivu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::add(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: add\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rt] + (uint32_t)cpu->r[rs]);
+
+    // TODO: possibly add integer overflow exception
 }
 void CPU::addu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

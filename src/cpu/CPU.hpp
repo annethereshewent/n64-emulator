@@ -43,6 +43,7 @@ public:
     uint64_t hi;
     uint64_t lo;
 
+    uint64_t previousPc;
     uint64_t pc;
     uint64_t nextPc;
 

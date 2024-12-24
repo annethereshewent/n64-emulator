@@ -284,6 +284,8 @@ void CPU::step() {
     uint32_t opcode = bus.memRead32(pc);
     uint32_t command = opcode >> 26;
 
+    previousPc = pc;
+
     if (!discarded) {
         pc = nextPc;
     } else {

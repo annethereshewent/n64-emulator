@@ -116,10 +116,6 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
 
     uint32_t immediate = getImmediate(instruction);
 
-    if (cpu->previousPc == 0x800001ac || cpu->previousPc == 0x800001b8) {
-        std::cout << "comparing registers " << rs << " and " << rt << " which equal " << std::hex << cpu->r[rs] << " and " << cpu->r[rt] << " respectively\n";
-    }
-
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
@@ -436,18 +432,19 @@ void CPU::sllv(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
 
-    uint32_t shift = std::min((uint64_t)31, cpu->r[rs]);
+    uint32_t shift = cpu->r[rs] & 0x1f;
 
-    cpu->r[rd] = cpu->r[rt] << shift;
+
+    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rt] << shift);
 }
 void CPU::srlv(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
 
-    uint32_t shift = std::min((uint64_t)31, cpu->r[rs]);
+    uint32_t shift = cpu->r[rs] & 0x1f;
 
-    cpu->r[rd] = cpu->r[rt] >> shift;
+    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rt] >> shift);
 }
 void CPU::srav(CPU* cpu, uint32_t instruction) {
 

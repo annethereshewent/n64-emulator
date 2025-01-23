@@ -50,8 +50,14 @@ uint32_t Bus::memRead32(uint64_t address) {
         case 0x4040018:
             return rsp.status.dmaBusy;
             break;
+        case 0x4080000:
+            return rsp.pc;
+            break;
         case 0x410000c:
             return rdp.status.value;
+            break;
+        case 0x430000c:
+            return mips.miMask;
             break;
         case 0x4600010:
             return peripheralInterface.piStatus.value;
@@ -61,6 +67,9 @@ uint32_t Bus::memRead32(uint64_t address) {
             // TODO: actually implement rdInterface related stuff
             return 0x14;
             // return rdInterface.select.value;
+            break;
+        case 0x4800000:
+            return serialInterface.dramAddress;
             break;
         case 0x4800018:
             return serialInterface.status.value;
@@ -122,6 +131,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             mips.write(value);
              // TODO: clear dp interrupt
             break;
+        case 0x430000c:
+            mips.miMask = value & 0xfff;
+            // TODO: check interrupts
+            break;
         case 0x4400024:
             videoInterface.hVideo = value & 0x3ff;
             break;
@@ -133,6 +146,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x4500004:
             audioInterface.audioLength = value & 0x3ffff;
+            break;
+        case 0x450000c:
+            // TODO: acknowledge interrupt here
+            std::cout << "it should acknowledge an audio interrupt here.\n";
             break;
         case 0x4600000:
             peripheralInterface.dramAddress = value & 0xfffffe;
@@ -172,6 +189,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x470000C:
             rdInterface.select.value = value & 0xff;
+            break;
+        case 0x4800018:
+            serialInterface.status.value = value & 0x1fff;
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {

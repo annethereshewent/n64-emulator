@@ -191,8 +191,17 @@ void CPU::j(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = address;
 }
 void CPU::jal(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: jal\n";
-    exit(1);
+    // TODO: check if this is correct. some other emulators
+    // do some stuff like check if delay slot is taken and
+    // only branch if thats not the case but idk if i need
+    // to do that with my code?
+    cpu->r[31] = cpu->nextPc;
+
+    uint32_t offset = (instruction & 0x3ffffff) << 2;
+
+    uint32_t address = (cpu->pc & 0xfffffffff0000000) | offset;
+
+    cpu->nextPc = address;
 }
 void CPU::lb(CPU* cpu, uint32_t instruction) {
     std::cout << "inside lb\n";

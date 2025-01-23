@@ -318,4 +318,9 @@ void CPU::step() {
             instructions[command](this, opcode);
             break;
     }
+
+    if (!visited.contains(previousPc)) {
+        std::cout << "pc = " << std::hex << previousPc << ", command = " << command << "\n";
+        visited.insert(previousPc);
+    }
 }

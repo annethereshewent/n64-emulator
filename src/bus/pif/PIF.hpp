@@ -97,4 +97,6 @@ public:
     std::array<uint8_t, 0x3f> ram;
 
     void executeCommand();
+
+    PIF();
 };

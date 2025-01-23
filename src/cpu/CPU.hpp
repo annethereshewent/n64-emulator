@@ -4,6 +4,7 @@
 #include "../bus/Bus.hpp"
 #include <vector>
 #include "CPUInstruction.hpp"
+#include <unordered_set>
 
 class CPU;
 uint32_t COP0_TAGLO_REG = 28;
@@ -58,6 +59,8 @@ public:
     std::array<CPUInstruction, 64> instructions;
     std::array<CPUInstruction, 64> secondary;
     std::array<CPUInstruction, 32> registerInstructions;
+
+    std::unordered_set<uint64_t> visited;
 
     void set(int i, uint64_t val);
 

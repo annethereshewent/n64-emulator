@@ -3,10 +3,18 @@
 #include "PIF.hpp"
 #include <iostream>
 
+PIF::PIF() {
+    // TODO: actually calculate these. it's hardcoded to get super mario 64 booting for now.
+    ram = {};
+    ram[0x26] = 0x3f;
+    ram[0x27] = 0x3f;
+}
+
 void PIF::executeCommand() {
     uint8_t commandByte = ram[0x3f];
 
     if (commandByte & 0x1) {
+         // TODO: implement controllers command
         std::cout << "received command 0x1\n";
     }
     if (commandByte & 0x2) {
@@ -16,7 +24,7 @@ void PIF::executeCommand() {
         std::cout << "received command 0x8\n";
     }
     if (commandByte & 0x10) {
-        // TODO: implement controllers command
+        // TODO: rom lockout
         std::cout << "received command 0x10\n";
     }
     if (commandByte & 0x20) {

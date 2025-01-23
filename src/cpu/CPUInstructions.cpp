@@ -116,6 +116,10 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
 
     uint32_t immediate = getImmediate(instruction);
 
+    if (cpu->previousPc == 0x800001ac || cpu->previousPc == 0x800001b8) {
+        std::cout << "comparing registers " << rs << " and " << rt << " which equal " << std::hex << cpu->r[rs] << " and " << cpu->r[rt] << " respectively\n";
+    }
+
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
@@ -248,7 +252,6 @@ void CPU::lld(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::lw(CPU* cpu, uint32_t instruction) {
-
     uint64_t immediate = getSignedImmediate(instruction);
     uint32_t baseReg = getRs(instruction);
     uint32_t rt = getRt(instruction);
@@ -501,10 +504,15 @@ void CPU::multu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
-    uint64_t result = cpu->r[rs] * cpu->r[rt];
+    uint64_t val1 = (uint32_t)(uint64_t)cpu->r[rs];
+    uint64_t val2 = (uint32_t)(uint64_t)cpu->r[rt];
 
-    cpu->lo = result & 0xffffffff;
-    cpu->hi = (result >> 32);
+    uint64_t result = val1 * val2;
+
+
+    cpu->lo = (int32_t)(int64_t)(uint64_t)result;
+
+    cpu->hi = (int32_t)(int64_t)(uint64_t)(result >> 32);
 }
 void CPU::div(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: div\n";
@@ -544,7 +552,7 @@ void CPU::addu(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
 
-    cpu->r[rd] = cpu->r[rs] + cpu->r[rt];
+    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rs] + (uint32_t)cpu->r[rt]);
 }
 void CPU::sub(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sub\n";
@@ -579,7 +587,7 @@ void CPU::xor_(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = cpu->r[rs] ^ cpu->r[rt];
 }
 void CPU::nor(CPU* cpu, uint32_t instruction) {
-
+    std::cout << "TODO: nor\n";
     exit(1);
 }
 void CPU::slt(CPU* cpu, uint32_t instruction) {
@@ -589,7 +597,9 @@ void CPU::slt(CPU* cpu, uint32_t instruction) {
 void CPU::sltu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
-    uint32_t rd = getRd(instruction);    if (cpu->r[rs] < cpu->r[rt]) {
+    uint32_t rd = getRd(instruction);
+
+    if (cpu->r[rs] < cpu->r[rt]) {
         cpu->r[rd] = 1;
     } else {
         cpu->r[rd] = 0;

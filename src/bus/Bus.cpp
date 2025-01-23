@@ -182,6 +182,8 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
+                std::cout << "writing to pif ram value " << std::hex << value << " at address " << actualAddress << "\n";
+
                 Bus::writeWord(&pif.ram[0], offset, value);
 
                 // TODO: add scheduler and schedule this for later
@@ -240,19 +242,7 @@ void Bus::dmaWrite() {
     uint32_t length = peripheralInterface.wrLen + 1;
 
     std::cout << "currDramAddr = " << std::hex << currDramAddr << ", length = " << length << "\n";
-
-
-
-    // while (currDramAddr < currDramAddr + length) {
-    //     if (currCartAddr >= cartridge.size()) {
-    //         rdram[currDramAddr] = 0;
-    //         currDramAddr++;
-    //     } else {
-    //         rdram[currDramAddr] = cartridge[currCartAddr];
-    //         currCartAddr++;
-    //         currDramAddr++;
-    //     }
-    // }
+    std::cout << "curCartAddr = " << std::hex << currCartAddr << "\n";
 
     for (int i = 0; i < length; i++) {
         if (currCartAddr + i >= cartridge.size()) {
@@ -265,7 +255,6 @@ void Bus::dmaWrite() {
     peripheralInterface.dramAddress += length;
     peripheralInterface.cartAddress += length;
 
-
-    peripheralInterface.piStatus.dmaBusy = 1;
-    // TODO: calculate cycles
+    // TODO: set dmaBusy, calculate cycles, and schedule dmaBusy = false
+    // peripheralInterface.piStatus.dmaBusy = 1;
 }

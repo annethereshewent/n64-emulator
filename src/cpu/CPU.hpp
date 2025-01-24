@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "../bus/Bus.hpp"
+#include "../bus/cop1/FCSR.hpp"
 #include <vector>
 #include "CPUInstruction.hpp"
 #include <unordered_set>
@@ -30,11 +31,34 @@ public:
 
 class COP1 {
 public:
+
+    FCSR fcsr;
+    COP1();
     static void reserved(CPU* cpu, uint32_t instruction);
     static void lwc1(CPU* cpu, uint32_t instruction);
     static void ldc1(CPU* cpu, uint32_t instruction);
     static void swc1(CPU* cpu, uint32_t instruction);
     static void sdc1(CPU* cpu, uint32_t instruction);
+
+    static void mfc1(CPU* cpu, uint32_t instructon);
+    static void dmfc1(CPU* cpu, uint32_t instructon);
+    static void cfc1(CPU* cpu, uint32_t instructon);
+    static void dcfc1(CPU* cpu, uint32_t instructon);
+    static void mtc1(CPU* cpu, uint32_t instructon);
+    static void dmtc1(CPU* cpu, uint32_t instructon);
+    static void ctc1(CPU* cpu, uint32_t instructon);
+    static void dctc1(CPU* cpu, uint32_t instructon);
+
+    static void cop1_b_instrs(CPU* cpu, uint32_t instructon);
+    static void cop1_s_instrs(CPU* cpu, uint32_t instructon);
+    static void cop1_d_instrs(CPU* cpu, uint32_t instructon);
+    static void cop1_w_instrs(CPU* cpu, uint32_t instructon);
+    static void cop1_l_instrs(CPU* cpu, uint32_t instructon);
+
+    void writeRegister(uint32_t index, uint64_t value);
+    uint32_t readRegister(uint32_t index);
+
+    std::array<CPUInstruction, 32> instructions;
 };
 
 class CPU {
@@ -51,6 +75,7 @@ public:
     Bus bus;
 
     COP0 cop0;
+    COP1 cop1;
 
     bool discarded;
 

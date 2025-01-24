@@ -46,6 +46,43 @@ COP0::COP0() {
     };
 }
 
+COP1::COP1() {
+    instructions = {
+        COP1::mfc1,           // 0
+        COP1::dmfc1,          // 1
+        COP1::cfc1,           // 2
+        COP1::dcfc1,          // 3
+        COP1::mtc1,           // 4
+        COP1::dmtc1,          // 5
+        COP1::ctc1,           // 6
+        COP1::dctc1,          // 7
+        COP1::cop1_b_instrs,  // 8
+        COP1::reserved,       // 9
+        COP1::reserved,       // 10
+        COP1::reserved,       // 11
+        COP1::reserved,       // 12
+        COP1::reserved,       // 13
+        COP1::reserved,       // 14
+        COP1::reserved,       // 15
+        COP1::cop1_s_instrs,  // 16
+        COP1::cop1_d_instrs,  // 17
+        COP1::reserved,       // 18
+        COP1::reserved,       // 19
+        COP1::cop1_w_instrs,  // 20
+        COP1::cop1_l_instrs,  // 21
+        COP1::reserved,       // 22
+        COP1::reserved,       // 23
+        COP1::reserved,       // 24
+        COP1::reserved,       // 25
+        COP1::reserved,       // 26
+        COP1::reserved,       // 27
+        COP1::reserved,       // 28
+        COP1::reserved,       // 29
+        COP1::reserved,       // 30
+        COP1::reserved,       // 31
+    };
+}
+
 CPU::CPU() {
     r[0] = 0;
 
@@ -307,8 +344,7 @@ void CPU::step() {
             cop0.instructions[(opcode >> 21) & 0x1f](this, opcode);
             break;
         case 17:
-            std::cout << "not yet implemented: 17\n";
-            exit(1);
+            cop1.instructions[(opcode >> 21) & 0x1f](this, opcode);
             break;
         case 18:
             std::cout << "not yet implemented: 18\n";

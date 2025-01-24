@@ -102,8 +102,15 @@ void CPU::bgtzl(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::blez(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: blez\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+
+    if ((int64_t)cpu->r[rs] <= 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->nextPc = cpu->pc + amount;
+    }
 }
 void CPU::blezl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: blezl\n";
@@ -168,10 +175,20 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             cpu->bus.icache[line].tag = tag;
             break;
         }
-        default:
+        case 0x19: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            if (cpu->bus.dcache[line].valid && (cpu->bus.dcache[line].tag & 0x1ffffffc) == (address & !0xfff) && cpu->bus.dcache[line].dirty) {
+                std::cout << "it worked!\n";
+                cpu->bus.dcacheWriteback(line);
+            }
+            break;
+        }
+        default: {
             std::cout << "cache op not yet implemented: " << std::hex << cacheOp << "\n";
             exit(1);
             break;
+        }
     }
 }
 void CPU::daddi(CPU* cpu, uint32_t instruction) {
@@ -753,7 +770,7 @@ void CPU::bgezall(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cfc1(CPU* cpu, uint32_t instruction) {
-    if ((cpu->cop0.r[12] >> 29) & 0b1 == 0) {
+    if (((cpu->cop0.r[12] >> 29) & 0b1) == 0) {
         // TODO: throw an exception
         std::cout << "im supposed to throw an exception in cfc1\n";
         return;
@@ -787,7 +804,7 @@ void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::ctc1(CPU* cpu, uint32_t instruction) {
-    if ((cpu->cop0.r[12] >> 29) & 0b1 == 0) {
+    if (((cpu->cop0.r[12] >> 29) & 0b1) == 0) {
         // TODO: throw an exception
         std::cout << "im supposed to throw an exception in ctc1\n";
         return;

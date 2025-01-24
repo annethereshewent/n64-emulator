@@ -40,6 +40,20 @@ uint16_t Bus::memRead16(uint64_t address) {
     }
 }
 
+uint64_t Bus::memRead64(uint64_t address) {
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    switch (actualAddress) {
+        default:
+            if (actualAddress <= 0x03EFFFFF) {
+                return std::byteswap(*(uint64_t*)&rdram[actualAddress]);
+            }
+
+            std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
+            exit(1);
+            break;
+    }
+}
 uint32_t Bus::memRead32(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
 

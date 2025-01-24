@@ -5,6 +5,8 @@
 #include "../bus/Bus.cpp"
 #include "CPU.hpp"
 
+typedef unsigned __int128 u128;
+
 uint32_t getImmediate(uint32_t instruction) {
     return instruction & 0xffff;
 }
@@ -246,8 +248,13 @@ void CPU::lbu(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::ld(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ld\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    cpu->r[rt] = cpu->bus.memRead64(address);
 }
 void CPU::ldl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ldl\n";
@@ -402,8 +409,7 @@ void COP1::swc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::cp0(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cp0\n";
-    exit(1);
+   cpu->cop0.cp0Instructions[instruction & 0x3f](cpu, instruction);
 }
 
 void COP0::dmfc0(CPU* cpu, uint32_t instruction) {
@@ -558,8 +564,10 @@ void CPU::dmult(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::dmultu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dmultu\n";
-    exit(1);
+    u128 result = (u128)cpu->r[getRs(instruction)] * (u128)cpu->r[getRt(instruction)];
+
+    cpu->lo = (uint64_t)result;
+    cpu->hi = (uint64_t)(result >> 64);
 }
 void CPU::ddiv(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ddiv\n";
@@ -892,4 +900,28 @@ uint32_t COP1::readRegister(uint32_t index) {
             exit(1);
             break;
     }
+}
+
+void COP0::tlbp(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tlbp\n";
+    exit(1);
+}
+
+void COP0::tlbr(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tlbr\n";
+    exit(1);
+}
+
+void COP0::tlbwi(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tlbwi\n";
+}
+
+void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: tlbwr\n";
+    exit(1);
+}
+
+void COP0::eret(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: eret\n";
+    exit(1);
 }

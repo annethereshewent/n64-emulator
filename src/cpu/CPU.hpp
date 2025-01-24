@@ -23,10 +23,16 @@ public:
     static void cp0(CPU* cpu, uint32_t instruction);
     static void syscall(CPU* cpu, uint32_t instruction);
     static void break_(CPU* cpu, uint32_t instruction);
+    static void tlbr(CPU* cpu, uint32_t instruction);
+    static void tlbwi(CPU* cpu, uint32_t instruction);
+    static void tlbwr(CPU* cpu, uint32_t instruction);
+    static void tlbp(CPU* cpu, uint32_t instruction);
+    static void eret(CPU* cpu, uint32_t instruction);
 
     static void reserved(CPU* cpu, uint32_t instruction);
 
     std::array<CPUInstruction, 64> instructions;
+    std::array<CPUInstruction, 32> cp0Instructions;
 };
 
 class COP1 {

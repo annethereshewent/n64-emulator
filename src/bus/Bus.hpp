@@ -42,6 +42,7 @@ public:
 
     MIPSInterface mips;
 
+    uint64_t memRead64(uint64_t address);
     uint32_t memRead32(uint64_t address);
     uint16_t memRead16(uint64_t address);
     uint8_t memRead8(uint64_t address);

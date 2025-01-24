@@ -355,13 +355,13 @@ void CPU::step() {
             break;
     }
 
-    if (!visited.contains(previousPc)) {
-        uint32_t actualCommand = command;
-        if (command == 0) {
-            std::cout << "command is secondary\n";
-            actualCommand = opcode & 0x3f;
-        }
-        std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
-        visited.insert(previousPc);
-    }
+    // if (!visited.contains(previousPc)) {
+    //     uint32_t actualCommand = command;
+    //     if (command == 0) {
+    //         std::cout << "command is secondary\n";
+    //         actualCommand = opcode & 0x3f;
+    //     }
+    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
+    //     visited.insert(previousPc);
+    // }
 }

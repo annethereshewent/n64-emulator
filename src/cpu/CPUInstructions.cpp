@@ -40,7 +40,7 @@ void CPU::lui(CPU* cpu, uint32_t instruction) {
 
     int reg = getRt(instruction);
 
-    uint32_t value = immediate << 16;
+    uint64_t value = (int32_t)(int64_t)(uint64_t)(immediate << 16);
 
     cpu->r[reg] = value;
 }
@@ -175,10 +175,19 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             cpu->bus.icache[line].tag = tag;
             break;
         }
+        case 0x10: {
+            uint64_t line = (actualAddress >> 5) & 0x1ff;
+            ICache* icachePtr = &cpu->bus.icache[line];
+
+            if (icachePtr[0].valid && (icachePtr[0].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff)) {
+                icachePtr[0].valid = false;
+            }
+            break;
+        }
         case 0x19: {
             uint64_t line = (actualAddress >> 4) & 0x1ff;
 
-            if (cpu->bus.dcache[line].valid && (cpu->bus.dcache[line].tag & 0x1ffffffc) == (address & !0xfff) && cpu->bus.dcache[line].dirty) {
+            if (cpu->bus.dcache[line].valid && (cpu->bus.dcache[line].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff) && cpu->bus.dcache[line].dirty) {
                 std::cout << "it worked!\n";
                 cpu->bus.dcacheWriteback(line);
             }

@@ -15,6 +15,10 @@ uint64_t getSignedImmediate(uint32_t instruction) {
     return (int16_t)(int64_t)(uint64_t)(instruction & 0xffff);
 }
 
+uint32_t getSa(uint32_t instruction) {
+    return (instruction >> 6) & 0x1f;
+}
+
 uint32_t getRs(uint32_t instruction) {
     return (instruction >> 21) & 0x1f;
 }
@@ -352,8 +356,14 @@ void CPU::sh(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::slti(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: slti\n";
-    exit(1);
+    int64_t immediate = (int16_t)(int64_t)getImmediate(instruction);
+
+    uint64_t val = 0;
+    if ((int64_t)cpu->r[getRs(instruction)] < immediate) {
+        val = 1;
+    }
+
+    cpu->r[getRd(instruction)] = val;
 }
 void CPU::sltiu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sltiu\n";
@@ -574,8 +584,17 @@ void CPU::ddiv(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::ddivu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ddivu\n";
-    exit(1);
+    uint64_t numerator = cpu->r[getRs(instruction)];
+    uint64_t denominator = cpu->r[getRt(instruction)];
+
+    if (denominator != 0) {
+        cpu->lo = numerator / denominator;
+        cpu->hi = numerator % denominator;
+    } else {
+        cpu->lo = 0xffffffffffffffff;
+        cpu->hi = numerator;
+    }
+    // TODO: add cycles here
 }
 void CPU::add(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
@@ -697,16 +716,16 @@ void CPU::dsra(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::dsll32(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsll32\n";
-    exit(1);
+    uint32_t shiftAmount = getSa(instruction) + 32;
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shiftAmount;
 }
 void CPU::dsrl32(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsrl32\n";
     exit(1);
 }
 void CPU::dsra32(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsra32\n";
-    exit(1);
+    uint32_t shiftAmount = getSa(instruction) + 32;
+    cpu->r[getRd(instruction)] = (uint64_t)((int64_t)cpu->r[getRt(instruction)] >> shiftAmount);
 }
 
 void CPU::bltz(CPU* cpu, uint32_t instruction) {

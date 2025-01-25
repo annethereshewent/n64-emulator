@@ -174,8 +174,8 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
         }
         case 0x8: {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
-            bool isValid = (cpu->cop0.r[COP0_TAGLO_REG] >> 7 & 0b1) == 1;
-            uint32_t tag = (cpu->cop0.r[COP0_TAGLO_REG] & 0xFFFFF00) << 4;
+            bool isValid = (cpu->cop0.r[COP0_TAGLO] >> 7 & 0b1) == 1;
+            uint32_t tag = (cpu->cop0.r[COP0_TAGLO] & 0xFFFFF00) << 4;
 
             cpu->bus.icache[line].valid = isValid;
             cpu->bus.icache[line].tag = tag;
@@ -469,9 +469,11 @@ void COP0::mtc0(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
     uint32_t rt = getRt(instruction);
 
-    std::cout << "moving to cop0 register " << rd << " value " << std::hex << cpu->r[rt] << "\n";
+    std::cout << "moving to cop0 register " << rd << " value " << std::hex << (int32_t)(int64_t)(uint64_t)cpu->r[rt] << "\n";
 
-    cpu->cop0.r[rd] = cpu->r[rt];
+    cpu->cop0.r[rd] = (int32_t)(int64_t)(uint64_t)cpu->r[rt];
+
+    // TODO: check pending interrupts
 }
 
 void COP0::break_(CPU* cpu, uint32_t instruction) {
@@ -549,7 +551,6 @@ void CPU::mfhi(CPU* cpu, uint32_t instruction) {
 }
 void CPU::mthi(CPU* cpu, uint32_t instruction) {
     cpu->hi = cpu->r[getRs(instruction)];
-    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
 }
 void CPU::mflo(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
@@ -558,7 +559,6 @@ void CPU::mflo(CPU* cpu, uint32_t instruction) {
 }
 void CPU::mtlo(CPU* cpu, uint32_t instruction) {
     cpu->lo = cpu->r[getRs(instruction)];
-    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
 }
 void CPU::dsllv(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsllv\n";
@@ -975,6 +975,16 @@ void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::eret(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: eret\n";
-    exit(1);
+    if (((cpu->cop0.r[COP0_STATUS] >> 2) & 0b1) == 1) {
+        cpu->pc = cpu->cop0.r[COP0_ERROREPC];
+        cpu->cop0.r[COP0_STATUS] &= ~(1 << 2);
+    } else {
+        cpu->pc = cpu->cop0.r[COP0_EPC];
+        cpu->cop0.r[COP0_STATUS] &= ~(1 << 1);
+    }
+
+    cpu->llbit = false;
+
+    std::cout << "exception, pc now = " << std::hex << cpu->pc << "\n";
+    // TODO: check pending interrupts
 }

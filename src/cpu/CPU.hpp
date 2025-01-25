@@ -8,7 +8,10 @@
 #include <unordered_set>
 
 class CPU;
-uint32_t COP0_TAGLO_REG = 28;
+uint32_t COP0_TAGLO = 28;
+uint32_t COP0_STATUS = 12;
+uint32_t COP0_ERROREPC = 30;
+uint32_t COP0_EPC = 14;
 
 class COP0 {
 public:
@@ -70,6 +73,7 @@ public:
 class CPU {
 public:
     uint64_t r[32];
+    bool llbit;
 
     uint64_t hi;
     uint64_t lo;

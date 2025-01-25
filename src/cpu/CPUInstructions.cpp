@@ -276,13 +276,20 @@ void CPU::lh(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = cpu->r[base] + offset;
 
-    uint64_t value = (int16_t)(uint16_t)(uint64_t)cpu->bus.memRead16(address);
+    uint64_t value = (int16_t)(int64_t)(uint64_t)cpu->bus.memRead16(address);
 
     cpu->r[rt] = value;
 }
 void CPU::lhu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lhu\n";
-    exit(1);
+    uint64_t offset = getSignedImmediate(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t base = getRs(instruction);
+
+    uint32_t address = cpu->r[base] + offset;
+
+    uint64_t value = (uint64_t)cpu->bus.memRead16(address);
+
+    cpu->r[rt] = value;
 }
 void CPU::ll(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ll\n";
@@ -360,8 +367,14 @@ void CPU::sdr(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sh(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sh\n";
-    exit(1);
+    uint8_t half = (uint16_t)cpu->r[getRt(instruction)];
+
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint64_t address = immediate + cpu->r[rs];
+
+    cpu->bus.memWrite16(address, half);
 }
 void CPU::slti(CPU* cpu, uint32_t instruction) {
     int64_t immediate = (int16_t)(int64_t)getImmediate(instruction);
@@ -535,8 +548,8 @@ void CPU::mfhi(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = cpu->hi;
 }
 void CPU::mthi(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mthi\n";
-    exit(1);
+    cpu->hi = cpu->r[getRs(instruction)];
+    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
 }
 void CPU::mflo(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
@@ -544,8 +557,8 @@ void CPU::mflo(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = cpu->lo;
 }
 void CPU::mtlo(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mtlo\n";
-    exit(1);
+    cpu->lo = cpu->r[getRs(instruction)];
+    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
 }
 void CPU::dsllv(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsllv\n";
@@ -665,8 +678,13 @@ void CPU::nor(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::slt(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: slt\n";
-    exit(1);
+    uint64_t value = 0;
+
+    if ((int64_t)cpu->r[getRs(instruction)] < (int64_t)cpu->r[getRt(instruction)]) {
+        value = 1;
+    }
+
+    cpu->r[getRd(instruction)] = value;
 }
 void CPU::sltu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

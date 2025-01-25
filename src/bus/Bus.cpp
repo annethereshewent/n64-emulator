@@ -21,7 +21,7 @@ uint8_t Bus::memRead8(uint64_t address) {
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint64_t offset = actualAddress - 0x10000000;
 
-                return cartridge[offset] & 0xff;
+                return cartridge[offset];
             }
             std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
@@ -34,7 +34,29 @@ uint16_t Bus::memRead16(uint64_t address) {
 
     switch (actualAddress) {
         default:
+            if (actualAddress <= 0x03EFFFFF) {
+                return std::byteswap(*(uint16_t*)&rdram[actualAddress]);
+            }
             std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
+            exit(1);
+            break;
+    }
+}
+
+void Bus::memWrite16(uint64_t address, uint16_t value) {
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    std::cout << "writing " << std::hex << value << " at address " << actualAddress << "\n";
+
+    switch (actualAddress) {
+        default:
+            if (actualAddress <= 0x03EFFFFF) {
+                writeHalf(&rdram[0], actualAddress, value);
+
+                return;
+            }
+
+            std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
             exit(1);
             break;
     }
@@ -250,6 +272,14 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
 void Bus::writeWord(uint8_t* ptr, uint32_t address, uint32_t value) {
     for (int i = 3; i >= 0; i--) {
         int shift = 3 - i;
+        uint8_t byte = (value >> shift * 8) & 0xff;
+        ptr[address + i] = byte;
+    }
+}
+
+void Bus::writeHalf(uint8_t* ptr, uint32_t address, uint16_t value) {
+    for (int i = 1; i >= 0; i--) {
+        int shift = 1 - i;
         uint8_t byte = (value >> shift * 8) & 0xff;
         ptr[address + i] = byte;
     }

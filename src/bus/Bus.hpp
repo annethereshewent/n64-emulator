@@ -48,6 +48,7 @@ public:
     uint8_t memRead8(uint64_t address);
 
     void memWrite32(uint64_t address, uint32_t value);
+    void memWrite16(uint64_t address, uint16_t value);
 
     void dcacheWriteback(uint64_t line);
 
@@ -56,4 +57,5 @@ public:
     static uint64_t translateAddress(uint64_t address);
 
     static void writeWord(uint8_t* ptr, uint32_t address, uint32_t value);
+    static void writeHalf(uint8_t* ptr, uint32_t address, uint16_t value);
 };

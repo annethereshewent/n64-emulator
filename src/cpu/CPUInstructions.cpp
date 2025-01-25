@@ -328,7 +328,15 @@ void CPU::reserved(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sb(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sb\n";
+    uint8_t byte = (uint8_t)cpu->r[getRt(instruction)];
+
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint64_t address = immediate + cpu->r[rs];
+
+    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
+    std::cout << "storing " << std::hex << +byte << " at address " << Bus::translateAddress(address) << "\n";
     exit(1);
 }
 void CPU::sc(CPU* cpu, uint32_t instruction) {
@@ -363,11 +371,16 @@ void CPU::slti(CPU* cpu, uint32_t instruction) {
         val = 1;
     }
 
-    cpu->r[getRd(instruction)] = val;
+    cpu->r[getRt(instruction)] = val;
 }
 void CPU::sltiu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sltiu\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint64_t val = 0;
+
+    if (cpu->r[getRs(instruction)] < immediate) {
+        val = 1;
+    }
+    cpu->r[getRt(instruction)] = val;
 }
 void CPU::sw(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -474,8 +487,11 @@ void CPU::srl(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = (int32_t)(uint32_t)(uint64_t)(cpu->r[rt] >> shift);
 }
 void CPU::sra(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sra\n";
-    exit(1);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+    uint32_t shift = shiftAmount(instruction);
+
+    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((int64_t)cpu->r[rt] >> shift);
 }
 void CPU::sllv(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

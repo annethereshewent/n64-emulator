@@ -49,6 +49,7 @@ public:
 
     void memWrite32(uint64_t address, uint32_t value);
     void memWrite16(uint64_t address, uint16_t value);
+    void memWrite8(uint64_t address, uint8_t value);
 
     void dcacheWriteback(uint64_t line);
 

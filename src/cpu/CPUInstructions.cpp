@@ -243,7 +243,7 @@ void CPU::lb(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = cpu->r[base] + offset;
 
-    uint64_t value = (int8_t)(uint8_t)(uint64_t)cpu->bus.memRead8(address);
+    uint64_t value = (int8_t)(int64_t)(uint64_t)cpu->bus.memRead8(address);
 
     cpu->r[rt] = value;
 }
@@ -342,9 +342,7 @@ void CPU::sb(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint64_t address = immediate + cpu->r[rs];
 
-    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
-    std::cout << "storing " << std::hex << +byte << " at address " << Bus::translateAddress(address) << "\n";
-    exit(1);
+    cpu->bus.memWrite8(address, byte);
 }
 void CPU::sc(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sc\n";
@@ -469,7 +467,7 @@ void COP0::mtc0(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
     uint32_t rt = getRt(instruction);
 
-    std::cout << "moving to cop0 register " << rd << " value " << std::hex << (int32_t)(int64_t)(uint64_t)cpu->r[rt] << "\n";
+    std::cout << "moving to cop0 register " << std::dec << rd << " value " << std::hex << (int32_t)(int64_t)(uint64_t)cpu->r[rt] << " from register " << std::dec << rt << "\n";
 
     cpu->cop0.r[rd] = (int32_t)(int64_t)(uint64_t)cpu->r[rt];
 
@@ -957,12 +955,10 @@ uint32_t COP1::readRegister(uint32_t index) {
 
 void COP0::tlbp(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tlbp\n";
-    exit(1);
 }
 
 void COP0::tlbr(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tlbr\n";
-    exit(1);
 }
 
 void COP0::tlbwi(CPU* cpu, uint32_t instruction) {
@@ -977,9 +973,11 @@ void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
 void COP0::eret(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.r[COP0_STATUS] >> 2) & 0b1) == 1) {
         cpu->pc = cpu->cop0.r[COP0_ERROREPC];
+        cpu->nextPc = cpu->pc + 4;
         cpu->cop0.r[COP0_STATUS] &= ~(1 << 2);
     } else {
         cpu->pc = cpu->cop0.r[COP0_EPC];
+        cpu->nextPc = cpu->pc + 4;
         cpu->cop0.r[COP0_STATUS] &= ~(1 << 1);
     }
 

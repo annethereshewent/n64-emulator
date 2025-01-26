@@ -43,10 +43,25 @@ uint16_t Bus::memRead16(uint64_t address) {
     }
 }
 
-void Bus::memWrite16(uint64_t address, uint16_t value) {
+void Bus::memWrite8(uint64_t address, uint8_t value) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
-    std::cout << "writing " << std::hex << value << " at address " << actualAddress << "\n";
+    switch (actualAddress) {
+        default:
+            if (actualAddress <= 0x03EFFFFF) {
+                rdram[actualAddress] = value;
+
+                return;
+            }
+
+            std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
+            exit(1);
+            break;
+    }
+}
+
+void Bus::memWrite16(uint64_t address, uint16_t value) {
+    uint64_t actualAddress = Bus::translateAddress(address);
 
     switch (actualAddress) {
         default:
@@ -94,6 +109,10 @@ uint32_t Bus::memRead32(uint64_t address) {
             break;
         case 0x430000c:
             return mips.miMask;
+            break;
+        case 0x4400010:
+            // TODO: implement V_CURRENT
+            return videoInterface.vcurrent.value;
             break;
         case 0x4600010:
             return peripheralInterface.piStatus.value;
@@ -154,9 +173,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
     switch (actualAddress) {
-        case 0x4400010:
-            // TODO: clear interrupt
-            break;
         case 0x4040010:
             rsp.status.value = value;
             break;
@@ -170,6 +186,12 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
         case 0x430000c:
             mips.miMask = value & 0xfff;
             // TODO: check interrupts
+            break;
+        case 0x4400000:
+            videoInterface.ctrl.value = value & 0x1ffff;
+            break;
+        case 0x4400010:
+            // TODO: clear interrupt
             break;
         case 0x4400024:
             videoInterface.hVideo = value & 0x3ff;

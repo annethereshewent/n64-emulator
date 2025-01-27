@@ -189,15 +189,50 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x4400000:
             videoInterface.ctrl.value = value & 0x1ffff;
+            videoInterface.ctrl.unused = 0;
+            break;
+        case 0x4400004:
+            videoInterface.origin = value & 0xffffff;
+            break;
+        case 0x4400008:
+            videoInterface.width = value & 0xfff;
+            break;
+        case 0x440000c:
+            videoInterface.vInterrupt = value & 0x3ff;
             break;
         case 0x4400010:
             // TODO: clear interrupt
             break;
+        case 0x4400014:
+            videoInterface.viBurst = value & 0x3fffffff;
+            break;
+        case 0x4400018:
+            videoInterface.vTotal = value & 0x3ff;
+            break;
+        case 0x440001c:
+            videoInterface.hTotal = value & 0xfff;
+            break;
+        case 0x4400020:
+            videoInterface.hTotalLeap.value = value & 0xfffffff;
+            videoInterface.hTotalLeap.unused = 0;
+            break;
         case 0x4400024:
             videoInterface.hVideo = value & 0x3ff;
             break;
-        case 0x440000c:
-            videoInterface.vInterrupt = value & 0x3ff;
+        case 0x4400028:
+            videoInterface.vVideo.value = value & 0x3ffffff;
+            videoInterface.vVideo.unused = 0;
+            break;
+        case 0x440002c:
+            videoInterface.vBurst = value & 0x3ffffff;
+            break;
+        case 0x4400030:
+            videoInterface.xScale.value = value & 0xfffffff;
+            videoInterface.xScale.unused = 0;
+            break;
+        case 0x4400034:
+            videoInterface.yScale.value = value & 0x3ffffff;
+            videoInterface.yScale.unused = 0;
             break;
         case 0x4500000:
             audioInterface.dramAddress = value & 0xffffff;

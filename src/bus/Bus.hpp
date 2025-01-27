@@ -47,6 +47,7 @@ public:
     uint16_t memRead16(uint64_t address);
     uint8_t memRead8(uint64_t address);
 
+    void memWrite64(uint64_t address, uint64_t value);
     void memWrite32(uint64_t address, uint32_t value);
     void memWrite16(uint64_t address, uint16_t value);
     void memWrite8(uint64_t address, uint8_t value);
@@ -57,6 +58,7 @@ public:
 
     static uint64_t translateAddress(uint64_t address);
 
-    static void writeWord(uint8_t* ptr, uint32_t address, uint32_t value);
-    static void writeHalf(uint8_t* ptr, uint32_t address, uint16_t value);
+    static void writeWord(uint8_t* ptr, uint32_t value);
+    static void writeHalf(uint8_t* ptr, uint16_t value);
+    static void writeDoubleWord(uint8_t* ptr, uint64_t value);
 };

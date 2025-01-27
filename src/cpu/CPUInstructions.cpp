@@ -248,8 +248,16 @@ void CPU::lb(CPU* cpu, uint32_t instruction) {
     cpu->r[rt] = value;
 }
 void CPU::lbu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lbu\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
+    std::cout << "loading from address " << std::hex << address << " into register " << std::dec << rt << "\n";
+
+    cpu->r[rt] = (uint64_t)cpu->bus.memRead8(address);
 }
 void CPU::ld(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -353,8 +361,12 @@ void CPU::scd(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sd(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sd\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint64_t address = immediate + cpu->r[rs];
+
+    cpu->bus.memWrite64(address, cpu->r[getRt(instruction)]);
 }
 void CPU::sdl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sdl\n";

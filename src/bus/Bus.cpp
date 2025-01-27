@@ -18,6 +18,9 @@ uint8_t Bus::memRead8(uint64_t address) {
 
     switch (actualAddress) {
         default:
+            if (actualAddress <= 0x03EFFFFF) {
+                return rdram[actualAddress];
+            }
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint64_t offset = actualAddress - 0x10000000;
 
@@ -66,7 +69,7 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                writeHalf(&rdram[0], actualAddress, value);
+                writeHalf(&rdram[actualAddress], value);
 
                 return;
             }
@@ -77,19 +80,25 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
     }
 }
 
+void Bus::memWrite64(uint64_t address, uint64_t value) {
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    if (actualAddress <= 0x03EFFFFF) {
+        writeDoubleWord(&rdram[actualAddress], value);
+        return;
+    }
+}
+
 uint64_t Bus::memRead64(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
-    switch (actualAddress) {
-        default:
-            if (actualAddress <= 0x03EFFFFF) {
-                return std::byteswap(*(uint64_t*)&rdram[actualAddress]);
-            }
-
-            std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
-            exit(1);
-            break;
+    if (actualAddress <= 0x03EFFFFF) {
+        return std::byteswap(*(uint64_t*)&rdram[actualAddress]);
     }
+
+    std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
+    exit(1);
+
 }
 uint32_t Bus::memRead32(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -288,7 +297,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                Bus::writeWord(&rdram[0], actualAddress, value);
+                Bus::writeWord(&rdram[actualAddress], value);
 
                 return;
             }
@@ -297,7 +306,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
 
                 std::cout << "writing to pif ram value " << std::hex << value << " at address " << actualAddress << "\n";
 
-                Bus::writeWord(&pif.ram[0], offset, value);
+                Bus::writeWord(&pif.ram[offset], value);
 
                 // TODO: add scheduler and schedule this for later
                 pif.executeCommand();
@@ -307,7 +316,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint32_t offset = actualAddress - 0x4000000;
 
-                Bus::writeWord(&rsp.dmem[0], offset, value);
+                Bus::writeWord(&rsp.dmem[offset], value);
 
                 return;
             }
@@ -315,7 +324,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
 
                 uint32_t offset = actualAddress - 0x4001000;
 
-                Bus::writeWord(&rsp.imem[0], offset, value);
+                Bus::writeWord(&rsp.imem[offset], value);
 
                 return;
             }
@@ -326,19 +335,27 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
     }
 }
 
-void Bus::writeWord(uint8_t* ptr, uint32_t address, uint32_t value) {
-    for (int i = 3; i >= 0; i--) {
-        int shift = 3 - i;
+void Bus::writeDoubleWord(uint8_t* ptr, uint64_t value) {
+    for (int i = 7; i >= 0; i--) {
+        int shift = 7 - i;
         uint8_t byte = (value >> shift * 8) & 0xff;
-        ptr[address + i] = byte;
+        ptr[i] = byte;
     }
 }
 
-void Bus::writeHalf(uint8_t* ptr, uint32_t address, uint16_t value) {
+void Bus::writeWord(uint8_t* ptr, uint32_t value) {
+    for (int i = 3; i >= 0; i--) {
+        int shift = 3 - i;
+        uint8_t byte = (value >> shift * 8) & 0xff;
+        ptr[i] = byte;
+    }
+}
+
+void Bus::writeHalf(uint8_t* ptr, uint16_t value) {
     for (int i = 1; i >= 0; i--) {
         int shift = 1 - i;
         uint8_t byte = (value >> shift * 8) & 0xff;
-        ptr[address + i] = byte;
+        ptr[i] = byte;
     }
 }
 

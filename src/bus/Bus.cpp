@@ -111,6 +111,9 @@ uint32_t Bus::memRead32(uint64_t address) {
         case 0x410000c:
             return rdp.status.value;
             break;
+        case 0x4300008:
+            return mips.mipsInterrupt.value;
+            break;
         case 0x430000c:
             return mips.mipsMask.value;
             break;
@@ -134,11 +137,14 @@ uint32_t Bus::memRead32(uint64_t address) {
             return serialInterface.status.value;
             break;
         default:
+            // fa40030
             if (actualAddress <= 0x03EFFFFF) {
                 return std::byteswap(*(uint32_t*)&rdram[actualAddress]);
             }
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
+                std::cout << "reading from cartridge sram, pc = " << std::hex << cpu->previousPc << "\n";
+                exit(1);
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;

@@ -295,13 +295,27 @@ CPU::CPU(): bus(this) {
 }
 
 void CPU::checkIrqs() {
-    uint32_t val = cop0.r[COP0_STATUS] & cop0.r[COP0_CAUSE] & 0b1111111100000000;
-    std::cout << std::hex << cop0.r[COP0_STATUS] << " vs " << cop0.r[COP0_CAUSE] << "\n";
+    if ((cop0.r[COP0_STATUS] & cop0.r[COP0_CAUSE] & 0b1111111100000000) != 0 &&
+        (cop0.r[COP0_STATUS] & 0b111) == 0b1
+    ) {
+        cop0.r[COP0_EPC] = pc;
 
-    std::cout << "pending irqs: " << std::hex << val << "\n";
+        if (nextPc != pc + 4) {
+            cop0.r[COP0_CAUSE] |= 1 << 31;
+        } else {
+            cop0.r[COP0_CAUSE] &= ~(1 << 31);
+        }
 
-    if (cop0.r[COP0_STATUS] & cop0.r[COP0_CAUSE] & 0b1111111100000000 != 0) {
-        std::cout << "firing an irq possibly\n";
+        cop0.r[COP0_STATUS] |= 1 << 1;
+
+        if (((cop0.r[COP0_STATUS] >> 22) & 0b1) == 0) {
+            std::cout << "setting exception vector to 0x80000018\n";
+            pc = 0x80000018;
+            nextPc = 0x8000001c;
+        } else {
+            pc = 0xbfc00218;
+            nextPc = 0xbfc0021c;
+        }
     }
 }
 

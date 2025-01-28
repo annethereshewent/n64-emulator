@@ -502,7 +502,6 @@ void CPU::sll(CPU* cpu, uint32_t instruction) {
     uint32_t shift = shiftAmount(instruction);
 
     cpu->r[rd] = rt << shift;
-
 }
 void CPU::srl(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
@@ -601,8 +600,24 @@ void CPU::multu(CPU* cpu, uint32_t instruction) {
     cpu->hi = (int32_t)(int64_t)(uint64_t)(result >> 32);
 }
 void CPU::div(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: div\n";
-    exit(1);
+    uint64_t numerator = (int32_t)(int64_t)(uint64_t)cpu->r[getRs(instruction)];
+    uint64_t denominator = (int32_t)(int64_t)(uint64_t)cpu->r[getRt(instruction)];
+
+    std::cout << "numerator = " << std::hex << numerator << ", denominator = " << denominator << "\n";
+
+    if (denominator != 0) {
+        cpu->lo = numerator / denominator;
+        cpu->hi = numerator % denominator;
+    } else {
+        if ((int32_t)numerator < 0) {
+            cpu->lo = 1;
+        } else {
+            cpu->lo = 0xffffffffffffffff;
+        }
+        cpu->hi = numerator;
+    }
+
+    // TODO: add cycles, do this for all div/mult operations
 }
 void CPU::divu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: divu\n";

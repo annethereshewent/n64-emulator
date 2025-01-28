@@ -65,6 +65,7 @@ public:
     void dcacheWriteback(uint64_t line);
 
     void setInterrupt(uint32_t flag);
+    void clearInterrupt(uint32_t flag);
 
     void dmaWrite();
 

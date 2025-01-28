@@ -7,6 +7,7 @@
 #include "../cpu/CPU.hpp"
 
 uint32_t SI_INTERRUPT_FLAG = 1 << 1;
+uint32_t VI_INTERRUPT_FLAG = 1 << 3;
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -143,8 +144,8 @@ uint32_t Bus::memRead32(uint64_t address) {
             }
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
-                std::cout << "reading from cartridge sram, pc = " << std::hex << cpu->previousPc << "\n";
-                exit(1);
+                // TODO: implement saves
+                return 0xff;
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;
@@ -214,7 +215,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             videoInterface.vInterrupt = value & 0x3ff;
             break;
         case 0x4400010:
-            // TODO: clear interrupt
+            clearInterrupt(VI_INTERRUPT_FLAG);
             break;
         case 0x4400014:
             videoInterface.viBurst = value & 0x3fffffff;
@@ -298,7 +299,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x4800018:
             serialInterface.status.interrupt = 0;
-            // TODO: clear mips interrupt flag later. hopefully soon!
+            clearInterrupt(SI_INTERRUPT_FLAG);
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
@@ -394,6 +395,15 @@ void Bus::setInterrupt(uint32_t flag) {
     cpu->checkIrqs();
 }
 
+void Bus::clearInterrupt(uint32_t flag) {
+    mips.mipsInterrupt.value &= ~flag;
+
+    if ((mips.mipsInterrupt.value & mips.mipsMask.value) == 0) {
+        cpu->cop0.r[COP0_CAUSE] &= ~(1 << 10);
+    }
+    cpu->checkIrqs();
+}
+
 void Bus::dmaWrite() {
     uint32_t currDramAddr = peripheralInterface.dramAddress;
     uint32_t currCartAddr = peripheralInterface.cartAddress;
@@ -424,6 +434,7 @@ void Bus::checkIrqs() {
         cpu->cop0.r[COP0_CAUSE] &= ~(0x1f << 2);
         cpu->cop0.r[COP0_CAUSE] |= 1 << 10;
     } else {
+        std::cout << "clearing cause register IP2\n";
         cpu->cop0.r[COP0_CAUSE] &= ~(1 << 10);
     }
 }

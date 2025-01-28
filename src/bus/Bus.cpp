@@ -4,14 +4,9 @@
 #include <iostream>
 #include <bit>
 #include "pif/PIF.cpp"
+#include "../cpu/CPU.hpp"
 
-Bus::Bus() {
-    rdram.resize(0x800000);
-    rdram9.resize(0x800000);
-    spdmem.resize(0x1000);
-
-    rsp.status.value = 1;
-}
+uint32_t SI_INTERRUPT_FLAG = 1 << 1;
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -117,7 +112,7 @@ uint32_t Bus::memRead32(uint64_t address) {
             return rdp.status.value;
             break;
         case 0x430000c:
-            return mips.miMask;
+            return mips.mipsMask.value;
             break;
         case 0x4400010:
             // TODO: implement V_CURRENT
@@ -190,11 +185,14 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x4300000:
             mips.write(value);
-             // TODO: clear dp interrupt
+            // TODO: clear dp interrupt
+            checkIrqs();
+            cpu->checkIrqs();
             break;
         case 0x430000c:
-            mips.miMask = value & 0xfff;
-            // TODO: check interrupts
+            mips.setMask(value);
+            checkIrqs();
+            cpu->checkIrqs();
             break;
         case 0x4400000:
             videoInterface.ctrl.value = value & 0x1ffff;
@@ -261,7 +259,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x460000c:
             peripheralInterface.wrLen = value & 0xffffff;
-            // TODO: start dma write transfer
+            // TODO: schedule dma write transfer
             dmaWrite();
             break;
         case 0x4600010:
@@ -293,7 +291,8 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             rdInterface.select.value = value & 0xff;
             break;
         case 0x4800018:
-            serialInterface.status.value = value & 0x1fff;
+            serialInterface.status.interrupt = 0;
+            // TODO: clear mips interrupt flag later. hopefully soon!
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
@@ -311,6 +310,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
                 // TODO: add scheduler and schedule this for later
                 pif.executeCommand();
 
+                serialInterface.status.dmaBusy = 0;
+                serialInterface.status.ioBusy = 0;
+                serialInterface.status.interrupt = 1;
+
+                setInterrupt(SI_INTERRUPT_FLAG);
                 return;
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
@@ -374,6 +378,16 @@ uint64_t Bus::translateAddress(uint64_t address) {
     return address & 0x1FFFFFFF;
 }
 
+void Bus::setInterrupt(uint32_t flag) {
+    mips.mipsInterrupt.value |= flag;
+
+    if ((mips.mipsInterrupt.value & mips.mipsMask.value) != 0) {
+        cpu->cop0.r[COP0_CAUSE] &= ~(0x1f << 2);
+        cpu->cop0.r[COP0_CAUSE] |= 1 << 10;
+    }
+    cpu->checkIrqs();
+}
+
 void Bus::dmaWrite() {
     uint32_t currDramAddr = peripheralInterface.dramAddress;
     uint32_t currCartAddr = peripheralInterface.cartAddress;
@@ -395,4 +409,15 @@ void Bus::dmaWrite() {
 
     // TODO: set dmaBusy, calculate cycles, and schedule dmaBusy = false
     // peripheralInterface.piStatus.dmaBusy = 1;
+}
+
+// TODO: move this to mips interface. currently having compile
+// issues putting the code in there :/
+void Bus::checkIrqs() {
+    if ((mips.mipsMask.value & mips.mipsInterrupt.value) != 0) {
+        cpu->cop0.r[COP0_CAUSE] &= ~(0x1f << 2);
+        cpu->cop0.r[COP0_CAUSE] |= 1 << 10;
+    } else {
+        cpu->cop0.r[COP0_CAUSE] &= ~(1 << 10);
+    }
 }

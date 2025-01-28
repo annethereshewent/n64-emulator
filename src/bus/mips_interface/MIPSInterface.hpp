@@ -1,4 +1,8 @@
+#pragma once
+
 #include <cstdint>
+#include "MIPSInterrupt.hpp"
+#include "../../cpu/CPU.hpp"
 
 class MIPSInterface {
 public:
@@ -8,8 +12,10 @@ public:
     bool repeatMode;
     bool ebus;
 
-    uint16_t miMask;
+    MIPSInterrupt mipsInterrupt;
+    MIPSInterrupt mipsMask;
     // TODO: add dp interrupt support
 
     void write(uint32_t value);
+    void setMask(uint32_t value);
 };

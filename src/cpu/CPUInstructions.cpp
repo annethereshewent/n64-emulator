@@ -483,7 +483,7 @@ void COP0::mtc0(CPU* cpu, uint32_t instruction) {
 
     cpu->cop0.r[rd] = (int32_t)(int64_t)(uint64_t)cpu->r[rt];
 
-    // TODO: check pending interrupts
+    cpu->checkIrqs();
 }
 
 void COP0::break_(CPU* cpu, uint32_t instruction) {
@@ -987,14 +987,19 @@ void COP0::eret(CPU* cpu, uint32_t instruction) {
         cpu->pc = cpu->cop0.r[COP0_ERROREPC];
         cpu->nextPc = cpu->pc + 4;
         cpu->cop0.r[COP0_STATUS] &= ~(1 << 2);
+
+        std::cout << "setting to error EPC\n";
     } else {
         cpu->pc = cpu->cop0.r[COP0_EPC];
         cpu->nextPc = cpu->pc + 4;
         cpu->cop0.r[COP0_STATUS] &= ~(1 << 1);
+
+        std::cout << "setting to EPC\n";
     }
 
     cpu->llbit = false;
 
     std::cout << "exception, pc now = " << std::hex << cpu->pc << "\n";
-    // TODO: check pending interrupts
+
+    cpu->checkIrqs();
 }

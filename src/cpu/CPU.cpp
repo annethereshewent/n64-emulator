@@ -118,7 +118,7 @@ COP1::COP1() {
     };
 }
 
-CPU::CPU() {
+CPU::CPU(): bus(this) {
     r[0] = 0;
 
     pc = 0xBFC00000;
@@ -292,6 +292,17 @@ CPU::CPU() {
         COP0::reserved,            // 30
         COP0::reserved,            // 31
     };
+}
+
+void CPU::checkIrqs() {
+    uint32_t val = cop0.r[COP0_STATUS] & cop0.r[COP0_CAUSE] & 0b1111111100000000;
+    std::cout << std::hex << cop0.r[COP0_STATUS] << " vs " << cop0.r[COP0_CAUSE] << "\n";
+
+    std::cout << "pending irqs: " << std::hex << val << "\n";
+
+    if (cop0.r[COP0_STATUS] & cop0.r[COP0_CAUSE] & 0b1111111100000000 != 0) {
+        std::cout << "firing an irq possibly\n";
+    }
 }
 
 void CPU::loadRom(std::string filename) {

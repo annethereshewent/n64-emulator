@@ -19,6 +19,18 @@ public:
     std::vector<uint8_t> rdram;
     std::vector<bool> rdram9;
 
+    CPU* cpu;
+
+    Bus(CPU* cpu): cpu(cpu) {
+        rdram.resize(0x800000);
+        rdram9.resize(0x800000);
+        spdmem.resize(0x1000);
+
+        rsp.status.value = 1;
+
+        this->cpu = cpu;
+    };
+
     std::vector<uint8_t> spdmem;
 
     PIF pif;
@@ -27,8 +39,6 @@ public:
 
     std::array<ICache, 512> icache;
     std::array<DCache, 512> dcache;
-
-    Bus();
 
     PeripheralInterface peripheralInterface;
     RSP rsp;
@@ -54,7 +64,11 @@ public:
 
     void dcacheWriteback(uint64_t line);
 
+    void setInterrupt(uint32_t flag);
+
     void dmaWrite();
+
+    void checkIrqs();
 
     static uint64_t translateAddress(uint64_t address);
 

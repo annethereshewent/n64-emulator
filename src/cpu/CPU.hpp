@@ -8,14 +8,17 @@
 #include <unordered_set>
 
 class CPU;
-uint32_t COP0_TAGLO = 28;
+
+// TODO: make these into proper properties instead of array index constants
 uint32_t COP0_STATUS = 12;
-uint32_t COP0_ERROREPC = 30;
+uint32_t COP0_CAUSE = 13;
 uint32_t COP0_EPC = 14;
+uint32_t COP0_TAGLO = 28;
+uint32_t COP0_ERROREPC = 30;
 
 class COP0 {
 public:
-    uint32_t r[32];
+    uint64_t r[32];
 
     COP0();
 
@@ -102,6 +105,8 @@ public:
     void step();
 
     void loadRom(std::string filename);
+
+    void checkIrqs();
 
     // instructions
     static void reserved(CPU* cpu, uint32_t instruction);

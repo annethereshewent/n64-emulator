@@ -7,6 +7,7 @@
 #include "../cpu/CPU.hpp"
 
 uint32_t SI_INTERRUPT_FLAG = 1 << 1;
+uint32_t AI_INTERRUPT_FLAG = 1 << 2;
 uint32_t VI_INTERRUPT_FLAG = 1 << 3;
 uint32_t PI_INTERRUPT_FLAG = 1 << 4;
 
@@ -256,7 +257,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             break;
         case 0x450000c:
             // TODO: acknowledge interrupt here
-            std::cout << "it should acknowledge an audio interrupt here.\n";
+            clearInterrupt(AI_INTERRUPT_FLAG);
             break;
         case 0x4600000:
             peripheralInterface.dramAddress = value & 0xfffffe;
@@ -316,8 +317,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             }
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
-
-                std::cout << "writing to pif ram value " << std::hex << value << " at address " << actualAddress << "\n";
 
                 Bus::writeWord(&pif.ram[offset], value);
 
@@ -416,9 +415,6 @@ void Bus::dmaWrite() {
     uint32_t currCartAddr = peripheralInterface.cartAddress;
     uint32_t length = peripheralInterface.wrLen + 1;
 
-    std::cout << "currDramAddr = " << std::hex << currDramAddr << ", length = " << length << "\n";
-    std::cout << "curCartAddr = " << std::hex << currCartAddr << "\n";
-
     for (int i = 0; i < length; i++) {
         if (currCartAddr + i >= cartridge.size()) {
             rdram[currDramAddr + i] = 0;
@@ -441,7 +437,6 @@ void Bus::checkIrqs() {
         cpu->cop0.cause &= ~(0x1f << 2);
         cpu->cop0.cause |= 1 << 10;
     } else {
-        std::cout << "clearing cause register IP2\n";
         cpu->cop0.cause &= ~(1 << 10);
     }
 }

@@ -30,14 +30,14 @@ void COP0::writeRegister(uint32_t index, uint64_t value) {
             break;
         case 9:
             count = (uint32_t)value;
-            // TODO: do some additional processing
+            count <<= 1;
             break;
         case 10:
             entryHi = value & 0xc00000ffffffe0ff;
             break;
         case 11:
             compare = (uint32_t)value;
-            // TODO: do some additional stuff here related to compare register.
+            // TODO: do some additional stuff here related to compare register once scheduler is in place.
             break;
         case 12:
             status = (uint32_t)value & 0xff57ffff;
@@ -181,6 +181,10 @@ uint64_t COP0::readRegister(uint32_t index) {
         case 25:
         case 31:
             return latch;
+            break;
+        default:
+            std::cout << "invalid register given for cop0: " << index << "\n";
+            exit(1);
             break;
     }
 }

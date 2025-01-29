@@ -235,8 +235,6 @@ void CPU::jal(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = address;
 }
 void CPU::lb(CPU* cpu, uint32_t instruction) {
-    std::cout << "inside lb\n";
-
     uint64_t offset = getSignedImmediate(instruction);
     uint32_t rt = getRt(instruction);
     uint32_t base = getRs(instruction);
@@ -253,9 +251,6 @@ void CPU::lbu(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
 
     uint64_t address = cpu->r[baseReg] + immediate;
-
-    std::cout << "pc = " << std::hex << cpu->previousPc << "\n";
-    std::cout << "loading from address " << std::hex << address << " into register " << std::dec << rt << "\n";
 
     cpu->r[rt] = (uint64_t)cpu->bus.memRead8(address);
 }
@@ -277,7 +272,6 @@ void CPU::ldr(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::lh(CPU* cpu, uint32_t instruction) {
-    std::cout << "inside lh\n";
     uint64_t offset = getSignedImmediate(instruction);
     uint32_t rt = getRt(instruction);
     uint32_t base = getRs(instruction);
@@ -600,8 +594,6 @@ void CPU::multu(CPU* cpu, uint32_t instruction) {
 void CPU::div(CPU* cpu, uint32_t instruction) {
     uint64_t numerator = (int32_t)(int64_t)(uint64_t)cpu->r[getRs(instruction)];
     uint64_t denominator = (int32_t)(int64_t)(uint64_t)cpu->r[getRt(instruction)];
-
-    std::cout << "numerator = " << std::hex << numerator << ", denominator = " << denominator << "\n";
 
     if (denominator != 0) {
         cpu->lo = numerator / denominator;
@@ -1000,19 +992,13 @@ void COP0::eret(CPU* cpu, uint32_t instruction) {
         cpu->pc = cpu->cop0.errorEpc;
         cpu->nextPc = cpu->pc + 4;
         cpu->cop0.status &= ~(1 << 2);
-
-        std::cout << "setting to error EPC\n";
     } else {
         cpu->pc = cpu->cop0.epc;
         cpu->nextPc = cpu->pc + 4;
         cpu->cop0.status &= ~(1 << 1);
-
-        std::cout << "setting to EPC\n";
     }
 
     cpu->llbit = false;
-
-    std::cout << "exception, pc now = " << std::hex << cpu->pc << "\n";
 
     cpu->checkIrqs();
 }

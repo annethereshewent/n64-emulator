@@ -310,7 +310,6 @@ void CPU::checkIrqs() {
         cop0.status |= 1 << 1;
 
         if (((cop0.status >> 22) & 0b1) == 0) {
-            std::cout << "setting exception vector to 0x80000018\n";
             pc = 0x80000180;
             nextPc = 0x80000184;
         } else {

@@ -8,6 +8,7 @@
 
 uint32_t SI_INTERRUPT_FLAG = 1 << 1;
 uint32_t VI_INTERRUPT_FLAG = 1 << 3;
+uint32_t PI_INTERRUPT_FLAG = 1 << 4;
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -138,7 +139,6 @@ uint32_t Bus::memRead32(uint64_t address) {
             return serialInterface.status.value;
             break;
         default:
-            // fa40030
             if (actualAddress <= 0x03EFFFFF) {
                 return std::byteswap(*(uint32_t*)&rdram[actualAddress]);
             }
@@ -268,10 +268,17 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             peripheralInterface.wrLen = value & 0xffffff;
             // TODO: schedule dma write transfer
             dmaWrite();
+            setInterrupt(PI_INTERRUPT_FLAG);
             break;
         case 0x4600010:
-            // TODO: clear interrupt and reset dma controller from doing transfer
-            std::cout << "it should clear interrupts and reset dma controller\n";
+            if ((value & 0b1) == 1) {
+                // TODO: reset dma controller from doing transfer
+                std::cout << "it should reset the dma controller from doing a transfer.\n";
+            }
+            if (((value >> 1) & 0b1) == 1) {
+                clearInterrupt(PI_INTERRUPT_FLAG);
+                peripheralInterface.piStatus.dmaCompleted = 0;
+            }
             break;
         case 0x4600014:
             peripheralInterface.dom1Latch = value & 0xff;

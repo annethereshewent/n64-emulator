@@ -8,6 +8,7 @@
 #include <fstream>
 #include <algorithm>
 #include <bit>
+#include "COP0.cpp"
 
 COP0::COP0() {
     instructions = {
@@ -295,20 +296,20 @@ CPU::CPU(): bus(this) {
 }
 
 void CPU::checkIrqs() {
-    if ((cop0.r[COP0_STATUS] & cop0.r[COP0_CAUSE] & 0b1111111100000000) != 0 &&
-        (cop0.r[COP0_STATUS] & 0b111) == 0b1
+    if ((cop0.status & cop0.cause & 0b1111111100000000) != 0 &&
+        (cop0.status & 0b111) == 0b1
     ) {
-        cop0.r[COP0_EPC] = pc;
+        cop0.epc = pc;
 
         if (nextPc != pc + 4) {
-            cop0.r[COP0_CAUSE] |= 1 << 31;
+            cop0.cause |= 1 << 31;
         } else {
-            cop0.r[COP0_CAUSE] &= ~(1 << 31);
+            cop0.cause &= ~(1 << 31);
         }
 
-        cop0.r[COP0_STATUS] |= 1 << 1;
+        cop0.status |= 1 << 1;
 
-        if (((cop0.r[COP0_STATUS] >> 22) & 0b1) == 0) {
+        if (((cop0.status >> 22) & 0b1) == 0) {
             std::cout << "setting exception vector to 0x80000018\n";
             pc = 0x80000180;
             nextPc = 0x80000184;

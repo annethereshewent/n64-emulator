@@ -396,8 +396,8 @@ void Bus::setInterrupt(uint32_t flag) {
     mips.mipsInterrupt.value |= flag;
 
     if ((mips.mipsInterrupt.value & mips.mipsMask.value) != 0) {
-        cpu->cop0.r[COP0_CAUSE] &= ~(0x1f << 2);
-        cpu->cop0.r[COP0_CAUSE] |= 1 << 10;
+        cpu->cop0.cause &= ~(0x1f << 2);
+        cpu->cop0.cause |= 1 << 10;
     }
     cpu->checkIrqs();
 }
@@ -406,7 +406,7 @@ void Bus::clearInterrupt(uint32_t flag) {
     mips.mipsInterrupt.value &= ~flag;
 
     if ((mips.mipsInterrupt.value & mips.mipsMask.value) == 0) {
-        cpu->cop0.r[COP0_CAUSE] &= ~(1 << 10);
+        cpu->cop0.cause &= ~(1 << 10);
     }
     cpu->checkIrqs();
 }
@@ -438,10 +438,10 @@ void Bus::dmaWrite() {
 // issues putting the code in there :/
 void Bus::checkIrqs() {
     if ((mips.mipsMask.value & mips.mipsInterrupt.value) != 0) {
-        cpu->cop0.r[COP0_CAUSE] &= ~(0x1f << 2);
-        cpu->cop0.r[COP0_CAUSE] |= 1 << 10;
+        cpu->cop0.cause &= ~(0x1f << 2);
+        cpu->cop0.cause |= 1 << 10;
     } else {
         std::cout << "clearing cause register IP2\n";
-        cpu->cop0.r[COP0_CAUSE] &= ~(1 << 10);
+        cpu->cop0.cause &= ~(1 << 10);
     }
 }

@@ -9,16 +9,35 @@
 
 class CPU;
 
-// TODO: make these into proper properties instead of array index constants
-uint32_t COP0_STATUS = 12;
-uint32_t COP0_CAUSE = 13;
-uint32_t COP0_EPC = 14;
-uint32_t COP0_TAGLO = 28;
-uint32_t COP0_ERROREPC = 30;
-
 class COP0 {
 public:
-    uint64_t r[32];
+    uint32_t index;
+    uint32_t random;
+    uint64_t entryLo0;
+    uint64_t entryLo1;
+    uint64_t context;
+    uint32_t pageMask;
+    uint32_t wired;
+    uint64_t badVAddress;
+    uint32_t count;
+    uint64_t entryHi;
+    uint32_t compare;
+    uint32_t status;
+    uint32_t cause;
+    uint64_t epc;
+    uint32_t prid;
+    uint32_t config;
+    uint32_t llAddress;
+    uint32_t watchLo;
+    uint32_t watchHi;
+    uint64_t xContext;
+    uint32_t parityError;
+    uint32_t cacheError;
+    uint32_t tagLo;
+    uint32_t tagHi;
+    uint64_t errorEpc;
+
+    uint64_t latch;
 
     COP0();
 
@@ -36,6 +55,9 @@ public:
     static void eret(CPU* cpu, uint32_t instruction);
 
     static void reserved(CPU* cpu, uint32_t instruction);
+
+    void writeRegister(uint32_t index, uint64_t value);
+    uint64_t readRegister(uint32_t index);
 
     std::array<CPUInstruction, 64> instructions;
     std::array<CPUInstruction, 32> cp0Instructions;

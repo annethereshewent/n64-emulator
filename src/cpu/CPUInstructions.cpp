@@ -174,8 +174,8 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
         }
         case 0x8: {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
-            bool isValid = (cpu->cop0.r[COP0_TAGLO] >> 7 & 0b1) == 1;
-            uint32_t tag = (cpu->cop0.r[COP0_TAGLO] & 0xFFFFF00) << 4;
+            bool isValid = (cpu->cop0.tagLo >> 7 & 0b1) == 1;
+            uint32_t tag = (cpu->cop0.tagLo & 0xFFFFF00) << 4;
 
             cpu->bus.icache[line].valid = isValid;
             cpu->bus.icache[line].tag = tag;
@@ -472,16 +472,14 @@ void COP0::mfc0(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
     uint32_t rt = getRt(instruction);
 
-    cpu->r[rt] = cpu->cop0.r[rd];
+    cpu->r[rt] = cpu->cop0.readRegister(rd);
 }
 
 void COP0::mtc0(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
     uint32_t rt = getRt(instruction);
 
-    std::cout << "moving to cop0 register " << std::dec << rd << " value " << std::hex << (int32_t)(int64_t)(uint64_t)cpu->r[rt] << " from register " << std::dec << rt << "\n";
-
-    cpu->cop0.r[rd] = (int32_t)(int64_t)(uint64_t)cpu->r[rt];
+    cpu->cop0.writeRegister(rd, (int32_t)(int64_t)(uint64_t)cpu->r[rt]);
 
     cpu->checkIrqs();
 }
@@ -865,7 +863,7 @@ void CPU::bgezall(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cfc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.r[12] >> 29) & 0b1) == 0) {
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         // TODO: throw an exception
         std::cout << "im supposed to throw an exception in cfc1\n";
         return;
@@ -899,7 +897,7 @@ void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::ctc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.r[12] >> 29) & 0b1) == 0) {
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         // TODO: throw an exception
         std::cout << "im supposed to throw an exception in ctc1\n";
         return;
@@ -998,16 +996,16 @@ void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::eret(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.r[COP0_STATUS] >> 2) & 0b1) == 1) {
-        cpu->pc = cpu->cop0.r[COP0_ERROREPC];
+    if (((cpu->cop0.status >> 2) & 0b1) == 1) {
+        cpu->pc = cpu->cop0.errorEpc;
         cpu->nextPc = cpu->pc + 4;
-        cpu->cop0.r[COP0_STATUS] &= ~(1 << 2);
+        cpu->cop0.status &= ~(1 << 2);
 
         std::cout << "setting to error EPC\n";
     } else {
-        cpu->pc = cpu->cop0.r[COP0_EPC];
+        cpu->pc = cpu->cop0.epc;
         cpu->nextPc = cpu->pc + 4;
-        cpu->cop0.r[COP0_STATUS] &= ~(1 << 1);
+        cpu->cop0.status &= ~(1 << 1);
 
         std::cout << "setting to EPC\n";
     }

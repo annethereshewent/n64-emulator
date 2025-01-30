@@ -480,19 +480,6 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int mask) {
     dcache[lineIndex].dirty = true;
 }
 
-void Bus::writebackDataCache(uint32_t lineIndex) {
-    // TODO: add cycles
-
-    dcache[lineIndex].dirty = false;
-
-    uint64_t cacheAddress = (uint64_t)((uint32_t)(dcache[lineIndex].tag | dcache[lineIndex].index) & 0x1ffffffc);
-
-    memWrite32(cacheAddress, dcache[lineIndex].words[0], true);
-    memWrite32(cacheAddress + 4, dcache[lineIndex].words[1], true);
-    memWrite32(cacheAddress + 8, dcache[lineIndex].words[2], true);
-    memWrite32(cacheAddress + 12, dcache[lineIndex].words[3], true);
-}
-
 void Bus::fillDataCache(uint32_t lineIndex, uint64_t address) {
     // TODO: add cycles
 
@@ -538,6 +525,8 @@ void Bus::writeHalf(uint8_t* ptr, uint16_t value) {
 }
 
 void Bus::dcacheWriteback(uint64_t line) {
+    // TODO: add cycles
+
     dcache[line].dirty = false;
 
     uint64_t cacheAddress = (dcache[line].tag | dcache[line].index) & 0x1ffffffc;

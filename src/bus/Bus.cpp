@@ -13,6 +13,26 @@ uint32_t PI_INTERRUPT_FLAG = 1 << 4;
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached) {
+        uint32_t value = readDataCache(actualAddress & ~0x3);
+
+        switch (actualAddress & 0x3) {
+            case 0:
+                return (uint8_t)(value >> 24);
+                break;
+            case 1:
+                return (uint8_t)(value >> 16);
+                break;
+            case 2:
+                return (uint8_t)(value >> 8);
+                break;
+            case 3:
+                return (uint8_t)value;
+                break;
+        }
+    }
 
     switch (actualAddress) {
         default:
@@ -32,6 +52,17 @@ uint8_t Bus::memRead8(uint64_t address) {
 
 uint16_t Bus::memRead16(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached) {
+        uint32_t value = readDataCache(actualAddress & ~0x3);
+
+        if ((actualAddress & 0x3) == 0) {
+            return (uint16_t)(value >> 16);
+        }
+
+        return (uint16_t)value;
+    }
 
     switch (actualAddress) {
         default:
@@ -47,6 +78,27 @@ uint16_t Bus::memRead16(uint64_t address) {
 void Bus::memWrite8(uint64_t address, uint8_t value) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached) {
+        switch (actualAddress & 0x3) {
+            case 0:
+                writeDataCache(actualAddress & ~0x3, (uint32_t)value << 24, 0xff << 24);
+                break;
+            case 1:
+                writeDataCache(actualAddress & ~0x3, (uint32_t)value << 16, 0xff << 16);
+                break;
+            case 2:
+                writeDataCache(actualAddress & ~0x3, (uint32_t)value << 8, 0xff << 8);
+                break;
+            case 3:
+                writeDataCache(actualAddress & ~0x3, (uint32_t)value, 0xff);
+                break;
+        }
+
+        return;
+    }
+
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
@@ -55,7 +107,7 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
                 return;
             }
 
-            std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
+            std::cout << "(memWrite8) unsupported address given: " << std::hex << address << "\n";
             exit(1);
             break;
     }
@@ -63,6 +115,19 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
 
 void Bus::memWrite16(uint64_t address, uint16_t value) {
     uint64_t actualAddress = Bus::translateAddress(address);
+
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached) {
+        if ((actualAddress & 0x3) == 0) {
+            uint32_t returnValue = (uint32_t)value << 16;
+            writeDataCache(actualAddress & ~0x3, (uint32_t)value << 16, 0xffff0000);
+        } else {
+            writeDataCache(actualAddress & ~0x3, (uint32_t)value, 0x0000ffff);
+        }
+
+        return;
+    }
 
     switch (actualAddress) {
         default:
@@ -72,7 +137,7 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
                 return;
             }
 
-            std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
+            std::cout << "(memWrite16) unsupported address given: " << std::hex << address << "\n";
             exit(1);
             break;
     }
@@ -80,6 +145,14 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
 
 void Bus::memWrite64(uint64_t address, uint64_t value) {
     uint64_t actualAddress = Bus::translateAddress(address);
+
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached) {
+        writeDataCache(actualAddress + 4, (uint32_t)value);
+        writeDataCache(actualAddress, (uint32_t)(value >> 32));
+        return;
+    }
 
     if (actualAddress <= 0x03EFFFFF) {
         writeDoubleWord(&rdram[actualAddress], value);
@@ -89,6 +162,11 @@ void Bus::memWrite64(uint64_t address, uint64_t value) {
 
 uint64_t Bus::memRead64(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached) {
+        return (uint64_t)readDataCache(address) << 32 | (uint64_t)readDataCache(address + 4);
+    }
 
     if (actualAddress <= 0x03EFFFFF) {
         return std::byteswap(*(uint64_t*)&rdram[actualAddress]);
@@ -98,8 +176,14 @@ uint64_t Bus::memRead64(uint64_t address) {
     exit(1);
 
 }
-uint32_t Bus::memRead32(uint64_t address) {
+uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
     uint64_t actualAddress = Bus::translateAddress(address);
+
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached && !ignoreCache) {
+        return readDataCache(actualAddress);
+    }
 
     switch (actualAddress) {
         case 0x4040010:
@@ -181,8 +265,15 @@ uint32_t Bus::memRead32(uint64_t address) {
     }
 }
 
-void Bus::memWrite32(uint64_t address, uint32_t value) {
+void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
     uint64_t actualAddress = Bus::translateAddress(address);
+
+    bool cached = (address & 0x20000000) == 0;
+
+    if (cached && !ignoreCache) {
+        writeDataCache(actualAddress, value);
+        return;
+    }
 
     switch (actualAddress) {
         case 0x4040010:
@@ -256,7 +347,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             audioInterface.audioLength = value & 0x3ffff;
             break;
         case 0x450000c:
-            // TODO: acknowledge interrupt here
             clearInterrupt(AI_INTERRUPT_FLAG);
             break;
         case 0x4600000:
@@ -350,6 +440,77 @@ void Bus::memWrite32(uint64_t address, uint32_t value) {
             exit(1);
             break;
     }
+}
+
+uint32_t Bus::readDataCache(uint64_t address) {
+    uint32_t lineIndex = (address >> 4) & 0x1ff;
+
+    if (!(dcacheHit(lineIndex, address))) {
+        if (dcache[lineIndex].valid && dcache[lineIndex].dirty) {
+            writebackDataCache(lineIndex);
+        }
+        fillDataCache(lineIndex, address);
+    } else {
+        // TODO: add cycles here
+    }
+
+    return dcache[lineIndex].words[(address >> 2) & 3];
+}
+
+void Bus::writeDataCache(uint64_t address, uint32_t value, int mask) {
+    uint32_t lineIndex = (address >> 4) & 0x1ff;
+
+    if (!dcacheHit(lineIndex, address)) {
+        if (dcache[lineIndex].valid && dcache[lineIndex].dirty) {
+            writebackDataCache(lineIndex);
+        }
+        fillDataCache(lineIndex, address);
+    } else {
+        // TODO: add cycles
+    }
+
+    uint32_t returnValue = value;
+    uint32_t oldValue = dcache[lineIndex].words[(address >> 2) & 3];
+
+    if (mask != -1) {
+        returnValue = (oldValue & ~mask) | (value & mask);
+    }
+
+    dcache[lineIndex].words[(address >> 2) & 3] = returnValue;
+    dcache[lineIndex].dirty = true;
+}
+
+void Bus::writebackDataCache(uint32_t lineIndex) {
+    // TODO: add cycles
+
+    dcache[lineIndex].dirty = false;
+
+    uint64_t cacheAddress = (uint64_t)((uint32_t)(dcache[lineIndex].tag | dcache[lineIndex].index) & 0x1ffffffc);
+
+    memWrite32(cacheAddress, dcache[lineIndex].words[0], true);
+    memWrite32(cacheAddress + 4, dcache[lineIndex].words[1], true);
+    memWrite32(cacheAddress + 8, dcache[lineIndex].words[2], true);
+    memWrite32(cacheAddress + 12, dcache[lineIndex].words[3], true);
+}
+
+void Bus::fillDataCache(uint32_t lineIndex, uint64_t address) {
+    // TODO: add cycles
+
+    dcache[lineIndex].valid = true;
+    dcache[lineIndex].dirty = false;
+
+    dcache[lineIndex].tag = (uint32_t)(address & ~0xfff);
+
+    uint64_t cacheAddress = (uint64_t)((uint32_t)((dcache[lineIndex].tag) | (dcache[lineIndex].index)) & 0x1ffffffc);
+
+    dcache[lineIndex].words[0] = memRead32(cacheAddress, true);
+    dcache[lineIndex].words[1] = memRead32(cacheAddress + 4, true);
+    dcache[lineIndex].words[2] = memRead32(cacheAddress + 8, true);
+    dcache[lineIndex].words[3] = memRead32(cacheAddress + 12, true);
+}
+
+bool Bus::dcacheHit(uint32_t lineIndex, uint64_t address) {
+    return dcache[lineIndex].valid && (dcache[lineIndex].tag & 0x1ffffffc) == (address & ~0xfff);
 }
 
 void Bus::writeDoubleWord(uint8_t* ptr, uint64_t value) {

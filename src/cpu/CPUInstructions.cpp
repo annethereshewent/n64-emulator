@@ -83,7 +83,7 @@ void CPU::beq(CPU* cpu, uint32_t instruction) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         cpu->nextPc = cpu->pc + amount;
-   }
+    }
 }
 void CPU::beql(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
@@ -194,7 +194,6 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             uint64_t line = (actualAddress >> 4) & 0x1ff;
 
             if (cpu->bus.dcache[line].valid && (cpu->bus.dcache[line].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff) && cpu->bus.dcache[line].dirty) {
-                std::cout << "it worked!\n";
                 cpu->bus.dcacheWriteback(line);
             }
             break;

@@ -28,6 +28,13 @@ public:
 
         rsp.status.value = 1;
 
+        for (int i = 0; i < icache.size(); i++) {
+            icache[i].index = (uint16_t)(i << 5) & 0xfe0;
+        }
+        for (int i = 0; i < dcache.size(); i++) {
+            dcache[i].index = (uint16_t)(i << 4) & 0xff0;
+        }
+
         this->cpu = cpu;
     };
 
@@ -53,12 +60,19 @@ public:
     MIPSInterface mips;
 
     uint64_t memRead64(uint64_t address);
-    uint32_t memRead32(uint64_t address);
+    uint32_t memRead32(uint64_t address, bool ignoreCache = false);
     uint16_t memRead16(uint64_t address);
     uint8_t memRead8(uint64_t address);
 
+    uint32_t readDataCache(uint64_t address);
+    void writeDataCache(uint64_t address, uint32_t value, int mask = -1);
+    bool dcacheHit(uint32_t lineIndex, uint64_t address);
+
+    void writebackDataCache(uint32_t lineIndex);
+    void fillDataCache(uint32_t lineIndex, uint64_t address);
+
     void memWrite64(uint64_t address, uint64_t value);
-    void memWrite32(uint64_t address, uint32_t value);
+    void memWrite32(uint64_t address, uint32_t value, bool ignoreCache = false);
     void memWrite16(uint64_t address, uint16_t value);
     void memWrite8(uint64_t address, uint8_t value);
 

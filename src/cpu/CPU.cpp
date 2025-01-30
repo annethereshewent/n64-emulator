@@ -378,7 +378,7 @@ void CPU::loadRom(std::string filename) {
 }
 
 void CPU::step() {
-    uint32_t opcode = bus.memRead32(pc);
+    uint32_t opcode = bus.memRead32(pc, true);
     uint32_t command = opcode >> 26;
 
     previousPc = pc;

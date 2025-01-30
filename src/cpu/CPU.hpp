@@ -68,6 +68,10 @@ public:
 
     FCSR fcsr;
     COP1();
+
+    std::array<uint32_t, 32> fgr32;
+    std::array<uint64_t, 32> fgr64;
+
     static void reserved(CPU* cpu, uint32_t instruction);
     static void lwc1(CPU* cpu, uint32_t instruction);
     static void ldc1(CPU* cpu, uint32_t instruction);
@@ -97,7 +101,7 @@ public:
 
 class CPU {
 public:
-    uint64_t r[32];
+    std::array<uint64_t, 32> r;
     bool llbit;
 
     uint64_t hi;

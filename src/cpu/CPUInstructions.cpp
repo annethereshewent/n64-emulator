@@ -7,6 +7,13 @@
 
 typedef unsigned __int128 u128;
 
+// gotten from https://stackoverflow.com/questions/11611787/convert-a-32-bits-to-float-value
+union conv32
+{
+    uint32_t u32; // here_write_bits
+    float    f32; // here_read_float
+};
+
 uint32_t getImmediate(uint32_t instruction) {
     return instruction & 0xffff;
 }
@@ -943,8 +950,14 @@ void COP1::mfc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::mtc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mtc1\n";
-    exit(1);
+    uint32_t value = (uint32_t)cpu->r[getRt(instruction)];
+    uint32_t index = getRd(instruction);
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[index] = value;
+    } else {
+        cpu->cop1.fgr64[index] = (cpu->cop1.fgr64[index] & 0xffffffff00000000) | (uint64_t)value;
+    }
 }
 
 void COP1::writeRegister(uint32_t index, uint64_t value) {

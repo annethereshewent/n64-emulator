@@ -879,8 +879,9 @@ void CPU::bgezall(CPU* cpu, uint32_t instruction) {
 
 void COP1::cfc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
-        // TODO: throw an exception
-        std::cout << "im supposed to throw an exception in cfc1\n";
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException();
         return;
     }
     cpu->r[getRt(instruction)] = (int32_t)(int64_t)(uint64_t)cpu->cop1.readRegister(getRd(instruction));
@@ -913,8 +914,9 @@ void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
 
 void COP1::ctc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
-        // TODO: throw an exception
-        std::cout << "im supposed to throw an exception in ctc1\n";
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException();
         return;
     }
 

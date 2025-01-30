@@ -439,8 +439,29 @@ void COP0::reserved(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::ldc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ldc1\n";
-    exit(1);
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException();
+        return;
+    }
+
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint64_t doubleWord = cpu->bus.memRead64(address);
+
+    uint32_t index = getRt(instruction);
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[index] = (uint32_t)doubleWord;
+        cpu->cop1.fgr32[index + 1] = (uint32_t)(doubleWord >> 32);
+    } else {
+        cpu->cop1.fgr64[index] = doubleWord;
+    }
 }
 void COP1::lwc1(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lwc1\n";

@@ -393,6 +393,17 @@ void CPU::step() {
     discarded = false;
     nextPc += 4;
 
+
+    // if (!visited.contains(previousPc)) {
+    //     uint32_t actualCommand = command;
+    //     if (command == 0) {
+    //         std::cout << "command is secondary\n";
+    //         actualCommand = opcode & 0x3f;
+    //     }
+    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
+    //     visited.insert(previousPc);
+    // }
+
     switch(command) {
         case 0:
             secondary[opcode & 0x3f](this, opcode);
@@ -415,13 +426,4 @@ void CPU::step() {
             break;
     }
 
-    // if (!visited.contains(previousPc)) {
-    //     uint32_t actualCommand = command;
-    //     if (command == 0) {
-    //         std::cout << "command is secondary\n";
-    //         actualCommand = opcode & 0x3f;
-    //     }
-    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
-    //     visited.insert(previousPc);
-    // }
 }

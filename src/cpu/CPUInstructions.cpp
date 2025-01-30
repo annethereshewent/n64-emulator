@@ -62,7 +62,7 @@ void CPU::addiu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
 
-    cpu->r[rt] = cpu->r[rs] + immediate;
+    cpu->r[rt] = (int32_t)(int64_t)(uint64_t)cpu->r[rs] + immediate;
 }
 
 void CPU::andi(CPU* cpu, uint32_t instruction) {
@@ -537,8 +537,10 @@ void CPU::jr(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = cpu->r[rs];
 }
 void CPU::jalr(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: jalr\n";
-    exit(1);
+    // TODO: see jal comments
+    cpu->r[getRd(instruction)] = cpu->nextPc;
+
+    cpu->nextPc = cpu->r[getRs(instruction)];
 }
 void CPU::sync(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sync\n";

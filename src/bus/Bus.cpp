@@ -510,7 +510,7 @@ void Bus::fillDataCache(uint32_t lineIndex, uint64_t address) {
 }
 
 bool Bus::dcacheHit(uint32_t lineIndex, uint64_t address) {
-    return dcache[lineIndex].valid && (dcache[lineIndex].tag & 0x1ffffffc) == (address & ~0xfff);
+    return dcache[lineIndex].valid && (dcache[lineIndex].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff);
 }
 
 void Bus::writeDoubleWord(uint8_t* ptr, uint64_t value) {
@@ -544,7 +544,7 @@ void Bus::dcacheWriteback(uint64_t line) {
 
     for (int i = 0; i < 4; i++) {
         uint64_t currAddress = cacheAddress | (i * 4);
-        memWrite32(currAddress, dcache[line].words[i]);
+        memWrite32(currAddress, dcache[line].words[i], true);
     }
 }
 

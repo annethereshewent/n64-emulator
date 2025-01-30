@@ -950,6 +950,12 @@ void COP1::mfc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::mtc1(CPU* cpu, uint32_t instruction) {
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException();
+        return;
+    }
     uint32_t value = (uint32_t)cpu->r[getRt(instruction)];
     uint32_t index = getRd(instruction);
 

@@ -299,23 +299,28 @@ void CPU::checkIrqs() {
     if ((cop0.status & cop0.cause & 0b1111111100000000) != 0 &&
         (cop0.status & 0b111) == 0b1
     ) {
-        cop0.epc = pc;
+        enterException();
+    }
+}
 
+void CPU::enterException() {
+    if (((cop0.status >> 1) & 0b1) == 0) {
+        cop0.epc = pc;
         if (nextPc != pc + 4) {
             cop0.cause |= 1 << 31;
         } else {
             cop0.cause &= ~(1 << 31);
         }
+    }
 
-        cop0.status |= 1 << 1;
+    cop0.status |= 1 << 1;
 
-        if (((cop0.status >> 22) & 0b1) == 0) {
-            pc = 0x80000180;
-            nextPc = 0x80000184;
-        } else {
-            pc = 0xbfc00200 + 0x180;
-            nextPc = 0xbfc00200 + 0x184;
-        }
+    if (((cop0.status >> 22) & 0b1) == 0) {
+        pc = 0x80000180;
+        nextPc = 0x80000184;
+    } else {
+        pc = 0xbfc00200 + 0x180;
+        nextPc = 0xbfc00200 + 0x184;
     }
 }
 

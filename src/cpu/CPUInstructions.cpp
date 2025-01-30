@@ -160,6 +160,11 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
     switch (cacheOp) {
+        case 0x0: {
+            uint64_t line = (actualAddress >> 5) & 0x1ff;
+            cpu->bus.icache[line].valid = false;
+            break;
+        }
         case 0x1: {
             // write-back invalidate of dcachce
             uint64_t line = (actualAddress >> 4) & 0x1ff;
@@ -779,12 +784,22 @@ void CPU::dsra32(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::bltz(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bltz\n";
-    exit(1);
+    if ((int64_t)cpu->r[getRs(instruction)] < 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->nextPc = cpu->pc + amount;
+    }
 }
 void CPU::bgez(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bgez\n";
-    exit(1);
+    if ((int64_t)cpu->r[getRs(instruction)] >= 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->nextPc = cpu->pc + amount;
+    }
 }
 void CPU::bltzl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bltzl\n";
@@ -837,7 +852,7 @@ void CPU::bltzal(CPU* cpu, uint32_t instruction) {
 void CPU::bgezal(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
 
-    if (cpu->r[rs] >= 0) {
+    if ((int64_t)cpu->r[rs] >= 0) {
         uint32_t immediate = getImmediate(instruction);
 
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);

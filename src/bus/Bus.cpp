@@ -447,7 +447,7 @@ uint32_t Bus::readDataCache(uint64_t address) {
 
     if (!(dcacheHit(lineIndex, address))) {
         if (dcache[lineIndex].valid && dcache[lineIndex].dirty) {
-            writebackDataCache(lineIndex);
+            dcacheWriteback(lineIndex);
         }
         fillDataCache(lineIndex, address);
     } else {
@@ -462,7 +462,7 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int mask) {
 
     if (!dcacheHit(lineIndex, address)) {
         if (dcache[lineIndex].valid && dcache[lineIndex].dirty) {
-            writebackDataCache(lineIndex);
+            dcacheWriteback(lineIndex);
         }
         fillDataCache(lineIndex, address);
     } else {

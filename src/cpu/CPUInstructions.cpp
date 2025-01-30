@@ -492,7 +492,7 @@ void CPU::sll(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
     uint32_t shift = shiftAmount(instruction);
 
-    cpu->r[rd] = rt << shift;
+    cpu->r[rd] = cpu->r[rt] << shift;
 }
 void CPU::srl(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);

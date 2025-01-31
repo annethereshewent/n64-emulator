@@ -926,8 +926,12 @@ void COP1::cop1_l_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cop1_s_instrs(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cop1_s_instrs\n";
-    exit(1);
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException(true);
+        return;
+    }
 }
 
 void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {

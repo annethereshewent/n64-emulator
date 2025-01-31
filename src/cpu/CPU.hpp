@@ -97,10 +97,47 @@ public:
     static void cvtSW(CPU* cpu, uint32_t instruction);
     static void cvtDW(CPU* cpu, uint32_t instruction);
 
+    static void addS(CPU* cpu, uint32_t instruction);
+    static void subS(CPU* cpu, uint32_t instruction);
+    static void mulS(CPU* cpu, uint32_t instruction);
+    static void divS(CPU* cpu, uint32_t instruction);
+    static void sqrtS(CPU* cpu, uint32_t instruction);
+    static void absS(CPU* cpu, uint32_t instruction);
+    static void movS(CPU* cpu, uint32_t instruction);
+    static void negS(CPU* cpu, uint32_t instruction);
+    static void roundLS(CPU* cpu, uint32_t instruction);
+    static void truncLS(CPU* cpu, uint32_t instruction);
+    static void ceilLS(CPU* cpu, uint32_t instruction);
+    static void floorLS(CPU* cpu, uint32_t instruction);
+    static void roundWS(CPU* cpu, uint32_t instruction);
+    static void truncWS(CPU* cpu, uint32_t instruction);
+    static void ceilWS(CPU* cpu, uint32_t instruction);
+    static void floorWS(CPU* cpu, uint32_t instruction);
+    static void cvtDS(CPU* cpu, uint32_t instruction);
+    static void cvtWS(CPU* cpu, uint32_t instruction);
+    static void cvtLS(CPU* cpu, uint32_t instruction);
+    static void CFS(CPU* cpu, uint32_t instruction);
+    static void cUnS(CPU* cpu, uint32_t instruction);
+    static void cEqS(CPU* cpu, uint32_t instruction);
+    static void cUeqS(CPU* cpu, uint32_t instruction);
+    static void cOltS(CPU* cpu, uint32_t instruction);
+    static void cUltS(CPU* cpu, uint32_t instruction);
+    static void cOleS(CPU* cpu, uint32_t instruction);
+    static void cUleS(CPU* cpu, uint32_t instruction);
+    static void cSfS(CPU* cpu, uint32_t instruction);
+    static void cNgleS(CPU* cpu, uint32_t instruction);
+    static void cSeqS(CPU* cpu, uint32_t instruction);
+    static void cNglS(CPU* cpu, uint32_t instruction);
+    static void cLtS(CPU* cpu, uint32_t instruction);
+    static void cNgeS(CPU* cpu, uint32_t instruction);
+    static void cLeS(CPU* cpu, uint32_t instruction);
+    static void cNgtS(CPU* cpu, uint32_t instruction);
+
     void writeRegister(uint32_t index, uint64_t value);
     uint32_t readRegister(uint32_t index);
 
     std::array<CPUInstruction, 32> instructions;
+    std::array<CPUInstruction, 64> sInstructions;
 };
 
 class CPU {

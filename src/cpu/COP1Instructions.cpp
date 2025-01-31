@@ -6,9 +6,15 @@
 #include "CPU.hpp"
 
 // gotten from https://stackoverflow.com/questions/11611787/convert-a-32-bits-to-float-value
-union conv32
+union convu32
 {
     uint32_t u32; // here_write_bits
+    float    f32; // here_read_float
+};
+
+union convi32
+{
+    int32_t i32; // here_write_bits
     float    f32; // here_read_float
 };
 
@@ -38,6 +44,8 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     } else {
         cpu->cop1.fgr64[index] = doubleWord;
     }
+
+
 }
 void COP1::lwc1(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lwc1\n";
@@ -149,17 +157,28 @@ void COP1::dmtc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::mfc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mfc1\n";
-    exit(1);
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+        cpu->enterException(true);
+        return;
+    }
+
+    uint32_t returnVal;
+
+    uint32_t rd = CPU::getRd(instruction);
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        returnVal = cpu->cop1.fgr32[rd];
+    } else {
+        returnVal = (uint32_t)cpu->cop1.fgr64[rd];
+    }
+
+    cpu->r[CPU::getRt(instruction)] = returnVal;
 }
 
 void COP1::mtc1(CPU* cpu, uint32_t instruction) {
-    if (Bus::translateAddress(cpu->previousPc) == 0x325978) {
-        std::cout << "we're at the address!!!!!!\n";
-    }
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
-        std::cout << "entering an exception :-(\n";
         cpu->enterException(true);
         return;
     }
@@ -229,20 +248,56 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
 
     uint32_t dest = CPU::getFd(instruction);
 
-    uint32_t destValue = ((union conv32){.f32 = (float)value}).u32;
+    int32_t destValue = ((union convi32){.f32 = (float)value}).i32;
 
-    std::cout << "got destValue " << std::hex << destValue << "\n";
+    std::cout << "storing " << std::hex << destValue << " at index " << std::dec << dest << "\n";
 
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[dest] = destValue;
     } else {
-        cpu->cop1.fgr64[dest] = (cpu->cop1.fgr64[dest] & 0xffffffff00000000) | (uint64_t)destValue;
+        cpu->cop1.fgr64[dest] = (uint64_t)destValue;
     }
+
+    // TODO: add cycles
 }
 
 void COP1::addS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: addS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    std:: cout << "rd = " << std::dec << rd << ", rt = " << rt << "\n";
+
+    uint32_t op1;
+    uint32_t op2;
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        op1 = cpu->cop1.fgr32[rd];
+        op2 = cpu->cop1.fgr32[rt];
+    } else {
+        op1 = (uint32_t)cpu->cop1.fgr64[rd];
+        op2 = (uint32_t)cpu->cop1.fgr64[rt];
+    }
+
+    float float1 = ((union convu32){.u32 = op1}).f32;
+    float float2 = ((union convu32){.u32 = op2}).f32;
+
+    std::cout << "adding " << float1 << " and " << float2 << " together\n";
+
+    float result = float1 + float2;
+
+    uint32_t returnVal = ((union convu32){.f32 = result }).u32;
+
+    std::cout << "returning back " << std::hex << returnVal << "\n";
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[dest] = returnVal;
+    } else {
+        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
+    }
+
+    // TODO: add cycles
 }
 void COP1::subS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: subS\n";
@@ -253,8 +308,39 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::divS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: divS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    std:: cout << "rd = " << std::dec << rd << ", rt = " << rt << "\n";
+
+    uint32_t numeratorBits;
+    uint32_t denominatorBits;
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        numeratorBits = cpu->cop1.fgr32[rd];
+        denominatorBits = cpu->cop1.fgr32[rt];
+    } else {
+        numeratorBits = (uint32_t)cpu->cop1.fgr64[rd];
+        denominatorBits = (uint32_t)cpu->cop1.fgr64[rt];
+    }
+
+    float numerator = ((union convu32){.u32 = numeratorBits}).f32;
+    float denominator = ((union convu32){.u32 = denominatorBits }).f32;
+
+    float result = numerator / denominator;
+    uint32_t returnVal = ((union convu32){.f32 = result }).u32;
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    std::cout << "storing value " << std::hex << returnVal << " at index = " << std::dec << dest << "\n";
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[dest] = returnVal;
+    } else {
+        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
+    }
+
+    // TODO: add cycles
 }
 void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sqrtS\n";
@@ -293,8 +379,33 @@ void COP1::roundWS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::truncWS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: truncWS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+
+    uint32_t bits;
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        bits = cpu->cop1.fgr32[rd];
+    } else {
+        bits = (uint32_t)cpu->cop1.fgr64[rd];
+    }
+
+    int32_t truncated = (int32_t)((convu32){.u32 = bits}).f32;
+
+    std::cout << "truncated val = " << std::dec << truncated << "\n";
+    float result = ((convi32){.i32 = truncated}).f32;
+
+    uint32_t returnVal = ((convu32){.f32 = result }).u32;
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    std::cout << "returning " << std::hex << returnVal << " at index " << dest << "\n";
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[dest] = returnVal;
+    } else {
+        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
+    }
+
 }
 void COP1::ceilWS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ceilWS\n";
@@ -309,8 +420,24 @@ void COP1::cvtDS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtWS\n";
-    exit(1);
+    switch (cpu->cop1.fcsr.roundingMode) {
+        case 0:
+            roundWS(cpu, instruction);
+            break;
+        case 1:
+            truncWS(cpu, instruction);
+            break;
+        case 2:
+            ceilWS(cpu, instruction);
+            break;
+        case 3:
+            floorWS(cpu, instruction);
+            break;
+        default:
+            std::cout << "should be unreachable\n";
+            exit(1);
+            break;
+    }
 }
 void COP1::cvtLS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cvtLS\n";

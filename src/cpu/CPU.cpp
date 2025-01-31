@@ -4,6 +4,8 @@
 #include "CPU.hpp"
 #include "../bus/Bus.cpp"
 #include "CPUInstructions.cpp"
+#include "COP1Instructions.cpp"
+#include "COP0Instructions.cpp"
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -499,5 +501,32 @@ void CPU::step() {
             instructions[command](this, opcode);
             break;
     }
+}
 
+uint32_t CPU::getImmediate(uint32_t instruction) {
+    return instruction & 0xffff;
+}
+
+uint64_t CPU::getSignedImmediate(uint32_t instruction) {
+    return (int16_t)(int64_t)(uint64_t)(instruction & 0xffff);
+}
+
+uint32_t CPU::getRs(uint32_t instruction) {
+    return (instruction >> 21) & 0x1f;
+}
+
+uint32_t CPU::getRt(uint32_t instruction) {
+    return (instruction >> 16) & 0x1f;
+}
+
+uint32_t CPU::getRd(uint32_t instruction) {
+    return (instruction >> 11) & 0x1f;
+}
+
+uint32_t CPU::shiftAmount(uint32_t instruction) {
+    return (instruction >> 6) & 0x1f;
+}
+
+uint32_t CPU::getFd(uint32_t instruction) {
+    return (instruction >> 6) & 0x1f;
 }

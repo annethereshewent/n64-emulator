@@ -291,4 +291,11 @@ public:
     static void bltzall(CPU* cpu, uint32_t instruction);
     static void bgezall(CPU* cpu, uint32_t instruction);
 
+    static uint32_t getRt(uint32_t instruction);
+    static uint32_t getRs(uint32_t instruction);
+    static uint32_t getImmediate(uint32_t instruction);
+    static uint64_t getSignedImmediate(uint32_t instruction);
+    static uint32_t getRd(uint32_t instruction);
+    static uint32_t shiftAmount(uint32_t instruction);
+    static uint32_t getFd(uint32_t instruction);
 };

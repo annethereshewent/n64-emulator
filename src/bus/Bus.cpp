@@ -316,7 +316,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             videoInterface.vTotal = value & 0x3ff;
 
             // fire an interrupt. TODO: actually schedule it based on refresh rate and clock rate
-            std::cout << "setting vi interrupt flag\n";
             setInterrupt(VI_INTERRUPT_FLAG);
             break;
         case 0x440001c:
@@ -552,6 +551,135 @@ void Bus::dcacheWriteback(uint64_t line) {
 
 uint64_t Bus::translateAddress(uint64_t address) {
     return address & 0x1FFFFFFF;
+}
+
+void Bus::tlbWrite(uint32_t index) {
+    if (index > 31) {
+        return;
+    }
+
+    tlbUnmap(index);
+
+    tlbEntries[index].g = (uint8_t)(cpu->cop0.entryLo0 & cpu->cop0.entryLo1 & 1);
+
+    tlbEntries[index].pfnEven = (cpu->cop0.entryLo0 >> 6) & 0xfffff;
+    tlbEntries[index].pfnOdd = (cpu->cop0.entryLo1 >> 6) & 0xfffff;
+    tlbEntries[index].cEven = (uint8_t)((cpu->cop0.entryLo0 >> 3) & 7);
+    tlbEntries[index].cOdd = (uint8_t)((cpu->cop0.entryLo1 >> 3) & 7);
+    tlbEntries[index].dEven = (uint8_t)((cpu->cop0.entryLo0 >> 2) & 1);
+    tlbEntries[index].dOdd = (uint8_t)((cpu->cop0.entryLo1 >> 2) & 1);
+    tlbEntries[index].vEven = (uint8_t)((cpu->cop0.entryLo0 >> 1) & 1);
+    tlbEntries[index].vOdd = (uint8_t)((cpu->cop0.entryLo1 >> 1) & 1);
+
+    tlbEntries[index].asid = (uint8_t)cpu->cop0.entryHi;
+
+    tlbEntries[index].mask = ((cpu->cop0.pageMask >> 13) & 0xfff) & 0b101010101010;
+    tlbEntries[index].vpn2 = (cpu->cop0.entryHi >> 13) & 0x7ffffff;
+
+    tlbEntries[index].region = (uint8_t)(cpu->cop0.entryHi >> 62);
+
+    tlbEntries[index].mask |= tlbEntries[index].mask >> 1;
+
+    tlbEntries[index].vpn2 &= tlbEntries[index].mask;
+
+    tlbEntries[index].startEven = (tlbEntries[index].vpn2 << 13) & 0xffffffff;
+    tlbEntries[index].endEven = tlbEntries[index].startEven + (tlbEntries[index].mask << 12) + 0xfff;
+
+    tlbEntries[index].physEven = tlbEntries[index].pfnEven << 12;
+
+    tlbEntries[index].startOdd = tlbEntries[index].endEven + 1;
+    tlbEntries[index].endOdd = tlbEntries[index].startOdd + (tlbEntries[index].mask << 12) + 0xfff;
+
+    tlbEntries[index].physOdd = tlbEntries[index].pfnOdd << 12;
+
+    tlbMap(index);
+}
+
+void Bus::tlbRead(uint32_t index) {
+    if (index > 31) {
+        return;
+    }
+
+    cpu->cop0.pageMask = tlbEntries[index].mask << 13;
+
+    cpu->cop0.entryHi = (uint64_t)tlbEntries[index].region << 62 |
+        (uint64_t)tlbEntries[index].vpn2 << 13 |
+        (uint64_t)tlbEntries[index].asid;
+
+    cpu->cop0.entryLo0 = (uint64_t)tlbEntries[index].pfnEven << 6 |
+        (uint64_t)tlbEntries[index].cEven << 3 |
+        (uint64_t)tlbEntries[index].dEven << 2 |
+        (uint64_t)tlbEntries[index].vEven << 1 |
+        (uint64_t)tlbEntries[index].g;
+
+    cpu->cop0.entryLo1 = (uint64_t)tlbEntries[index].pfnOdd << 6 |
+        (uint64_t)tlbEntries[index].cOdd << 3 |
+        (uint64_t)tlbEntries[index].dOdd << 2 |
+        (uint64_t)tlbEntries[index].vOdd << 1 |
+        (uint64_t)tlbEntries[index].g;
+}
+
+void Bus::tlbProbe() {
+    uint64_t returnVal = 0x80000000;
+
+    for (uint64_t i = 0; i < tlbEntries.size(); i++) {
+        TlbEntry entry = tlbEntries[i];
+
+        if ((entry.vpn2 & ~entry.mask) == (((cpu->cop0.entryHi >> 13) & 0x7ffffff) & ~entry.mask) &&
+            entry.region == (uint8_t)(cpu->cop0.entryHi >> 62) &&
+            (entry.g != 0 || entry.asid == (uint8_t)cpu->cop0.entryHi)
+        ) {
+            returnVal = (uint64_t)i;
+            break;
+        }
+    }
+
+    cpu->cop0.index = returnVal;
+}
+
+void Bus::tlbMap(uint32_t index) {
+    TlbEntry entry = tlbEntries[index];
+
+    if (entry.vEven != 0 &&
+        entry.startEven < entry.endEven &&
+        !(entry.startEven >= 0x80000000 && entry.endEven < 0xc0000000) &&
+        entry.physEven < 0x20000000
+    ) {
+        for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+            tlbReadLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
+            tlbReadLut[i >> 12].cached = entry.cEven != 2;
+        }
+    }
+
+    if (entry.vOdd != 0 &&
+        entry.startOdd < entry.endOdd &&
+        !(entry.startOdd >= 0x80000000 && entry.endOdd < 0xc0000000) &&
+        entry.physOdd < 0x20000000
+    ) {
+        for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+            tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
+            tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
+        }
+    }
+
+}
+
+void Bus::tlbUnmap(uint32_t index) {
+    TlbEntry entry = tlbEntries[index];
+
+    if (entry.vEven != 0) {
+        for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+            tlbReadLut[i >> 12].address = 0;
+            tlbReadLut[i >> 12].cached = false;
+        }
+    }
+
+    if (entry.vOdd != 0) {
+        for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+            tlbWriteLut[i >> 12].address = 0;
+            tlbWriteLut[i >> 12].cached = false;
+        }
+    }
 }
 
 void Bus::setInterrupt(uint32_t flag) {

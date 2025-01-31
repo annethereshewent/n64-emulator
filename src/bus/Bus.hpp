@@ -13,11 +13,17 @@
 #include "mips_interface/MIPSInterface.cpp"
 #include "cache/ICache.hpp"
 #include "cache/DCache.hpp"
+#include "tlb/TlbEntry.hpp"
 
 class Bus {
 public:
     std::vector<uint8_t> rdram;
     std::vector<bool> rdram9;
+
+    std::vector<TlbLut> tlbReadLut;
+    std::vector<TlbLut> tlbWriteLut;
+
+    std::array<TlbEntry, 32> tlbEntries;
 
     CPU* cpu;
 
@@ -25,6 +31,9 @@ public:
         rdram.resize(0x800000);
         rdram9.resize(0x800000);
         spdmem.resize(0x1000);
+
+        tlbReadLut.resize(0x100000);
+        tlbWriteLut.resize(0x100000);
 
         rsp.status.value = 1;
 
@@ -83,6 +92,12 @@ public:
     void dmaWrite();
 
     void checkIrqs();
+
+    void tlbRead(uint32_t index);
+    void tlbWrite(uint32_t index);
+    void tlbMap(uint32_t index);
+    void tlbUnmap(uint32_t index);
+    void tlbProbe();
 
     static uint64_t translateAddress(uint64_t address);
 

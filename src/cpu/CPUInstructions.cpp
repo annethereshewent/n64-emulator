@@ -523,8 +523,18 @@ void CPU::div(CPU* cpu, uint32_t instruction) {
     // TODO: add cycles, do this for all div/mult operations
 }
 void CPU::divu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: divu\n";
-    exit(1);
+    uint32_t numerator = (uint32_t)cpu->r[getRs(instruction)];
+    uint32_t denominator = (uint32_t)cpu->r[getRt(instruction)];
+
+    if (denominator != 0) {
+        cpu->lo = (int32_t)(int64_t)(uint64_t)(numerator / denominator);
+        cpu->hi = (int32_t)(int64_t)(uint64_t)(numerator % denominator);
+    } else {
+        cpu->lo = 0xffffffffffffffff;
+        cpu->hi = (int32_t)(int64_t)(uint64_t)numerator;
+    }
+
+    // TODO: add cycles
 }
 void CPU::dmult(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dmult\n";

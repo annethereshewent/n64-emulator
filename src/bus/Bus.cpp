@@ -346,8 +346,17 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
         case 0x4500004:
             audioInterface.audioLength = value & 0x3ffff;
             break;
+        case 0x4500008:
+            audioInterface.dmaEnable = (value & 0b1) == 1;
+            break;
         case 0x450000c:
             clearInterrupt(AI_INTERRUPT_FLAG);
+            break;
+        case 0x4500010:
+            audioInterface.dacRate = value & 0x3fff;
+            break;
+        case 0x4500014:
+            audioInterface.bitRate = value & 0xf;
             break;
         case 0x4600000:
             peripheralInterface.dramAddress = value & 0xfffffe;

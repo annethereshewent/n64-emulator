@@ -48,8 +48,31 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
 
 }
 void COP1::lwc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lwc1\n";
-    exit(1);
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException(true);
+        return;
+    }
+
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t baseReg = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint32_t word = cpu->bus.memRead32(address);
+
+    uint32_t index = CPU::getRt(instruction);
+
+    std::cout << "storing " << std::hex << word << " at index " << std::dec << index << "\n";
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[index] = word;
+    } else {
+        cpu->cop1.fgr64[index] = (cpu->cop1.fgr64[index] & 0xffffffff00000000) | (uint64_t)word;
+    }
+
 }
 void COP1::reserved(CPU* cpu, uint32_t instruction) {
     std::cout << "instruction reserved for COP1\n";
@@ -207,6 +230,7 @@ void COP1::writeRegister(uint32_t index, uint64_t value) {
 
             if (enableBits & causeBits || fcsr.caseUnimplemented) {
                 std::cout << "lmao im supposed to throw some sort of floating point exception\n";
+                exit(1);
             }
             break;
         }
@@ -304,8 +328,44 @@ void COP1::subS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::mulS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mulS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    std:: cout << "rd = " << std::dec << rd << ", rt = " << rt << "\n";
+
+    uint32_t op1;
+    uint32_t op2;
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        op1 = cpu->cop1.fgr32[rd];
+        op2 = cpu->cop1.fgr32[rt];
+    } else {
+        op1 = (uint32_t)cpu->cop1.fgr64[rd];
+        op2 = (uint32_t)cpu->cop1.fgr64[rt];
+    }
+
+    float float1 = ((union convu32){.u32 = op1}).f32;
+    float float2 = ((union convu32){.u32 = op2}).f32;
+
+    std::cout << "float1 = " << float1 << ", float2 = " << float2 << "\n";
+
+    float result = float1 * float2;
+
+    std::cout << "result = " << result << "\n";
+
+    uint32_t returnVal = ((convu32){.f32 = result }).u32;
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    std::cout << "returning back " << std::hex << returnVal << " at index " << std::dec << dest << "\n";
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[dest] = returnVal;
+    } else {
+        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
+    }
+
+    // TODO: add cycles
 }
 void COP1::divS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);

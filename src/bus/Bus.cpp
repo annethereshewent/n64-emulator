@@ -314,6 +314,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             break;
         case 0x4400018:
             videoInterface.vTotal = value & 0x3ff;
+
+            // fire an interrupt. TODO: actually schedule it based on refresh rate and clock rate
+            std::cout << "setting vi interrupt flag\n";
+            setInterrupt(VI_INTERRUPT_FLAG);
             break;
         case 0x440001c:
             videoInterface.hTotal = value & 0xfff;

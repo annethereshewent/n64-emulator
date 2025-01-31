@@ -88,6 +88,8 @@ void COP1::cop1_s_instrs(CPU* cpu, uint32_t instruction) {
         cpu->enterException(true);
         return;
     }
+
+    cpu->cop1.sInstructions[instruction & 0x3f](cpu, instruction);
 }
 
 void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
@@ -236,4 +238,146 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
     } else {
         cpu->cop1.fgr64[dest] = (cpu->cop1.fgr64[dest] & 0xffffffff00000000) | (uint64_t)destValue;
     }
+}
+
+void COP1::addS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: addS\n";
+    exit(1);
+}
+void COP1::subS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: subS\n";
+    exit(1);
+}
+void COP1::mulS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: mulS\n";
+    exit(1);
+}
+void COP1::divS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: divS\n";
+    exit(1);
+}
+void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sqrtS\n";
+    exit(1);
+}
+void COP1::absS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: absS\n";
+    exit(1);
+}
+void COP1::movS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: movS\n";
+    exit(1);
+}
+void COP1::negS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: negS\n";
+    exit(1);
+}
+void COP1::roundLS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: roundLS\n";
+    exit(1);
+}
+void COP1::truncLS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: truncLS\n";
+    exit(1);
+}
+void COP1::ceilLS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ceilLS\n";
+    exit(1);
+}
+void COP1::floorLS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: floorLS\n";
+    exit(1);
+}
+void COP1::roundWS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: roundWS\n";
+    exit(1);
+}
+void COP1::truncWS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: truncWS\n";
+    exit(1);
+}
+void COP1::ceilWS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ceilWS\n";
+    exit(1);
+}
+void COP1::floorWS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: floorWS\n";
+    exit(1);
+}
+void COP1::cvtDS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtDS\n";
+    exit(1);
+}
+void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtWS\n";
+    exit(1);
+}
+void COP1::cvtLS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtLS\n";
+    exit(1);
+}
+void COP1::CFS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: CFS\n";
+    exit(1);
+}
+void COP1::cUnS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUnS\n";
+    exit(1);
+}
+void COP1::cEqS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cEqS\n";
+    exit(1);
+}
+void COP1::cUeqS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUeqS\n";
+    exit(1);
+}
+
+void COP1::cOltS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cOltS\n";
+    exit(1);
+}
+void COP1::cUltS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUltS\n";
+    exit(1);
+}
+void COP1::cOleS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cOleS\n";
+    exit(1);
+}
+void COP1::cUleS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUleS\n";
+    exit(1);
+}
+void COP1::cSfS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cSfS\n";
+    exit(1);
+}
+void COP1::cNgleS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgleS\n";
+    exit(1);
+}
+void COP1::cSeqS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cSeqS\n";
+    exit(1);
+}
+void COP1::cNglS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNglS\n";
+    exit(1);
+}
+void COP1::cLtS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cLtS\n";
+    exit(1);
+}
+void COP1::cNgeS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgeS\n";
+    exit(1);
+}
+void COP1::cLeS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cLeS\n";
+    exit(1);
+}
+void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgtS\n";
+    exit(1);
 }

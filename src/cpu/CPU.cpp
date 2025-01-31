@@ -302,10 +302,12 @@ void CPU::checkIrqs() {
         enterException();
     }
 }
-
-void CPU::enterException() {
+// the bool is a hacky way to get things to work properly.
+// TODO: properly check delay slot to determine what to set
+// the EPC to instead.
+void CPU::enterException(bool usePreviousPc) {
     if (((cop0.status >> 1) & 0b1) == 0) {
-        cop0.epc = pc;
+        cop0.epc = usePreviousPc ? previousPc : pc;
         if (nextPc != pc + 4) {
             cop0.cause |= 1 << 31;
         } else {

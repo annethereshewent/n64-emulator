@@ -457,7 +457,7 @@ uint32_t Bus::readDataCache(uint64_t address) {
     return dcache[lineIndex].words[(address >> 2) & 3];
 }
 
-void Bus::writeDataCache(uint64_t address, uint32_t value, int mask) {
+void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
     uint32_t lineIndex = (address >> 4) & 0x1ff;
 
     if (!dcacheHit(lineIndex, address)) {

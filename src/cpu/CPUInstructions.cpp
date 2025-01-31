@@ -22,10 +22,6 @@ uint64_t getSignedImmediate(uint32_t instruction) {
     return (int16_t)(int64_t)(uint64_t)(instruction & 0xffff);
 }
 
-uint32_t getSa(uint32_t instruction) {
-    return (instruction >> 6) & 0x1f;
-}
-
 uint32_t getRs(uint32_t instruction) {
     return (instruction >> 21) & 0x1f;
 }
@@ -39,6 +35,10 @@ uint32_t getRd(uint32_t instruction) {
 }
 
 uint32_t shiftAmount(uint32_t instruction) {
+    return (instruction >> 6) & 0x1f;
+}
+
+uint32_t getFd(uint32_t instruction) {
     return (instruction >> 6) & 0x1f;
 }
 void CPU::set(int i, uint64_t val) {
@@ -442,7 +442,7 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException();
+        cpu->enterException(true);
         return;
     }
 
@@ -453,6 +453,8 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     uint64_t address = cpu->r[baseReg] + immediate;
 
     uint64_t doubleWord = cpu->bus.memRead64(address);
+
+    std::cout << "storing doubleWord " << std::hex << doubleWord << "\n";
 
     uint32_t index = getRt(instruction);
 
@@ -799,16 +801,16 @@ void CPU::dsra(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::dsll32(CPU* cpu, uint32_t instruction) {
-    uint32_t shiftAmount = getSa(instruction) + 32;
-    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shiftAmount;
+    uint32_t shift = shiftAmount(instruction) + 32;
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shift;
 }
 void CPU::dsrl32(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsrl32\n";
     exit(1);
 }
 void CPU::dsra32(CPU* cpu, uint32_t instruction) {
-    uint32_t shiftAmount = getSa(instruction) + 32;
-    cpu->r[getRd(instruction)] = (uint64_t)((int64_t)cpu->r[getRt(instruction)] >> shiftAmount);
+    uint32_t shift = shiftAmount(instruction) + 32;
+    cpu->r[getRd(instruction)] = (uint64_t)((int64_t)cpu->r[getRt(instruction)] >> shift);
 }
 
 void CPU::bltz(CPU* cpu, uint32_t instruction) {
@@ -902,7 +904,7 @@ void COP1::cfc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException();
+        cpu->enterException(true);
         return;
     }
     cpu->r[getRt(instruction)] = (int32_t)(int64_t)(uint64_t)cpu->cop1.readRegister(getRd(instruction));
@@ -929,15 +931,32 @@ void COP1::cop1_s_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cop1_w_instrs\n";
-    exit(1);
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException(true);
+        return;
+    }
+
+    switch (instruction & 0x3f) {
+        case 32:
+            COP1::cvtSW(cpu, instruction);
+            break;
+        case 33:
+            COP1::cvtDW(cpu, instruction);
+            break;
+        default: {
+            COP1::reserved(cpu, instruction);
+            break;
+        }
+    }
 }
 
 void COP1::ctc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException();
+        cpu->enterException(true);
         return;
     }
 
@@ -973,15 +992,19 @@ void COP1::mfc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::mtc1(CPU* cpu, uint32_t instruction) {
+    if (Bus::translateAddress(cpu->previousPc) == 0x325978) {
+        std::cout << "we're at the address!!!!!!\n";
+    }
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
-
-        cpu->enterException();
+        std::cout << "entering an exception :-(\n";
+        cpu->enterException(true);
         return;
     }
     uint32_t value = (uint32_t)cpu->r[getRt(instruction)];
     uint32_t index = getRd(instruction);
 
+    std::cout << "storing value " << std::hex << value << " at index " << std::dec << index << "\n";
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[index] = value;
     } else {
@@ -1059,4 +1082,31 @@ void COP0::eret(CPU* cpu, uint32_t instruction) {
     cpu->llbit = false;
 
     cpu->checkIrqs();
+}
+
+void COP1::cvtDW(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtDW\n";
+    exit(1);
+}
+
+void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
+    uint32_t index = getRd(instruction);
+
+    int32_t value = (int32_t)cpu->cop1.fgr32[index];
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 1) {
+        value = (int32_t)cpu->cop1.fgr64[index];
+    }
+
+    uint32_t dest = getFd(instruction);
+
+    uint32_t destValue = ((union conv32){.f32 = (float)value}).u32;
+
+    std::cout << "got destValue " << std::hex << destValue << "\n";
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[dest] = destValue;
+    } else {
+        cpu->cop1.fgr64[dest] = (cpu->cop1.fgr64[dest] & 0xffffffff00000000) | (uint64_t)destValue;
+    }
 }

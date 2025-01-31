@@ -87,11 +87,15 @@ public:
     static void ctc1(CPU* cpu, uint32_t instructon);
     static void dctc1(CPU* cpu, uint32_t instructon);
 
+    // TODO: rename these to camel case
     static void cop1_b_instrs(CPU* cpu, uint32_t instructon);
     static void cop1_s_instrs(CPU* cpu, uint32_t instructon);
     static void cop1_d_instrs(CPU* cpu, uint32_t instructon);
     static void cop1_w_instrs(CPU* cpu, uint32_t instructon);
     static void cop1_l_instrs(CPU* cpu, uint32_t instructon);
+
+    static void cvtSW(CPU* cpu, uint32_t instruction);
+    static void cvtDW(CPU* cpu, uint32_t instruction);
 
     void writeRegister(uint32_t index, uint64_t value);
     uint32_t readRegister(uint32_t index);
@@ -133,7 +137,7 @@ public:
     void loadRom(std::string filename);
 
     void checkIrqs();
-    void enterException();
+    void enterException(bool usePreviousPc = false);
 
     // instructions
     static void reserved(CPU* cpu, uint32_t instruction);

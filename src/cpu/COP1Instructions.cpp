@@ -28,13 +28,10 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t immediate = CPU::getSignedImmediate(instruction);
     uint32_t baseReg = CPU::getRs(instruction);
-    uint32_t rt = CPU::getRt(instruction);
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
     uint64_t doubleWord = cpu->bus.memRead64(address);
-
-    std::cout << "storing doubleWord " << std::hex << doubleWord << "\n";
 
     uint32_t index = CPU::getRt(instruction);
 
@@ -57,15 +54,12 @@ void COP1::lwc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t immediate = CPU::getSignedImmediate(instruction);
     uint32_t baseReg = CPU::getRs(instruction);
-    uint32_t rt = CPU::getRt(instruction);
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
     uint32_t word = cpu->bus.memRead32(address);
 
     uint32_t index = CPU::getRt(instruction);
-
-    std::cout << "storing " << std::hex << word << " at index " << std::dec << index << "\n";
 
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[index] = word;
@@ -79,12 +73,40 @@ void COP1::reserved(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::sdc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sdc1\n";
-    exit(1);
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException(true);
+        return;
+    }
+
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t baseReg = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint64_t doubleWord = ((cpu->cop0.status >> 26) & 0b1) == 0 ? (uint64_t)cpu->cop1.fgr32[rt] | ((uint64_t)cpu->cop1.fgr32[rt + 1] << 32) : cpu->cop1.fgr64[rt];
+
+    cpu->bus.memWrite64(address, doubleWord);
 }
 void COP1::swc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: swc1\n";
-    exit(1);
+    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException(true);
+        return;
+    }
+
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t baseReg = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint32_t word = ((cpu->cop0.status >> 26) & 0b1) == 0 ? cpu->cop1.fgr32[rt] : (uint32_t)cpu->cop1.fgr64[rt];
+
+    cpu->bus.memWrite32(address, word);
 }
 
 void COP1::cfc1(CPU* cpu, uint32_t instruction) {
@@ -208,7 +230,6 @@ void COP1::mtc1(CPU* cpu, uint32_t instruction) {
     uint32_t value = (uint32_t)cpu->r[CPU::getRt(instruction)];
     uint32_t index = CPU::getRd(instruction);
 
-    std::cout << "storing value " << std::hex << value << " at index " << std::dec << index << "\n";
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[index] = value;
     } else {
@@ -274,8 +295,6 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
 
     int32_t destValue = ((union convi32){.f32 = (float)value}).i32;
 
-    std::cout << "storing " << std::hex << destValue << " at index " << std::dec << dest << "\n";
-
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[dest] = destValue;
     } else {
@@ -288,8 +307,6 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
 void COP1::addS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
-
-    std:: cout << "rd = " << std::dec << rd << ", rt = " << rt << "\n";
 
     uint32_t op1;
     uint32_t op2;
@@ -305,13 +322,9 @@ void COP1::addS(CPU* cpu, uint32_t instruction) {
     float float1 = ((union convu32){.u32 = op1}).f32;
     float float2 = ((union convu32){.u32 = op2}).f32;
 
-    std::cout << "adding " << float1 << " and " << float2 << " together\n";
-
     float result = float1 + float2;
 
     uint32_t returnVal = ((union convu32){.f32 = result }).u32;
-
-    std::cout << "returning back " << std::hex << returnVal << "\n";
 
     uint32_t dest = CPU::getFd(instruction);
 
@@ -331,8 +344,6 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    std:: cout << "rd = " << std::dec << rd << ", rt = " << rt << "\n";
-
     uint32_t op1;
     uint32_t op2;
 
@@ -347,17 +358,11 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
     float float1 = ((union convu32){.u32 = op1}).f32;
     float float2 = ((union convu32){.u32 = op2}).f32;
 
-    std::cout << "float1 = " << float1 << ", float2 = " << float2 << "\n";
-
     float result = float1 * float2;
-
-    std::cout << "result = " << result << "\n";
 
     uint32_t returnVal = ((convu32){.f32 = result }).u32;
 
     uint32_t dest = CPU::getFd(instruction);
-
-    std::cout << "returning back " << std::hex << returnVal << " at index " << std::dec << dest << "\n";
 
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[dest] = returnVal;
@@ -370,8 +375,6 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
 void COP1::divS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
-
-    std:: cout << "rd = " << std::dec << rd << ", rt = " << rt << "\n";
 
     uint32_t numeratorBits;
     uint32_t denominatorBits;
@@ -391,8 +394,6 @@ void COP1::divS(CPU* cpu, uint32_t instruction) {
     uint32_t returnVal = ((union convu32){.f32 = result }).u32;
 
     uint32_t dest = CPU::getFd(instruction);
-
-    std::cout << "storing value " << std::hex << returnVal << " at index = " << std::dec << dest << "\n";
 
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[dest] = returnVal;
@@ -451,14 +452,11 @@ void COP1::truncWS(CPU* cpu, uint32_t instruction) {
 
     int32_t truncated = (int32_t)((convu32){.u32 = bits}).f32;
 
-    std::cout << "truncated val = " << std::dec << truncated << "\n";
     float result = ((convi32){.i32 = truncated}).f32;
 
     uint32_t returnVal = ((convu32){.f32 = result }).u32;
 
     uint32_t dest = CPU::getFd(instruction);
-
-    std::cout << "returning " << std::hex << returnVal << " at index " << dest << "\n";
 
     if (((cpu->cop0.status >> 26) & 0b1) == 0) {
         cpu->cop1.fgr32[dest] = returnVal;

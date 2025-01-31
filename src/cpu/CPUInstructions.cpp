@@ -168,6 +168,15 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             }
             break;
         }
+        case 0x11: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            if (cpu->bus.dcacheHit(line, actualAddress)) {
+                cpu->bus.dcache[line].valid = false;
+                cpu->bus.dcache[line].dirty = false;
+            }
+            break;
+        }
         case 0x19: {
             uint64_t line = (actualAddress >> 4) & 0x1ff;
 
@@ -580,8 +589,7 @@ void CPU::addu(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rs] + (uint32_t)cpu->r[rt]);
 }
 void CPU::sub(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sub\n";
-    exit(1);
+    CPU::subu(cpu, instruction);
 }
 void CPU::subu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

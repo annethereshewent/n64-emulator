@@ -469,7 +469,6 @@ void CPU::step() {
     discarded = false;
     nextPc += 4;
 
-
     // if (!visited.contains(previousPc)) {
     //     uint32_t actualCommand = command;
     //     if (command == 0) {

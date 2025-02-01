@@ -54,6 +54,8 @@ public:
     static void reserved(CPU* cpu, uint32_t instruction);
 
     void writeRegister(uint32_t index, uint64_t value);
+
+    void addCycles(uint32_t cycles);
     uint64_t readRegister(uint32_t index);
 
     std::array<CPUInstruction, 64> instructions;

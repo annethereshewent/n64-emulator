@@ -23,6 +23,8 @@ public:
     XScale xScale;
     YScale yScale;
 
+    uint32_t clock = 48681812;
+
     bool interruptStarted;
     uint32_t delay;
 };

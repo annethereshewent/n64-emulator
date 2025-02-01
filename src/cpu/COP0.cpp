@@ -157,9 +157,14 @@ void COP0::writeRegister(uint32_t index, uint64_t value) {
         case 25:
         case 27:
         case 29:
+        case 31:
             // read only or unused
             break;
     }
+}
+
+void COP0::addCycles(uint32_t cycles) {
+    count += cycles;
 }
 
 uint64_t COP0::readRegister(uint32_t index) {

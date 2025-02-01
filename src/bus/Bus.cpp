@@ -315,6 +315,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
         case 0x4400018:
             if (videoInterface.vTotal != (value & 0x3ff)) {
                 videoInterface.vTotal = value & 0x3ff;
+                recalculateDelay();
 
                 if (!videoInterface.interruptStarted) {
                     videoInterface.interruptStarted = true;
@@ -324,7 +325,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             }
             break;
         case 0x440001c:
-            videoInterface.hTotal = value & 0xfff;
+            if (videoInterface.hTotal != (value & 0xfff)) {
+                videoInterface.hTotal = value & 0xfff;
+                recalculateDelay();
+            }
             break;
         case 0x4400020:
             videoInterface.hTotalLeap.value = value & 0xfffffff;
@@ -621,6 +625,14 @@ void Bus::tlbRead(uint32_t index) {
         (uint64_t)tlbEntries[index].dOdd << 2 |
         (uint64_t)tlbEntries[index].vOdd << 1 |
         (uint64_t)tlbEntries[index].g;
+}
+
+void Bus::recalculateDelay() {
+    double expectedRefreshRate = (double)videoInterface.clock / (double)(videoInterface.vTotal +1) / (double)((videoInterface.hTotal) + 1) * 2.0;
+
+    videoInterface.delay = (uint32_t)((double)cpu->clock / expectedRefreshRate);
+
+    std::cout << "delay is now = " << std::dec << videoInterface.delay << "\n";
 }
 
 void Bus::tlbProbe() {

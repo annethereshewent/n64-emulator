@@ -51,14 +51,17 @@ void COP0::syscall(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::tlbp(CPU* cpu, uint32_t instruction) {
+    std::cout << "inside tlbp\n";
     cpu->bus.tlbProbe();
 }
 
 void COP0::tlbr(CPU* cpu, uint32_t instruction) {
+    std::cout << "inside tlbr\n";
     cpu->bus.tlbRead(cpu->cop0.index);
 }
 
 void COP0::tlbwi(CPU* cpu, uint32_t instruction) {
+    std::cout << "inside tlbwi\n";
     cpu->bus.tlbWrite(cpu->cop0.index);
 }
 

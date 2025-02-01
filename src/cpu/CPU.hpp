@@ -11,6 +11,8 @@
 class CPU {
 public:
     std::array<uint64_t, 32> r;
+
+    uint32_t clock = 93750000;
     bool llbit = false;
 
     uint64_t hi = 0;

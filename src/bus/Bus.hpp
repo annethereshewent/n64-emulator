@@ -97,6 +97,8 @@ public:
     void tlbUnmap(uint32_t index);
     void tlbProbe();
 
+    void recalculateDelay();
+
     static uint64_t translateAddress(uint64_t address);
 
     static void writeWord(uint8_t* ptr, uint32_t value);

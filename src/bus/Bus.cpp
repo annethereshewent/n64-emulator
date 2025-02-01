@@ -437,6 +437,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
+                uint32_t cycles = ignoreCache ? 32 : 9;
+
+                cpu->cop0.addCycles(cycles);
+
                 Bus::writeWord(&rdram[actualAddress], value);
 
                 return;

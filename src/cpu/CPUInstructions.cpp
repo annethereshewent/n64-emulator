@@ -73,7 +73,7 @@ void CPU::beql(CPU* cpu, uint32_t instruction) {
    }
 }
 void CPU::bgtz(CPU* cpu, uint32_t instruction) {
-    if ((int64_t)cpu->getRs(instruction) > 0) {
+    if ((int64_t)cpu->r[getRs(instruction)] > 0) {
         uint32_t immediate = getImmediate(instruction);
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 

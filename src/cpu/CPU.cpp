@@ -12,6 +12,7 @@
 #include <bit>
 #include "COP0.cpp"
 
+// TODO (soon): move this to its own file
 COP0::COP0() {
     instructions = {
         COP0::mfc0,     // 0
@@ -84,6 +85,7 @@ COP0::COP0() {
     };
 }
 
+// TODO (soon): move this to its own file
 COP1::COP1() {
     instructions = {
         COP1::mfc1,           // 0
@@ -475,7 +477,7 @@ void CPU::step() {
     //         std::cout << "command is secondary\n";
     //         actualCommand = opcode & 0x3f;
     //     }
-    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
+    //     std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
     //     visited.insert(previousPc);
     // }
 

@@ -208,6 +208,14 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
             // TODO: implement V_CURRENT
             return videoInterface.vcurrent.value;
             break;
+        case 0x4500004:
+            // TODO: actually return the current audio length
+            return audioInterface.audioLength;
+            break;
+        case 0x450000c:
+            // TODO: implement this audio register
+            return 0;
+            break;
         case 0x4600010:
             return peripheralInterface.piStatus.value;
             break;
@@ -316,6 +324,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
         case 0x4400018:
             if (videoInterface.vTotal != (value & 0x3ff)) {
                 videoInterface.vTotal = value & 0x3ff;
+
                 recalculateDelay();
 
                 if (!videoInterface.interruptStarted) {
@@ -431,7 +440,12 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
 
                 Bus::writeWord(&pif.ram[offset], value);
 
-                // TODO: add scheduler and schedule this for later
+                // TODO: figure out why this is causing unexpected behavior
+                // cpu->scheduler.addEvent(Event(PIFExecuteCommand, cpu->cop0.count + 3200));
+
+                // serialInterface.status.dmaBusy = 1;
+                // serialInterface.status.ioBusy = 1;
+
                 pif.executeCommand();
 
                 serialInterface.status.dmaBusy = 0;

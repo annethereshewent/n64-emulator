@@ -73,8 +73,12 @@ void CPU::beql(CPU* cpu, uint32_t instruction) {
    }
 }
 void CPU::bgtz(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bgtz\n";
-    exit(1);
+    if ((int64_t)cpu->getRs(instruction) > 0) {
+        uint32_t immediate = getImmediate(instruction);
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->nextPc = cpu->pc + amount;
+    }
 }
 void CPU::bgtzl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bgtzl\n";
@@ -404,8 +408,7 @@ void CPU::swr(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::xori(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: xori\n";
-    exit(1);
+    cpu->r[getRt(instruction)] = cpu->r[getRs(instruction)] ^ (uint64_t)getImmediate(instruction);
 }
 
 void CPU::sll(CPU* cpu, uint32_t instruction) {

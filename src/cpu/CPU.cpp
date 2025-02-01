@@ -237,7 +237,6 @@ void CPU::loadRom(std::string filename) {
 
     file.read(reinterpret_cast<char*>(rom.data()), fileSize);
 
-
     std::vector<uint8_t> formattedRom;
 
     formattedRom.resize(fileSize);
@@ -339,6 +338,15 @@ void CPU::step() {
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
+                break;
+            case PIFExecuteCommand:
+                bus.pif.executeCommand();
+
+                bus.serialInterface.status.dmaBusy = 0;
+                bus.serialInterface.status.ioBusy = 0;
+                bus.serialInterface.status.interrupt = 1;
+
+                bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
         }
     }

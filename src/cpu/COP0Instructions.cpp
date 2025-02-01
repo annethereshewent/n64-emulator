@@ -41,7 +41,7 @@ void COP0::mtc0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::break_(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: break";
+    std::cout << "TODO: break\n";
     exit(1);
 }
 

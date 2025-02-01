@@ -5,7 +5,8 @@
 #include <vector>
 
 enum EventType {
-    VideoInterrupt
+    VideoInterrupt,
+    PIFExecuteCommand
 };
 
 class Event {

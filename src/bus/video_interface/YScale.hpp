@@ -7,5 +7,5 @@ typedef union YScale {
         unsigned int xOffset: 10;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } yscalebitset;

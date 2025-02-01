@@ -6,25 +6,28 @@
 #include "COP0.hpp"
 #include "COP1.hpp"
 #include <unordered_set>
+#include "Scheduler.hpp"
 
 class CPU {
 public:
     std::array<uint64_t, 32> r;
-    bool llbit;
+    bool llbit = false;
 
-    uint64_t hi;
-    uint64_t lo;
+    uint64_t hi = 0;
+    uint64_t lo = 0;
 
     uint64_t previousPc;
     uint64_t pc;
     uint64_t nextPc;
+
+    Scheduler scheduler;
 
     Bus bus;
 
     COP0 cop0;
     COP1 cop1;
 
-    bool discarded;
+    bool discarded = false;
 
     CPU();
 

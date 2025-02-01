@@ -313,10 +313,15 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             videoInterface.viBurst = value & 0x3fffffff;
             break;
         case 0x4400018:
-            videoInterface.vTotal = value & 0x3ff;
+            if (videoInterface.vTotal != (value & 0x3ff)) {
+                videoInterface.vTotal = value & 0x3ff;
 
-            // fire an interrupt. TODO: actually schedule it based on refresh rate and clock rate
-            setInterrupt(VI_INTERRUPT_FLAG);
+                if (!videoInterface.interruptStarted) {
+                    videoInterface.interruptStarted = true;
+
+                    cpu->scheduler.addEvent(Event(VideoInterrupt, cpu->cop0.count + videoInterface.delay));
+                }
+            }
             break;
         case 0x440001c:
             videoInterface.hTotal = value & 0xfff;
@@ -369,7 +374,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             break;
         case 0x460000c:
             peripheralInterface.wrLen = value & 0xffffff;
-            // TODO: schedule dma write transfer
             dmaWrite();
             setInterrupt(PI_INTERRUPT_FLAG);
             break;

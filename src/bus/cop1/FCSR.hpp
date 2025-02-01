@@ -23,5 +23,5 @@ typedef union FCSR {
         unsigned int flushDenormToZero: 24;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } fcsrbitset;

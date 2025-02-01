@@ -6,5 +6,5 @@ typedef union Config {
         unsigned int autoCC: 1;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } configbitset;

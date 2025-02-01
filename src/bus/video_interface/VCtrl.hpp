@@ -16,5 +16,5 @@ typedef union VCtrl {
         unsigned int deditherEnable: 1;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } vctrlbitset;

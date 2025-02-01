@@ -12,5 +12,5 @@ typedef union SIStatus {
         unsigned int reserved: 19;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } sibitset;

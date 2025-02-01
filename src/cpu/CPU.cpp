@@ -12,6 +12,7 @@
 #include <bit>
 #include "COP0.cpp"
 #include "COP1.cpp"
+#include "Scheduler.cpp"
 
 CPU::CPU(): bus(this) {
     r[0] = 0;
@@ -324,6 +325,18 @@ void CPU::step() {
         default:
             instructions[command](this, opcode);
             break;
+    }
+
+    if (scheduler.hasNextEvent(cop0.count)) {
+        Event event = scheduler.getNextEvent();
+
+        switch (event.eventType) {
+            case VideoInterrupt:
+                bus.setInterrupt(VI_INTERRUPT_FLAG);
+
+                scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
+                break;
+        }
     }
 }
 

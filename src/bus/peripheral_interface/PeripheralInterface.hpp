@@ -3,21 +3,21 @@
 class PeripheralInterface {
 public:
     PIStatus piStatus;
-    uint8_t dom1Latch;
-    uint8_t dom2Latch;
+    uint8_t dom1Latch = 0;
+    uint8_t dom2Latch = 0;
 
-    uint8_t dom1Pwd;
-    uint8_t dom2Pwd;
+    uint8_t dom1Pwd = 0;
+    uint8_t dom2Pwd = 0;
 
-    uint8_t dom1Pgs;
-    uint8_t dom2Pgs;
+    uint8_t dom1Pgs = 0;
+    uint8_t dom2Pgs = 0;
 
-    uint8_t dom1Rls;
-    uint8_t dom2Rls;
+    uint8_t dom1Rls = 0;
+    uint8_t dom2Rls = 0;
 
-    uint32_t dramAddress;
-    uint32_t cartAddress;
+    uint32_t dramAddress = 0;
+    uint32_t cartAddress = 0;
 
-    uint32_t wrLen;
-    uint32_t rdLen;
+    uint32_t wrLen = 0;
+    uint32_t rdLen = 0;
 };

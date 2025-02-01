@@ -15,5 +15,5 @@ typedef union DPCStatus {
         unsigned int startPending: 1;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } dpcbitfield;

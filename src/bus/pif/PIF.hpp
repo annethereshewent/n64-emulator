@@ -94,7 +94,7 @@ std::array<uint8_t, 1984> PIF_BOOT_ROM = {
 
 class PIF {
 public:
-    std::array<uint8_t, 0x3f> ram;
+    std::array<uint8_t, 64> ram = {};
 
     void executeCommand();
 

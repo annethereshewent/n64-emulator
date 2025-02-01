@@ -77,14 +77,12 @@ public:
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);
     void fillDataCache(uint32_t lineIndex, uint64_t address);
-     void dcacheWriteback(uint64_t line);
+    void dcacheWriteback(uint64_t line);
 
     void memWrite64(uint64_t address, uint64_t value);
     void memWrite32(uint64_t address, uint32_t value, bool ignoreCache = false);
     void memWrite16(uint64_t address, uint16_t value);
     void memWrite8(uint64_t address, uint8_t value);
-
-
 
     void setInterrupt(uint32_t flag);
     void clearInterrupt(uint32_t flag);

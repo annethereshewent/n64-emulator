@@ -7,5 +7,5 @@ typedef union Mode {
         unsigned int stopR: 1;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } modebitset;

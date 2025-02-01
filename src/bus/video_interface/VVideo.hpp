@@ -7,5 +7,5 @@ typedef union VVideo {
         unsigned int vStart: 10;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } vvideobitset;

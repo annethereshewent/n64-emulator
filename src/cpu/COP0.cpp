@@ -103,6 +103,8 @@ void COP0::writeRegister(uint32_t index, uint64_t value) {
         case 9:
             count = (uint32_t)value;
             count <<= 1;
+
+            // TODO: rebase scheduler cycles after setting count to this value.
             break;
         case 10:
             entryHi = value & 0xc00000ffffffe0ff;

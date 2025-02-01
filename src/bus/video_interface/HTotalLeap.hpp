@@ -7,5 +7,5 @@ typedef union HTotalLeap {
         unsigned int leapA: 12;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } htotalleapbitset;

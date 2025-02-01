@@ -8,33 +8,33 @@ class CPU;
 
 class COP0 {
 public:
-    uint32_t index;
-    uint32_t random;
-    uint64_t entryLo0;
-    uint64_t entryLo1;
-    uint64_t context;
-    uint32_t pageMask;
-    uint32_t wired;
-    uint64_t badVAddress;
-    uint32_t count;
-    uint64_t entryHi;
-    uint32_t compare;
-    uint32_t status;
-    uint32_t cause;
-    uint64_t epc;
-    uint32_t prid;
-    uint32_t config;
-    uint32_t llAddress;
-    uint32_t watchLo;
-    uint32_t watchHi;
-    uint64_t xContext;
-    uint32_t parityError;
-    uint32_t cacheError;
-    uint32_t tagLo;
-    uint32_t tagHi;
-    uint64_t errorEpc;
+    uint32_t index = 0;
+    uint32_t random = 0;
+    uint64_t entryLo0 = 0;
+    uint64_t entryLo1 = 0;
+    uint64_t context = 0;
+    uint32_t pageMask = 0;
+    uint32_t wired = 0;
+    uint64_t badVAddress = 0;
+    uint32_t count = 0;
+    uint64_t entryHi = 0;
+    uint32_t compare = 0;
+    uint32_t status = 0;
+    uint32_t cause = 0 ;
+    uint64_t epc = 0;
+    uint32_t prid = 0;
+    uint32_t config = 0;
+    uint32_t llAddress = 0;
+    uint32_t watchLo = 0;
+    uint32_t watchHi = 0;
+    uint64_t xContext = 0;
+    uint32_t parityError = 0;
+    uint32_t cacheError = 0;
+    uint32_t tagLo = 0;
+    uint32_t tagHi = 0;
+    uint64_t errorEpc = 0;
 
-    uint64_t latch;
+    uint64_t latch = 0;
 
     COP0();
 

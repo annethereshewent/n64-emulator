@@ -9,5 +9,5 @@ public:
     Config config;
     Mode mode;
 
-    uint32_t currentLoad;
+    uint32_t currentLoad = 0;
 };

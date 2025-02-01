@@ -4,5 +4,5 @@
 class SerialInterface {
 public:
     SIStatus status;
-    uint32_t dramAddress;
+    uint32_t dramAddress = 0;
 };

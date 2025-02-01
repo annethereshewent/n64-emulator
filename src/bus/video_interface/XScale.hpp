@@ -7,5 +7,5 @@ typedef union XScale {
         unsigned int xOffset: 12;
     };
 
-    uint32_t value;
+    uint32_t value = 0;
 } xscalebitset;

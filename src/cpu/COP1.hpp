@@ -13,8 +13,8 @@ public:
     FCSR fcsr;
     COP1();
 
-    std::array<uint32_t, 32> fgr32;
-    std::array<uint64_t, 32> fgr64;
+    std::array<uint32_t, 32> fgr32 = {};
+    std::array<uint64_t, 32> fgr64 = {};
 
     static void reserved(CPU* cpu, uint32_t instruction);
     static void lwc1(CPU* cpu, uint32_t instruction);

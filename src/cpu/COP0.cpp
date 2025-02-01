@@ -2,6 +2,78 @@
 
 #include "CPU.hpp"
 
+COP0::COP0() {
+    instructions = {
+        COP0::mfc0,     // 0
+        COP0::dmfc0,    // 1
+        COP0::reserved, // 2
+        COP0::reserved, // 3
+        COP0::mtc0,     // 4
+        COP0::dmtc0,    // 5
+        COP0::reserved, // 6
+        COP0::reserved, // 7
+        COP0::reserved, // 8
+        COP0::reserved, // 9
+        COP0::reserved, // a
+        COP0::reserved, // b
+        COP0::reserved, // c
+        COP0::reserved, // d
+        COP0::reserved, // e
+        COP0::reserved, // f
+        COP0::cp0,      // 10
+        COP0::reserved, // 11
+        COP0::reserved, // 12
+        COP0::reserved, // 13
+        COP0::reserved, // 14
+        COP0::reserved, // 15
+        COP0::reserved, // 16
+        COP0::reserved, // 17
+        COP0::reserved, // 18
+        COP0::reserved, // 19
+        COP0::reserved, // 1a
+        COP0::reserved, // 1b
+        COP0::reserved, // 1c
+        COP0::reserved, // 1d
+        COP0::reserved, // 1e
+        COP0::reserved, // 1f
+    };
+
+    cp0Instructions = {
+        COP0::reserved, // 0
+        COP0::tlbr,     // 1
+        COP0::tlbwi,    // 2
+        COP0::reserved, // 3
+        COP0::reserved, // 4
+        COP0::reserved, // 5
+        COP0::tlbwr,    // 6
+        COP0::reserved, // 7
+        COP0::tlbp,     // 8
+        COP0::reserved, // 9
+        COP0::reserved, // 10
+        COP0::reserved, // 11
+        COP0::reserved, // 12
+        COP0::reserved, // 13
+        COP0::reserved, // 14
+        COP0::reserved, // 15
+        COP0::reserved, // 16
+        COP0::reserved, // 17
+        COP0::reserved, // 18
+        COP0::reserved, // 19
+        COP0::reserved, // 20
+        COP0::reserved, // 21
+        COP0::reserved, // 22
+        COP0::reserved, // 23
+        COP0::eret,     // 24
+        COP0::reserved, // 25
+        COP0::reserved, // 26
+        COP0::reserved, // 27
+        COP0::reserved, // 28
+        COP0::reserved, // 29
+        COP0::reserved, // 30
+        COP0::reserved, // 31
+    };
+}
+
 // mask values gotten mostly from https://github.com/gopher64
 void COP0::writeRegister(uint32_t index, uint64_t value) {
     latch = value;

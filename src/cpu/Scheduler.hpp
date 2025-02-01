@@ -35,4 +35,6 @@ public:
     bool hasNextEvent(uint32_t cycles);
 
     Event getNextEvent();
+
+    void rebaseEvents(uint32_t oldCount, uint32_t newCount);
 };

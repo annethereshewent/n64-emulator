@@ -512,6 +512,8 @@ void CPU::multu(CPU* cpu, uint32_t instruction) {
     cpu->lo = (int32_t)(int64_t)(uint64_t)result;
 
     cpu->hi = (int32_t)(int64_t)(uint64_t)(result >> 32);
+
+    cpu->cop0.addCycles(4);
 }
 void CPU::div(CPU* cpu, uint32_t instruction) {
     uint64_t numerator = (int32_t)(int64_t)(uint64_t)cpu->r[getRs(instruction)];
@@ -529,7 +531,7 @@ void CPU::div(CPU* cpu, uint32_t instruction) {
         cpu->hi = numerator;
     }
 
-    // TODO: add cycles, do this for all div/mult operations
+    cpu->cop0.addCycles(36);
 }
 void CPU::divu(CPU* cpu, uint32_t instruction) {
     uint32_t numerator = (uint32_t)cpu->r[getRs(instruction)];
@@ -543,7 +545,7 @@ void CPU::divu(CPU* cpu, uint32_t instruction) {
         cpu->hi = (int32_t)(int64_t)(uint64_t)numerator;
     }
 
-    // TODO: add cycles
+    cpu->cop0.addCycles(36);
 }
 void CPU::dmult(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dmult\n";
@@ -554,6 +556,8 @@ void CPU::dmultu(CPU* cpu, uint32_t instruction) {
 
     cpu->lo = (uint64_t)result;
     cpu->hi = (uint64_t)(result >> 64);
+
+    cpu->cop0.addCycles(7);
 }
 void CPU::ddiv(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ddiv\n";
@@ -570,7 +574,8 @@ void CPU::ddivu(CPU* cpu, uint32_t instruction) {
         cpu->lo = 0xffffffffffffffff;
         cpu->hi = numerator;
     }
-    // TODO: add cycles here
+
+    cpu->cop0.addCycles(68);
 }
 void CPU::add(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

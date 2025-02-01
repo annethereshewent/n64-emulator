@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "CPUInstruction.hpp"
+#include "Scheduler.hpp"
 
 class CPU;
 
@@ -53,7 +54,7 @@ public:
 
     static void reserved(CPU* cpu, uint32_t instruction);
 
-    void writeRegister(uint32_t index, uint64_t value);
+    void writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler);
 
     void addCycles(uint32_t cycles);
     uint64_t readRegister(uint32_t index);

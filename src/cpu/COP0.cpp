@@ -75,7 +75,7 @@ COP0::COP0() {
 }
 
 // mask values gotten mostly from https://github.com/gopher64
-void COP0::writeRegister(uint32_t index, uint64_t value) {
+void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
     latch = value;
 
     // TODO: find out which of these registers are written to outside of here
@@ -100,12 +100,16 @@ void COP0::writeRegister(uint32_t index, uint64_t value) {
             random = 31;
             wired = (uint32_t)value & 0x3f;
             break;
-        case 9:
-            count = (uint32_t)value;
-            count <<= 1;
+        case 9: {
+            uint32_t newCount = (uint32_t)value;
+            newCount <<= 1;
 
-            // TODO: rebase scheduler cycles after setting count to this value.
+
+            scheduler->rebaseEvents(count, newCount);
+
+            count = newCount;
             break;
+        }
         case 10:
             entryHi = value & 0xc00000ffffffe0ff;
             break;

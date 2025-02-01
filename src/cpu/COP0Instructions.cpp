@@ -35,7 +35,7 @@ void COP0::mtc0(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    cpu->cop0.writeRegister(rd, (int32_t)(int64_t)(uint64_t)cpu->r[rt]);
+    cpu->cop0.writeRegister(rd, (int32_t)(int64_t)(uint64_t)cpu->r[rt], &cpu->scheduler);
 
     cpu->checkIrqs();
 }

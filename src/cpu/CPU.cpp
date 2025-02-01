@@ -219,6 +219,8 @@ void CPU::enterException(bool usePreviousPc) {
         pc = 0xbfc00200 + 0x180;
         nextPc = 0xbfc00200 + 0x184;
     }
+
+    cop0.addCycles(2);
 }
 
 void CPU::loadRom(std::string filename) {
@@ -326,6 +328,8 @@ void CPU::step() {
             instructions[command](this, opcode);
             break;
     }
+
+    cop0.addCycles(1);
 
     if (scheduler.hasNextEvent(cop0.count)) {
         Event event = scheduler.getNextEvent();

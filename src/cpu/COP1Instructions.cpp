@@ -301,7 +301,7 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
         cpu->cop1.fgr64[dest] = (uint64_t)destValue;
     }
 
-    // TODO: add cycles
+    cpu->cop0.addCycles(4);
 }
 
 void COP1::addS(CPU* cpu, uint32_t instruction) {
@@ -334,7 +334,7 @@ void COP1::addS(CPU* cpu, uint32_t instruction) {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
     }
 
-    // TODO: add cycles
+    cpu->cop0.addCycles(2);
 }
 void COP1::subS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: subS\n";
@@ -370,7 +370,7 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
     }
 
-    // TODO: add cycles
+    cpu->cop0.addCycles(4);
 }
 void COP1::divS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
@@ -400,8 +400,7 @@ void COP1::divS(CPU* cpu, uint32_t instruction) {
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
     }
-
-    // TODO: add cycles
+    cpu->cop0.addCycles(28);
 }
 void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sqrtS\n";
@@ -463,7 +462,7 @@ void COP1::truncWS(CPU* cpu, uint32_t instruction) {
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
     }
-
+    cpu->cop0.addCycles(4);
 }
 void COP1::ceilWS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ceilWS\n";

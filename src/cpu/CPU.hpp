@@ -31,6 +31,8 @@ public:
 
     bool discarded = false;
 
+    bool debugOn = false;
+
     CPU();
 
     std::array<CPUInstruction, 64> instructions;

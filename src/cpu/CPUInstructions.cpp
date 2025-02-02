@@ -184,7 +184,7 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
         case 0x19: {
             uint64_t line = (actualAddress >> 4) & 0x1ff;
 
-            if (cpu->bus.dcache[line].valid && (cpu->bus.dcache[line].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff) && cpu->bus.dcache[line].dirty) {
+            if (cpu->bus.dcacheHit(line, actualAddress) && cpu->bus.dcache[line].dirty) {
                 cpu->bus.dcacheWriteback(line);
             }
             break;

@@ -460,19 +460,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
 
                 Bus::writeWord(&pif.ram[offset], value);
 
-                // TODO: figure out why this is causing unexpected behavior
                 cpu->scheduler.addEvent(Event(PIFExecuteCommand, cpu->cop0.count + 3200));
 
                 serialInterface.status.dmaBusy = 1;
                 serialInterface.status.ioBusy = 1;
-
-                // pif.executeCommand();
-
-                // serialInterface.status.dmaBusy = 0;
-                // serialInterface.status.ioBusy = 0;
-                // serialInterface.status.interrupt = 1;
-
-                // setInterrupt(SI_INTERRUPT_FLAG);
                 return;
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {

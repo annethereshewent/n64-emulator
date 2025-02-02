@@ -787,18 +787,6 @@ void Bus::handleRspDma(SPDma dma) {
         memAddress -= 0x1000;
     }
 
-    std::cout << "length = " << std::dec <<
-        length <<
-        ", count = " <<
-        count <<
-        ", skip = " <<
-        skip <<
-        ", memAddress = " <<
-        std::hex << memAddress <<
-        ", dramAddress = " <<
-        dramAddress <<
-        "\n";
-
     if (dma.direction == Read) {
          std::cout << "doing a DMA transfer from rdram to imem/dmem\n";
         for (int i = 0; i < count; i++) {
@@ -834,8 +822,6 @@ void Bus::handleRspDma(SPDma dma) {
             dramAddress += skip;
         }
     }
-
-    exit(1);
 
     rsp.dmaMemAddress = memAddress;
     rsp.dmaRamAddress = dramAddress;

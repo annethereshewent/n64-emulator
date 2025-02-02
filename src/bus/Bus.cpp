@@ -286,13 +286,23 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
 
     switch (actualAddress) {
         case 0x4040000:
-            rsp.dmaMemAddress = value & 0x1fff;
+            rsp.dmaMemAddress = value & 0x1ffc;
             break;
         case 0x4040004:
-            rsp.dmaRamAddress = value & 0xffffff;
+            rsp.dmaRamAddress = value & 0xfffffc;
+            break;
+        case 0x4040008:
+            rsp.spReadLength.value = value;
+
+            rsp.pushDma(Read);
+
+            handleRspDma(rsp.fifo[0]);
             break;
         case 0x4040010:
             rsp.status.value = value;
+            break;
+        case 0x4080000:
+            rsp.pc = value & 0xffc;
             break;
         case 0x410000c:
             rdp.status.value = value;
@@ -437,7 +447,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                uint32_t cycles = ignoreCache ? 32 : 9;
+                uint32_t cycles = ignoreCache ? 9 : 32;
 
                 cpu->cop0.addCycles(cycles);
 
@@ -770,4 +780,85 @@ void Bus::checkIrqs() {
     } else {
         cpu->cop0.cause &= ~(1 << 10);
     }
+}
+
+void Bus::handleRspDma(SPDma dma) {
+    uint32_t length = dma.length.length + 1;
+    uint32_t count = dma.length.count + 1;
+    uint32_t skip = dma.length.skip;
+
+    uint32_t memAddress = dma.memAddress;
+    uint32_t dramAddress = dma.dramAddress;
+
+    bool isImem = (memAddress & 0x1000) != 0;
+
+    if (isImem) {
+        memAddress -= 0x1000;
+    }
+
+    std::cout << "length = " << std::dec <<
+        length <<
+        ", count = " <<
+        count <<
+        ", skip = " <<
+        skip <<
+        ", memAddress = " <<
+        std::hex << memAddress <<
+        ", dramAddress = " <<
+        dramAddress <<
+        "\n";
+
+    if (dma.direction == Read) {
+         std::cout << "doing a DMA transfer from rdram to imem/dmem\n";
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j < length; j += 4) {
+                uint32_t value = std::byteswap(*(uint32_t*)&rdram[dramAddress]);
+
+                std::cout << "writing word " << std::hex << value << " from address " << dramAddress << "\n";
+
+                uint8_t* ramPtr = isImem ? &rsp.imem[memAddress] : &rsp.dmem[memAddress];
+
+                writeWord(ramPtr, value);
+
+                memAddress += 4;
+                dramAddress += 4;
+            }
+            dramAddress += skip;
+        }
+    } else {
+        std::cout << "doing a DMA transfer from imem/dmem to rdram\n";
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j < length; j += 4) {
+                uint8_t* ramPtr = isImem ? &rsp.imem[memAddress] : &rsp.dmem[memAddress];
+
+                uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
+
+                std::cout << "writing word " << std::hex << value << "\n";
+
+                writeWord(&rdram[dramAddress], value);
+
+                memAddress += 4;
+                dramAddress += 4;
+            }
+            dramAddress += skip;
+        }
+    }
+
+    exit(1);
+
+    rsp.dmaMemAddress = memAddress;
+    rsp.dmaRamAddress = dramAddress;
+    rsp.spReadLength.value = 0xff8;
+    rsp.spWriteLength.value = 0xff8;
+
+    cpu->scheduler.addEvent(
+        Event(
+            RspDmaPop,
+            cpu->cop0.count + calculateRdRamCycles(dma.length.count * dma.length.length) + 9
+        )
+    );
+}
+
+uint32_t Bus::calculateRdRamCycles(uint32_t length) {
+    return 31 + (length / 3);
 }

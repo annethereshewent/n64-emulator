@@ -348,6 +348,11 @@ void CPU::step() {
 
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
+            case RspDmaPop:
+                if (bus.rsp.popDma()) {
+                    bus.handleRspDma(bus.rsp.fifo[0]);
+                }
+                break;
         }
     }
 }

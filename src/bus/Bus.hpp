@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "peripheral_interface/PeripheralInterface.hpp"
-#include "rsp/RSP.hpp"
+#include "rsp/RSP.cpp"
 #include "video_interface/VideoInterface.hpp"
 #include "audio_interface/AudioInterface.hpp"
 #include "serial_interface/SerialInterface.hpp"
@@ -88,6 +88,7 @@ public:
     void clearInterrupt(uint32_t flag);
 
     void dmaWrite();
+    void handleRspDma(SPDma dma);
 
     void checkIrqs();
 
@@ -104,4 +105,5 @@ public:
     static void writeWord(uint8_t* ptr, uint32_t value);
     static void writeHalf(uint8_t* ptr, uint16_t value);
     static void writeDoubleWord(uint8_t* ptr, uint64_t value);
+    static uint32_t calculateRdRamCycles(uint32_t length);
 };

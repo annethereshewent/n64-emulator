@@ -253,7 +253,12 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint32_t offset = actualAddress - 0x10000000;
 
-                return std::byteswap(*(uint32_t*)&cartridge[offset]);
+                if (offset < cartridge.size()) {
+                    return std::byteswap(*(uint32_t*)&cartridge[offset]);
+                }
+
+                std::cout << "invalid offset given to cartridge: " << std::hex << offset << "\n";
+                exit(1);
             }
             if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
 

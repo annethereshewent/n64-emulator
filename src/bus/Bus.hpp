@@ -100,6 +100,9 @@ public:
 
     void recalculateDelay();
 
+    void updateRspStatus(uint32_t value);
+    uint64_t runRspPc();
+
     static uint64_t translateAddress(uint64_t address);
 
     static void writeWord(uint8_t* ptr, uint32_t value);

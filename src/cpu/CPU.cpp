@@ -353,6 +353,9 @@ void CPU::step() {
                     bus.handleRspDma(bus.rsp.fifo[0]);
                 }
                 break;
+            case RunRspPc:
+                // do something
+                break;
         }
     }
 }

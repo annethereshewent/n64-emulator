@@ -38,5 +38,4 @@ bool RSP::popDma() {
     status.dmaBusy = 0;
 
     return false;
-
 }

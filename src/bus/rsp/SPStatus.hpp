@@ -9,6 +9,7 @@ typedef union SPStatus {
         unsigned int ioBusy: 1;
         unsigned int singleStep: 1;
         unsigned int intBreak: 1;
+        unsigned int flag0: 1;
         unsigned int flag1: 1;
         unsigned int flag2: 1;
         unsigned int flag3: 1;
@@ -16,7 +17,6 @@ typedef union SPStatus {
         unsigned int flag5: 1;
         unsigned int flag6: 1;
         unsigned int flag7: 1;
-        unsigned int flag8: 1;
     };
 
     uint32_t value = 0;

@@ -330,7 +330,7 @@ void CPU::step() {
 
     cop0.addCycles(1);
 
-    if (scheduler.hasNextEvent(cop0.count)) {
+    while (scheduler.hasNextEvent(cop0.count)) {
         Event event = scheduler.getNextEvent();
 
         switch (event.eventType) {

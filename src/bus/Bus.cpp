@@ -831,7 +831,7 @@ void Bus::handleRspDma(SPDma dma) {
     cpu->scheduler.addEvent(
         Event(
             RspDmaPop,
-            cpu->cop0.count + calculateRdRamCycles(dma.length.count * dma.length.length) + 9
+            cpu->cop0.count + calculateRdRamCycles(count * length) + 9
         )
     );
 }

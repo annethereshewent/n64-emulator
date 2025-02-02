@@ -24,7 +24,7 @@ public:
 class Comparator {
 public:
     bool operator() (Event l, Event r) {
-        return l.cycles < r.cycles;
+        return l.cycles > r.cycles;
     }
 };
 

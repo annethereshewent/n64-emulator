@@ -20,6 +20,10 @@ class RSP {
 public:
     SPStatus status;
     uint32_t pc = 0;
+
+    bool cpuBroken = false;
+    uint64_t cycleCounter = 0;
+
     uint16_t dmaMemAddress = 0;
     uint32_t dmaRamAddress = 0;
     SPLength spReadLength;

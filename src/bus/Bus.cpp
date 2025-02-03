@@ -663,8 +663,6 @@ void Bus::recalculateDelay() {
     double expectedRefreshRate = (double)videoInterface.clock / (double)(videoInterface.vTotal +1) / (double)((videoInterface.hTotal) + 1) * 2.0;
 
     videoInterface.delay = (uint32_t)((double)cpu->clock / expectedRefreshRate);
-
-    std::cout << "delay is now = " << std::dec << videoInterface.delay << "\n";
 }
 
 void Bus::tlbProbe() {
@@ -795,12 +793,9 @@ void Bus::handleRspDma(SPDma dma) {
     }
 
     if (dma.direction == Read) {
-         std::cout << "doing a DMA transfer from rdram to imem/dmem\n";
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
                 uint32_t value = std::byteswap(*(uint32_t*)&rdram[dramAddress]);
-
-                std::cout << "writing word " << std::hex << value << " from address " << dramAddress << "\n";
 
                 uint8_t* ramPtr = isImem ? &rsp.imem[memAddress] : &rsp.dmem[memAddress];
 
@@ -812,14 +807,11 @@ void Bus::handleRspDma(SPDma dma) {
             dramAddress += skip;
         }
     } else {
-        std::cout << "doing a DMA transfer from imem/dmem to rdram\n";
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
                 uint8_t* ramPtr = isImem ? &rsp.imem[memAddress] : &rsp.dmem[memAddress];
 
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
-
-                std::cout << "writing word " << std::hex << value << "\n";
 
                 writeWord(&rdram[dramAddress], value);
 
@@ -847,8 +839,8 @@ uint32_t Bus::calculateRdRamCycles(uint32_t length) {
     return 31 + (length / 3);
 }
 
-uint64_t Bus::runRspPc() {
-
+uint64_t Bus::runRsp() {
+    return 0;
 }
 
 // tried to put this in RSP but due to needing to use the bus class
@@ -860,10 +852,10 @@ void Bus::updateRspStatus(uint32_t value) {
 
     bool previousHalt = status->halted;
 
-    if (value & 0b1 == 1 && ((value >> 1) & 0b1) == 0) {
+    if ((value & 0b1) == 1 && ((value >> 1) & 0b1) == 0) {
         status->halted = 0;
     }
-    if (value & 0b1 == 0 & ((value >> 1) & 0b1) == 1) {
+    if ((value & 0b1) == 0 & ((value >> 1) & 0b1) == 1) {
         status->halted = 1;
         // todo: remove from scheduler rsp pc event
     }
@@ -938,6 +930,6 @@ void Bus::updateRspStatus(uint32_t value) {
     }
 
     if (!status->halted && previousHalt) {
-       runRspPc();
+       runRsp();
     }
 }

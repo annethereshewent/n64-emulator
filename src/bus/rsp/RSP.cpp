@@ -3,8 +3,64 @@
 #include "RSP.hpp"
 #include <iostream>
 #include "../Bus.hpp"
+#include <bit>
 
-class Bus;
+void RSP::handleDma(SPDma dma) {
+    uint32_t length = dma.length.length + 1;
+    uint32_t count = dma.length.count + 1;
+    uint32_t skip = dma.length.skip;
+
+    uint32_t memAddress = dma.memAddress;
+    uint32_t dramAddress = dma.dramAddress;
+
+    bool isImem = (memAddress & 0x1000) != 0;
+
+    if (isImem) {
+        memAddress -= 0x1000;
+    }
+
+    if (dma.direction == Read) {
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j < length; j += 4) {
+                uint32_t value = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress]);
+
+                uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
+
+                bus.writeWord(ramPtr, value);
+
+                memAddress += 4;
+                dramAddress += 4;
+            }
+            dramAddress += skip;
+        }
+    } else {
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j < length; j += 4) {
+                uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
+
+                uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
+
+                bus.writeWord(&bus.rdram[dramAddress], value);
+
+                memAddress += 4;
+                dramAddress += 4;
+            }
+            dramAddress += skip;
+        }
+    }
+
+    dmaMemAddress = memAddress;
+    dmaRamAddress = dramAddress;
+    spReadLength.value = 0xff8;
+    spWriteLength.value = 0xff8;
+
+    bus.cpu.scheduler.addEvent(
+        Event(
+            RspDmaPop,
+            bus.cpu.cop0.count + bus.calculateRdRamCycles(count * length) + 9
+        )
+    );
+}
 
 void RSP::pushDma(DmaDirection direction) {
     if (status.dmaFull) {
@@ -27,9 +83,11 @@ void RSP::pushDma(DmaDirection direction) {
 
         status.dmaBusy = 1;
     }
+
+    handleDma(fifo[0]);
 }
 
-void RSP::updateStatus(Bus* bus, uint32_t value) {
+void RSP::updateStatus(uint32_t value) {
     bool previousHalt = status.halted;
 
     if ((value & 0b1) == 1 && ((value >> 1) & 0b1) == 0) {
@@ -43,10 +101,10 @@ void RSP::updateStatus(Bus* bus, uint32_t value) {
         status.broke = 0;
     }
     if (((value >> 3) & 0b1) == 1 && ((value >> 4) & 0b1) == 0) {
-        bus->clearInterrupt(SP_INTERRUPT_FLAG);
+        bus.clearInterrupt(SP_INTERRUPT_FLAG);
     }
     if (((value >> 3) & 0b1) == 0 && ((value >> 4) & 0b1) == 1) {
-        bus->setInterrupt(SP_INTERRUPT_FLAG);
+        bus.setInterrupt(SP_INTERRUPT_FLAG);
     }
     if (((value >> 5) & 0b1) == 1 && ((value >> 6) & 0b1) == 0) {
         status.singleStep = 0;
@@ -110,24 +168,22 @@ void RSP::updateStatus(Bus* bus, uint32_t value) {
     }
 
     if (!status.halted && previousHalt) {
-       runRsp(bus);
+       runRsp();
     }
 }
 
-bool RSP::popDma() {
+void RSP::popDma() {
     if (status.dmaFull) {
         fifo[0] = fifo[1];
 
         status.dmaFull = 0;
 
-        return true;
+        handleDma(fifo[0]);
+    } else {
+        status.dmaBusy = 0;
     }
-
-    status.dmaBusy = 0;
-
-    return false;
 }
 
-uint64_t RSP::runRsp(Bus* bus) {
+uint64_t RSP::runRsp() {
     return 0;
 }

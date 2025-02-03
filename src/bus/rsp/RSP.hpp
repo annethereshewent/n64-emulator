@@ -25,6 +25,10 @@ public:
     SPStatus status;
     uint32_t pc = 0;
 
+    Bus& bus;
+
+    RSP(Bus& bus) : bus(bus) {};
+
     bool cpuBroken = false;
     uint64_t cycleCounter = 0;
 
@@ -38,9 +42,11 @@ public:
     std::array<uint8_t, 0x1000> imem = {};
     std::array<uint8_t, 0x1000> dmem = {};
 
-    void pushDma(DmaDirection direction);
-    bool popDma();
+    void handleDma(SPDma dma);
 
-    void updateStatus(Bus* bus, uint32_t value);
-    uint64_t runRsp(Bus* bus);
+    void pushDma(DmaDirection direction);
+    void popDma();
+
+    void updateStatus(uint32_t value);
+    uint64_t runRsp();
 };

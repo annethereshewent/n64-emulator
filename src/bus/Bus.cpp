@@ -297,12 +297,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             rsp.spReadLength.value = value;
 
             rsp.pushDma(Read);
-
-            handleRspDma(rsp.fifo[0]);
             break;
         case 0x4040010:
             // rsp.status.value = value;
-            rsp.updateStatus(this, value);
+            rsp.updateStatus(value);
             break;
         case 0x4080000:
             rsp.pc = value & 0xffc;
@@ -774,67 +772,6 @@ void Bus::checkIrqs() {
     }
 }
 
-void Bus::handleRspDma(SPDma dma) {
-    uint32_t length = dma.length.length + 1;
-    uint32_t count = dma.length.count + 1;
-    uint32_t skip = dma.length.skip;
-
-    uint32_t memAddress = dma.memAddress;
-    uint32_t dramAddress = dma.dramAddress;
-
-    bool isImem = (memAddress & 0x1000) != 0;
-
-    if (isImem) {
-        memAddress -= 0x1000;
-    }
-
-    if (dma.direction == Read) {
-        for (int i = 0; i < count; i++) {
-            for (int j = 0; j < length; j += 4) {
-                uint32_t value = std::byteswap(*(uint32_t*)&rdram[dramAddress]);
-
-                uint8_t* ramPtr = isImem ? &rsp.imem[memAddress] : &rsp.dmem[memAddress];
-
-                writeWord(ramPtr, value);
-
-                memAddress += 4;
-                dramAddress += 4;
-            }
-            dramAddress += skip;
-        }
-    } else {
-        for (int i = 0; i < count; i++) {
-            for (int j = 0; j < length; j += 4) {
-                uint8_t* ramPtr = isImem ? &rsp.imem[memAddress] : &rsp.dmem[memAddress];
-
-                uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
-
-                writeWord(&rdram[dramAddress], value);
-
-                memAddress += 4;
-                dramAddress += 4;
-            }
-            dramAddress += skip;
-        }
-    }
-
-    rsp.dmaMemAddress = memAddress;
-    rsp.dmaRamAddress = dramAddress;
-    rsp.spReadLength.value = 0xff8;
-    rsp.spWriteLength.value = 0xff8;
-
-    cpu.scheduler.addEvent(
-        Event(
-            RspDmaPop,
-            cpu.cop0.count + calculateRdRamCycles(count * length) + 9
-        )
-    );
-}
-
 uint32_t Bus::calculateRdRamCycles(uint32_t length) {
     return 31 + (length / 3);
-}
-
-uint64_t Bus::runRsp() {
-    return 0;
 }

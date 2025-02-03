@@ -14,7 +14,7 @@
 #include "COP1.cpp"
 #include "Scheduler.cpp"
 
-CPU::CPU(): bus(this) {
+CPU::CPU(): bus(*this) {
     r[0] = 0;
 
     pc = 0xBFC00000;

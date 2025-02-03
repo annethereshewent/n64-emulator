@@ -10,7 +10,7 @@
 #include "rdp/RDP.hpp"
 #include "pif/PIF.cpp"
 #include "rdram_interface/RDInterface.hpp"
-#include "mips_interface/MIPSInterface.cpp"
+#include "mips_interface/MIPSInterface.hpp"
 #include "cache/ICache.hpp"
 #include "cache/DCache.hpp"
 #include "tlb/TlbEntry.hpp"
@@ -31,9 +31,9 @@ public:
 
     std::array<TlbEntry, 32> tlbEntries;
 
-    CPU* cpu;
+    CPU& cpu;
 
-    Bus(CPU* cpu): cpu(cpu) {
+    Bus(CPU& cpu): cpu(cpu) {
         rdram.resize(0x800000);
         rdram9.resize(0x800000);
         spdmem.resize(0x1000);
@@ -49,8 +49,6 @@ public:
         for (int i = 0; i < dcache.size(); i++) {
             dcache[i].index = (uint16_t)(i << 4) & 0xff0;
         }
-
-        this->cpu = cpu;
     };
 
     std::vector<uint8_t> spdmem;

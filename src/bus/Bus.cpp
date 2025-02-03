@@ -6,6 +6,7 @@
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
 #include "rsp/RSP.cpp"
+#include "mips_interface/MIPSInterface.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -263,7 +264,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
                 return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
             }
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
-                cpu->cop0.addCycles(3000);
+                cpu.cop0.addCycles(3000);
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
                 return std::byteswap(*(uint32_t*)&pif.ram[offset]);
@@ -313,12 +314,12 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             mips.write(value);
             // TODO: clear dp interrupt
             checkIrqs();
-            cpu->checkIrqs();
+            cpu.checkIrqs();
             break;
         case 0x430000c:
             mips.setMask(value);
             checkIrqs();
-            cpu->checkIrqs();
+            cpu.checkIrqs();
             break;
         case 0x4400000:
             videoInterface.ctrl.value = value & 0x1ffff;
@@ -348,7 +349,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
                 if (!videoInterface.interruptStarted) {
                     videoInterface.interruptStarted = true;
 
-                    cpu->scheduler.addEvent(Event(VideoInterrupt, cpu->cop0.count + videoInterface.delay));
+                    cpu.scheduler.addEvent(Event(VideoInterrupt, cpu.cop0.count + videoInterface.delay));
                 }
             }
             break;
@@ -451,7 +452,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             if (actualAddress <= 0x03EFFFFF) {
                 uint32_t cycles = ignoreCache ? 9 : 32;
 
-                cpu->cop0.addCycles(cycles);
+                cpu.cop0.addCycles(cycles);
 
                 Bus::writeWord(&rdram[actualAddress], value);
 
@@ -462,7 +463,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
 
                 Bus::writeWord(&pif.ram[offset], value);
 
-                cpu->scheduler.addEvent(Event(PIFExecuteCommand, cpu->cop0.count + 3200));
+                cpu.scheduler.addEvent(Event(PIFExecuteCommand, cpu.cop0.count + 3200));
 
                 serialInterface.status.dmaBusy = 1;
                 serialInterface.status.ioBusy = 1;
@@ -499,7 +500,7 @@ uint32_t Bus::readDataCache(uint64_t address) {
         }
         fillDataCache(lineIndex, address);
     } else {
-        cpu->cop0.addCycles(1);
+        cpu.cop0.addCycles(1);
     }
 
     return dcache[lineIndex].words[(address >> 2) & 3];
@@ -514,7 +515,7 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
         }
         fillDataCache(lineIndex, address);
     } else {
-        cpu->cop0.addCycles(1);
+        cpu.cop0.addCycles(1);
     }
 
     uint32_t returnValue = value;
@@ -529,7 +530,7 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
 }
 
 void Bus::fillDataCache(uint32_t lineIndex, uint64_t address) {
-    cpu->cop0.addCycles(7);
+    cpu.cop0.addCycles(7);
 
     dcache[lineIndex].valid = true;
     dcache[lineIndex].dirty = false;
@@ -573,7 +574,7 @@ void Bus::writeHalf(uint8_t* ptr, uint16_t value) {
 }
 
 void Bus::dcacheWriteback(uint64_t line) {
-    cpu->cop0.addCycles(36);
+    cpu.cop0.addCycles(36);
     dcache[line].dirty = false;
 
     uint64_t cacheAddress = (dcache[line].tag | dcache[line].index) & 0x1ffffffc;
@@ -595,23 +596,23 @@ void Bus::tlbWrite(uint32_t index) {
 
     tlbUnmap(index);
 
-    tlbEntries[index].g = (uint8_t)(cpu->cop0.entryLo0 & cpu->cop0.entryLo1 & 1);
+    tlbEntries[index].g = (uint8_t)(cpu.cop0.entryLo0 & cpu.cop0.entryLo1 & 1);
 
-    tlbEntries[index].pfnEven = (cpu->cop0.entryLo0 >> 6) & 0xfffff;
-    tlbEntries[index].pfnOdd = (cpu->cop0.entryLo1 >> 6) & 0xfffff;
-    tlbEntries[index].cEven = (uint8_t)((cpu->cop0.entryLo0 >> 3) & 7);
-    tlbEntries[index].cOdd = (uint8_t)((cpu->cop0.entryLo1 >> 3) & 7);
-    tlbEntries[index].dEven = (uint8_t)((cpu->cop0.entryLo0 >> 2) & 1);
-    tlbEntries[index].dOdd = (uint8_t)((cpu->cop0.entryLo1 >> 2) & 1);
-    tlbEntries[index].vEven = (uint8_t)((cpu->cop0.entryLo0 >> 1) & 1);
-    tlbEntries[index].vOdd = (uint8_t)((cpu->cop0.entryLo1 >> 1) & 1);
+    tlbEntries[index].pfnEven = (cpu.cop0.entryLo0 >> 6) & 0xfffff;
+    tlbEntries[index].pfnOdd = (cpu.cop0.entryLo1 >> 6) & 0xfffff;
+    tlbEntries[index].cEven = (uint8_t)((cpu.cop0.entryLo0 >> 3) & 7);
+    tlbEntries[index].cOdd = (uint8_t)((cpu.cop0.entryLo1 >> 3) & 7);
+    tlbEntries[index].dEven = (uint8_t)((cpu.cop0.entryLo0 >> 2) & 1);
+    tlbEntries[index].dOdd = (uint8_t)((cpu.cop0.entryLo1 >> 2) & 1);
+    tlbEntries[index].vEven = (uint8_t)((cpu.cop0.entryLo0 >> 1) & 1);
+    tlbEntries[index].vOdd = (uint8_t)((cpu.cop0.entryLo1 >> 1) & 1);
 
-    tlbEntries[index].asid = (uint8_t)cpu->cop0.entryHi;
+    tlbEntries[index].asid = (uint8_t)cpu.cop0.entryHi;
 
-    tlbEntries[index].mask = ((cpu->cop0.pageMask >> 13) & 0xfff) & 0b101010101010;
-    tlbEntries[index].vpn2 = (cpu->cop0.entryHi >> 13) & 0x7ffffff;
+    tlbEntries[index].mask = ((cpu.cop0.pageMask >> 13) & 0xfff) & 0b101010101010;
+    tlbEntries[index].vpn2 = (cpu.cop0.entryHi >> 13) & 0x7ffffff;
 
-    tlbEntries[index].region = (uint8_t)(cpu->cop0.entryHi >> 62);
+    tlbEntries[index].region = (uint8_t)(cpu.cop0.entryHi >> 62);
 
     tlbEntries[index].mask |= tlbEntries[index].mask >> 1;
 
@@ -635,19 +636,19 @@ void Bus::tlbRead(uint32_t index) {
         return;
     }
 
-    cpu->cop0.pageMask = tlbEntries[index].mask << 13;
+    cpu.cop0.pageMask = tlbEntries[index].mask << 13;
 
-    cpu->cop0.entryHi = (uint64_t)tlbEntries[index].region << 62 |
+    cpu.cop0.entryHi = (uint64_t)tlbEntries[index].region << 62 |
         (uint64_t)tlbEntries[index].vpn2 << 13 |
         (uint64_t)tlbEntries[index].asid;
 
-    cpu->cop0.entryLo0 = (uint64_t)tlbEntries[index].pfnEven << 6 |
+    cpu.cop0.entryLo0 = (uint64_t)tlbEntries[index].pfnEven << 6 |
         (uint64_t)tlbEntries[index].cEven << 3 |
         (uint64_t)tlbEntries[index].dEven << 2 |
         (uint64_t)tlbEntries[index].vEven << 1 |
         (uint64_t)tlbEntries[index].g;
 
-    cpu->cop0.entryLo1 = (uint64_t)tlbEntries[index].pfnOdd << 6 |
+    cpu.cop0.entryLo1 = (uint64_t)tlbEntries[index].pfnOdd << 6 |
         (uint64_t)tlbEntries[index].cOdd << 3 |
         (uint64_t)tlbEntries[index].dOdd << 2 |
         (uint64_t)tlbEntries[index].vOdd << 1 |
@@ -657,7 +658,7 @@ void Bus::tlbRead(uint32_t index) {
 void Bus::recalculateDelay() {
     double expectedRefreshRate = (double)videoInterface.clock / (double)(videoInterface.vTotal +1) / (double)((videoInterface.hTotal) + 1) * 2.0;
 
-    videoInterface.delay = (uint32_t)((double)cpu->clock / expectedRefreshRate);
+    videoInterface.delay = (uint32_t)((double)cpu.clock / expectedRefreshRate);
 }
 
 void Bus::tlbProbe() {
@@ -666,16 +667,16 @@ void Bus::tlbProbe() {
     for (uint64_t i = 0; i < tlbEntries.size(); i++) {
         TlbEntry entry = tlbEntries[i];
 
-        if ((entry.vpn2 & ~entry.mask) == (((cpu->cop0.entryHi >> 13) & 0x7ffffff) & ~entry.mask) &&
-            entry.region == (uint8_t)(cpu->cop0.entryHi >> 62) &&
-            (entry.g != 0 || entry.asid == (uint8_t)cpu->cop0.entryHi)
+        if ((entry.vpn2 & ~entry.mask) == (((cpu.cop0.entryHi >> 13) & 0x7ffffff) & ~entry.mask) &&
+            entry.region == (uint8_t)(cpu.cop0.entryHi >> 62) &&
+            (entry.g != 0 || entry.asid == (uint8_t)cpu.cop0.entryHi)
         ) {
             returnVal = (uint64_t)i;
             break;
         }
     }
 
-    cpu->cop0.index = returnVal;
+    cpu.cop0.index = returnVal;
 }
 
 void Bus::tlbMap(uint32_t index) {
@@ -727,19 +728,19 @@ void Bus::setInterrupt(uint32_t flag) {
     mips.mipsInterrupt.value |= flag;
 
     if ((mips.mipsInterrupt.value & mips.mipsMask.value) != 0) {
-        cpu->cop0.cause &= ~(0x1f << 2);
-        cpu->cop0.cause |= 1 << 10;
+        cpu.cop0.cause &= ~(0x1f << 2);
+        cpu.cop0.cause |= 1 << 10;
     }
-    cpu->checkIrqs();
+    cpu.checkIrqs();
 }
 
 void Bus::clearInterrupt(uint32_t flag) {
     mips.mipsInterrupt.value &= ~flag;
 
     if ((mips.mipsInterrupt.value & mips.mipsMask.value) == 0) {
-        cpu->cop0.cause &= ~(1 << 10);
+        cpu.cop0.cause &= ~(1 << 10);
     }
-    cpu->checkIrqs();
+    cpu.checkIrqs();
 }
 
 void Bus::dmaWrite() {
@@ -766,10 +767,10 @@ void Bus::dmaWrite() {
 // issues putting the code in there :/
 void Bus::checkIrqs() {
     if ((mips.mipsMask.value & mips.mipsInterrupt.value) != 0) {
-        cpu->cop0.cause &= ~(0x1f << 2);
-        cpu->cop0.cause |= 1 << 10;
+        cpu.cop0.cause &= ~(0x1f << 2);
+        cpu.cop0.cause |= 1 << 10;
     } else {
-        cpu->cop0.cause &= ~(1 << 10);
+        cpu.cop0.cause &= ~(1 << 10);
     }
 }
 
@@ -822,10 +823,10 @@ void Bus::handleRspDma(SPDma dma) {
     rsp.spReadLength.value = 0xff8;
     rsp.spWriteLength.value = 0xff8;
 
-    cpu->scheduler.addEvent(
+    cpu.scheduler.addEvent(
         Event(
             RspDmaPop,
-            cpu->cop0.count + calculateRdRamCycles(count * length) + 9
+            cpu.cop0.count + calculateRdRamCycles(count * length) + 9
         )
     );
 }

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "peripheral_interface/PeripheralInterface.hpp"
-#include "rsp/RSP.cpp"
+#include "rsp/RSP.hpp"
 #include "video_interface/VideoInterface.hpp"
 #include "audio_interface/AudioInterface.hpp"
 #include "serial_interface/SerialInterface.hpp"
@@ -14,6 +14,12 @@
 #include "cache/ICache.hpp"
 #include "cache/DCache.hpp"
 #include "tlb/TlbEntry.hpp"
+
+uint32_t SP_INTERRUPT_FLAG = 1;
+uint32_t SI_INTERRUPT_FLAG = 1 << 1;
+uint32_t AI_INTERRUPT_FLAG = 1 << 2;
+uint32_t VI_INTERRUPT_FLAG = 1 << 3;
+uint32_t PI_INTERRUPT_FLAG = 1 << 4;
 
 class Bus {
 public:

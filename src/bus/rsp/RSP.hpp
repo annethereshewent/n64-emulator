@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include "SPStatus.hpp"
 #include "SPLength.hpp"
@@ -15,6 +17,8 @@ public:
     uint32_t dramAddress = 0;
     uint32_t memAddress = 0;
 };
+
+class Bus;
 
 class RSP {
 public:
@@ -36,4 +40,7 @@ public:
 
     void pushDma(DmaDirection direction);
     bool popDma();
+
+    void updateStatus(Bus* bus, uint32_t value);
+    uint64_t runRsp(Bus* bus);
 };

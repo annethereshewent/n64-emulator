@@ -5,12 +5,7 @@
 #include <bit>
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
-
-uint32_t SP_INTERRUPT_FLAG = 1;
-uint32_t SI_INTERRUPT_FLAG = 1 << 1;
-uint32_t AI_INTERRUPT_FLAG = 1 << 2;
-uint32_t VI_INTERRUPT_FLAG = 1 << 3;
-uint32_t PI_INTERRUPT_FLAG = 1 << 4;
+#include "rsp/RSP.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -306,7 +301,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             break;
         case 0x4040010:
             // rsp.status.value = value;
-            updateRspStatus(value);
+            rsp.updateStatus(this, value);
             break;
         case 0x4080000:
             rsp.pc = value & 0xffc;
@@ -841,95 +836,4 @@ uint32_t Bus::calculateRdRamCycles(uint32_t length) {
 
 uint64_t Bus::runRsp() {
     return 0;
-}
-
-// tried to put this in RSP but due to needing to use the bus class
-// it was causing a circular reference so i couldn't compile the code.
-// TODO: try again at some point, although it seems like it's not letting
-// me do this for a reason lol
-void Bus::updateRspStatus(uint32_t value) {
-    SPStatus* status = &rsp.status;
-
-    bool previousHalt = status->halted;
-
-    if ((value & 0b1) == 1 && ((value >> 1) & 0b1) == 0) {
-        status->halted = 0;
-    }
-    if ((value & 0b1) == 0 & ((value >> 1) & 0b1) == 1) {
-        status->halted = 1;
-        // todo: remove from scheduler rsp pc event
-    }
-    if (((value >> 2) & 0b1) == 1) {
-        status->broke = 0;
-    }
-    if (((value >> 3) & 0b1) == 1 && ((value >> 4) & 0b1) == 0) {
-        clearInterrupt(SP_INTERRUPT_FLAG);
-    }
-    if (((value >> 3) & 0b1) == 0 && ((value >> 4) & 0b1) == 1) {
-        setInterrupt(SP_INTERRUPT_FLAG);
-    }
-    if (((value >> 5) & 0b1) == 1 && ((value >> 6) & 0b1) == 0) {
-        status->singleStep = 0;
-    }
-    if (((value >> 5) & 0b1) == 0 && ((value >> 6) & 0b1) == 1) {
-        status->singleStep = 1;
-    }
-    if (((value >> 7) & 0b1) == 1 && ((value >> 8) & 0b1) == 0) {
-        status->intBreak = 0;
-    }
-    if (((value >> 7) & 0b1) == 0 && ((value >> 8) & 0b1) == 1) {
-        status->intBreak = 1;
-    }
-    if (((value >> 9) & 0b1) == 1 && ((value >> 10) & 0b1) == 0) {
-        status->flag0 = 0;
-    }
-    if (((value >> 9) & 0b1) == 0 && ((value >> 10) & 0b1) == 1) {
-        status->flag0 = 1;
-    }
-    if (((value >> 11) & 0b1) == 1 && ((value >> 12) & 0b1) == 0) {
-        status->flag1 = 0;
-    }
-    if (((value >> 11) & 0b1) == 0 && ((value >> 12) & 0b1) == 1) {
-        status->flag1 = 1;
-    }
-    if (((value >> 13) & 0b1) == 1 && ((value >> 14) & 0b1) == 0) {
-        status->flag2 = 0;
-    }
-    if (((value >> 13) & 0b1) == 0 && ((value >> 14) & 0b1) == 1) {
-        status->flag2 = 1;
-    }
-    if (((value >> 15) & 0b1) == 1 && ((value >> 16) & 0b1) == 0) {
-        status->flag3 = 0;
-    }
-    if (((value >> 15) & 0b1) == 0 && ((value >> 16) & 0b1) == 1) {
-        status->flag3 = 1;
-    }
-    if (((value >> 17) & 0b1) == 1 && ((value >> 18) & 0b1) == 0) {
-        status->flag4 = 0;
-    }
-    if (((value >> 17) & 0b1) == 0 && ((value >> 18) & 0b1) == 1) {
-        status->flag4 = 1;
-    }
-    if (((value >> 19) & 0b1) == 1 && ((value >> 20) & 0b1) == 0) {
-        status->flag5 = 0;
-    }
-    if (((value >> 19) & 0b1) == 0 && ((value >> 20) & 0b1) == 1) {
-        status->flag5 = 1;
-    }
-    if (((value >> 21) & 0b1) == 1 && ((value >> 22) & 0b1) == 0) {
-        status->flag6 = 0;
-    }
-    if (((value >> 21) & 0b1) == 0 && ((value >> 22) & 0b1) == 1) {
-        status->flag6 = 1;
-    }
-    if (((value >> 23) & 0b1) == 1 && ((value >> 24) & 0b1) == 0) {
-        status->flag7 = 0;
-    }
-    if (((value >> 23) & 0b1) == 0 && ((value >> 24) & 0b1) == 1) {
-        status->flag7 = 1;
-    }
-
-    if (!status->halted && previousHalt) {
-       runRsp();
-    }
 }

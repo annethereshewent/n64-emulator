@@ -1,3 +1,4 @@
+#pragma once
 #include "PIStatus.hpp"
 
 class PeripheralInterface {
@@ -20,4 +21,6 @@ public:
 
     uint32_t wrLen = 0;
     uint32_t rdLen = 0;
+
+    uint32_t calculateCycles(int32_t domain, uint32_t length);
 };

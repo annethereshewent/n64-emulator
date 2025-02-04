@@ -8,7 +8,8 @@ enum EventType {
     VideoInterrupt,
     PIFExecuteCommand,
     RspDmaPop,
-    RunRspPc
+    RunRspPc,
+    PIDma
 };
 
 class Event {

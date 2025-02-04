@@ -103,9 +103,7 @@ public:
     void tlbProbe();
 
     void recalculateDelay();
-
-    void updateRspStatus(uint32_t value);
-    uint64_t runRsp();
+    void finishPiDma();
 
     static uint64_t translateAddress(uint64_t address);
 

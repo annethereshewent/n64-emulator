@@ -33,6 +33,8 @@ public:
 
     bool debugOn = false;
 
+    bool inDelaySlot = false;
+
     CPU();
 
     std::array<CPUInstruction, 64> instructions;

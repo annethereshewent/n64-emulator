@@ -57,6 +57,8 @@ void CPU::beq(CPU* cpu, uint32_t instruction) {
 
         cpu->nextPc = cpu->pc + amount;
     }
+
+    cpu->inDelaySlot = true;
 }
 void CPU::beql(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
@@ -67,10 +69,12 @@ void CPU::beql(CPU* cpu, uint32_t instruction) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         cpu->nextPc = cpu->pc + amount;
-   } else {
+
+        cpu->inDelaySlot = true;
+    } else {
         cpu->pc = cpu->nextPc;
         cpu->discarded = true;
-   }
+    }
 }
 void CPU::bgtz(CPU* cpu, uint32_t instruction) {
     if ((int64_t)cpu->r[getRs(instruction)] > 0) {
@@ -79,6 +83,8 @@ void CPU::bgtz(CPU* cpu, uint32_t instruction) {
 
         cpu->nextPc = cpu->pc + amount;
     }
+
+    cpu->inDelaySlot = true;
 }
 void CPU::bgtzl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bgtzl\n";
@@ -94,6 +100,8 @@ void CPU::blez(CPU* cpu, uint32_t instruction) {
 
         cpu->nextPc = cpu->pc + amount;
     }
+
+    cpu->inDelaySlot = true;
 }
 void CPU::blezl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: blezl\n";
@@ -109,7 +117,8 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         cpu->nextPc = cpu->pc + amount;
-   }
+    }
+    cpu->inDelaySlot = true;
 }
 void CPU::bnel(CPU* cpu, uint32_t instruction) {
 
@@ -121,10 +130,12 @@ void CPU::bnel(CPU* cpu, uint32_t instruction) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
         cpu->nextPc = cpu->pc + amount;
-   } else {
+
+        cpu->inDelaySlot = true;
+    } else {
         cpu->pc = cpu->nextPc;
         cpu->discarded = true;
-   }
+    }
 }
 void CPU::cache(CPU* cpu, uint32_t instruction) {
     uint32_t cacheOp = getRt(instruction);
@@ -209,6 +220,8 @@ void CPU::j(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = (cpu->pc & 0xfffffffff0000000) | offset;
 
+    cpu->inDelaySlot = true;
+
     cpu->nextPc = address;
 }
 void CPU::jal(CPU* cpu, uint32_t instruction) {
@@ -218,9 +231,11 @@ void CPU::jal(CPU* cpu, uint32_t instruction) {
     // to do that with my code?
     cpu->r[31] = cpu->nextPc;
 
-    uint32_t offset = (instruction & 0x3ffffff) << 2;
+    uint64_t offset = ((uint64_t)instruction & 0x3ffffff) << 2;
 
-    uint32_t address = (cpu->pc & 0xfffffffff0000000) | offset;
+    uint64_t address = (cpu->pc & 0xfffffffff0000000) | offset;
+
+    cpu->inDelaySlot = true;
 
     cpu->nextPc = address;
 }
@@ -458,11 +473,15 @@ void CPU::srav(CPU* cpu, uint32_t instruction) {
 void CPU::jr(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
 
+    cpu->inDelaySlot = true;
+
     cpu->nextPc = cpu->r[rs];
 }
 void CPU::jalr(CPU* cpu, uint32_t instruction) {
     // TODO: see jal comments
     cpu->r[getRd(instruction)] = cpu->nextPc;
+
+    cpu->inDelaySlot = true;
 
     cpu->nextPc = cpu->r[getRs(instruction)];
 }
@@ -724,6 +743,7 @@ void CPU::bltz(CPU* cpu, uint32_t instruction) {
 
         cpu->nextPc = cpu->pc + amount;
     }
+    cpu->inDelaySlot = true;
 }
 void CPU::bgez(CPU* cpu, uint32_t instruction) {
     if ((int64_t)cpu->r[getRs(instruction)] >= 0) {
@@ -733,6 +753,7 @@ void CPU::bgez(CPU* cpu, uint32_t instruction) {
 
         cpu->nextPc = cpu->pc + amount;
     }
+    cpu->inDelaySlot = true;
 }
 void CPU::bltzl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bltzl\n";
@@ -793,6 +814,8 @@ void CPU::bgezal(CPU* cpu, uint32_t instruction) {
         cpu->r[31] = cpu->nextPc;
         cpu->nextPc = cpu->pc + amount;
     }
+
+    cpu->inDelaySlot = true;
 }
 void CPU::bltzall(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bltzall\n";

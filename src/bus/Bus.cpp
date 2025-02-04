@@ -7,6 +7,7 @@
 #include "../cpu/CPU.hpp"
 #include "rsp/RSP.cpp"
 #include "mips_interface/MIPSInterface.cpp"
+#include "peripheral_interface/PeripheralInterface.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -39,7 +40,12 @@ uint8_t Bus::memRead8(uint64_t address) {
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint64_t offset = actualAddress - 0x10000000;
 
-                return cartridge[offset];
+                if (offset < cartridge.size()) {
+                    return cartridge[offset];
+                }
+
+                std::cout << "invalid cartridge offset given!\n";
+                exit(1);
             }
             std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
@@ -248,7 +254,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
-                uint32_t offset = actualAddress - 0x10000000;
+                uint32_t offset = actualAddress & 0xfffffff;
 
                 if (offset < cartridge.size()) {
                     return std::byteswap(*(uint32_t*)&cartridge[offset]);
@@ -405,13 +411,13 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             break;
         case 0x460000c:
             peripheralInterface.wrLen = value & 0xffffff;
+
+            std::cout << "dma write event happened!\n";
             dmaWrite();
-            setInterrupt(PI_INTERRUPT_FLAG);
             break;
         case 0x4600010:
             if ((value & 0b1) == 1) {
-                // TODO: reset dma controller from doing transfer
-                std::cout << "it should reset the dma controller from doing a transfer.\n";
+                peripheralInterface.piStatus.value = 0;
             }
             if (((value >> 1) & 0b1) == 1) {
                 clearInterrupt(PI_INTERRUPT_FLAG);
@@ -746,6 +752,13 @@ void Bus::dmaWrite() {
     uint32_t currCartAddr = peripheralInterface.cartAddress;
     uint32_t length = peripheralInterface.wrLen + 1;
 
+    if (length > 0x7f & (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= (currDramAddr & 0x7);
+    }
+
     for (int i = 0; i < length; i++) {
         if (currCartAddr + i >= cartridge.size()) {
             rdram[currDramAddr + i] = 0;
@@ -754,11 +767,18 @@ void Bus::dmaWrite() {
         }
     }
 
-    peripheralInterface.dramAddress += length;
-    peripheralInterface.cartAddress += length;
+    peripheralInterface.dramAddress += length + 7;
+    peripheralInterface.dramAddress &= ~0x7;
+    peripheralInterface.cartAddress += length + 1;
+    peripheralInterface.cartAddress &= ~0b1;
 
-    // TODO: set dmaBusy, calculate cycles, and schedule dmaBusy = false
-    // peripheralInterface.piStatus.dmaBusy = 1;
+    peripheralInterface.piStatus.dmaBusy = 1;
+
+    uint64_t cycles = peripheralInterface.calculateCycles(1, length);
+
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+
+    // setInterrupt(PI_INTERRUPT_FLAG);
 }
 
 // TODO: move this to mips interface. currently having compile
@@ -770,6 +790,15 @@ void Bus::checkIrqs() {
     } else {
         cpu.cop0.cause &= ~(1 << 10);
     }
+}
+
+void Bus::finishPiDma() {
+    std::cout << "setting PI interrupt flag\n";
+    peripheralInterface.piStatus.ioBusy = 0;
+    peripheralInterface.piStatus.dmaBusy = 0;
+    peripheralInterface.piStatus.dmaCompleted = 1;
+
+    setInterrupt(PI_INTERRUPT_FLAG);
 }
 
 uint32_t Bus::calculateRdRamCycles(uint32_t length) {

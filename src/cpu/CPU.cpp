@@ -194,6 +194,7 @@ void CPU::checkIrqs() {
     if ((cop0.status & cop0.cause & 0b1111111100000000) != 0 &&
         (cop0.status & 0b111) == 0b1
     ) {
+        std::cout << "entering interrupt\n";
         enterException();
     }
 }
@@ -202,10 +203,11 @@ void CPU::checkIrqs() {
 // the EPC to instead.
 void CPU::enterException(bool usePreviousPc) {
     if (((cop0.status >> 1) & 0b1) == 0) {
-        cop0.epc = usePreviousPc ? previousPc : pc;
-        if (nextPc != pc + 4) {
+        if (inDelaySlot) {
+            cop0.epc = pc - 4;
             cop0.cause |= 1 << 31;
         } else {
+            cop0.epc = pc;
             cop0.cause &= ~(1 << 31);
         }
     }
@@ -296,13 +298,18 @@ void CPU::step() {
     discarded = false;
     nextPc += 4;
 
-    // if (!visited.contains(previousPc)) {
+
+    // if ((!visited.contains(previousPc) && debugOn) || previousPc == 0xffffffff80327788) {
     //     uint32_t actualCommand = command;
     //     if (command == 0) {
     //         std::cout << "command is secondary\n";
     //         actualCommand = opcode & 0x3f;
+    //     } else if (command == 16) {
+    //         std::cout << "command is cop0\n";
+    //         actualCommand = (opcode >> 21) & 0x1f;
     //     }
     //     std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
+    //     // std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << "\n";
     //     visited.insert(previousPc);
     // }
 
@@ -335,6 +342,7 @@ void CPU::step() {
 
         switch (event.eventType) {
             case VideoInterrupt:
+                std::cout << "setting VI interrupt flag\n";
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
@@ -346,6 +354,7 @@ void CPU::step() {
                 bus.serialInterface.status.ioBusy = 0;
                 bus.serialInterface.status.interrupt = 1;
 
+                std::cout << "setting SI interrupt flag\n";
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
             case RspDmaPop:
@@ -353,6 +362,9 @@ void CPU::step() {
                 break;
             case RunRspPc:
                 // do something
+                break;
+            case PIDma:
+                bus.finishPiDma();
                 break;
         }
     }

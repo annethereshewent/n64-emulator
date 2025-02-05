@@ -57,70 +57,137 @@ public:
         };
 
         instructions = {
-            RSP::reserved, // SPECIAL
-            RSP::reserved, // REGIMM
-            RSP::j,        // 2
-            RSP::jal,      // 3
-            RSP::beq,      // 4
-            RSP::bne,      // 5
-            RSP::blez,     // 6
-            RSP::bgtz,     // 7
-            RSP::addi,     // 8
-            RSP::addiu,    // 9
-            RSP::slti,     // 10
-            RSP::sltiu,    // 11
-            RSP::andi,     // 12
-            RSP::ori,      // 13
-            RSP::xori,     // 14
-            RSP::lui,      // 15
-            RSP::reserved, // COP0
-            RSP::reserved, // COP1
-            RSP::reserved, // COP2
-            RSP::reserved, // 19
-            RSP::reserved, // 20
-            RSP::reserved, // 21
-            RSP::reserved, // 22
-            RSP::reserved, // 23
-            RSP::reserved, // 24
-            RSP::reserved, // 25
-            RSP::reserved, // 26
-            RSP::reserved, // 27
-            RSP::reserved, // 28
-            RSP::reserved, // 29
-            RSP::reserved, // 30
-            RSP::reserved, // 31
-            RSP::lb,       // 32
-            RSP::lh,       // 33
-            RSP::reserved, // 34
-            RSP::lw,       // 35
-            RSP::lbu,      // 36
-            RSP::lhu,      // 37
-            RSP::reserved, // 38
-            RSP::lwu,      // 39
-            RSP::sb,       // 40
-            RSP::sh,       // 41
-            RSP::reserved, // 42
-            RSP::sw,       // 43
-            RSP::reserved, // 44
-            RSP::reserved, // 45
-            RSP::reserved, // 46
-            RSP::reserved, // 47
-            RSP::reserved, // 48
-            RSP::reserved, // 49
-            RSP::reserved, // lwc2
-            RSP::reserved, // 51
-            RSP::reserved, // 52
-            RSP::reserved, // 53
-            RSP::reserved, // 54
-            RSP::reserved, // 55
-            RSP::reserved, // 56
-            RSP::reserved, // 57
-            RSP::reserved, // swc2
-            RSP::reserved, // 59
-            RSP::reserved, // 60
-            RSP::reserved, // 61
-            RSP::reserved, // 62
-            RSP::reserved, // 63
+            RSP::reserved,
+            RSP::reserved,
+            RSP::j,
+            RSP::jal,
+            RSP::beq,
+            RSP::bne,
+            RSP::blez,
+            RSP::bgtz,
+            RSP::addi,
+            RSP::addiu,
+            RSP::slti,
+            RSP::sltiu,
+            RSP::andi,
+            RSP::ori,
+            RSP::xori,
+            RSP::lui,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::lb,
+            RSP::lh,
+            RSP::reserved,
+            RSP::lw,
+            RSP::lbu,
+            RSP::lhu,
+            RSP::reserved,
+            RSP::lwu,
+            RSP::sb,
+            RSP::sh,
+            RSP::reserved,
+            RSP::sw,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+        };
+
+        secondary = {
+            RSP::sll,
+            RSP::reserved,
+            RSP::srl,
+            RSP::sra,
+            RSP::sllv,
+            RSP::reserved,
+            RSP::srlv,
+            RSP::srav,
+            RSP::jr,
+            RSP::jalr,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::break_,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::add,
+            RSP::addu,
+            RSP::sub,
+            RSP::subu,
+            RSP::and_,
+            RSP::or_,
+            RSP::xor_,
+            RSP::nor,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::slt,
+            RSP::sltu,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
+            RSP::reserved,
         };
     };
 
@@ -155,6 +222,7 @@ public:
     std::array<uint8_t, 0x1000> dmem = {};
 
     std::array<RSPInstruction, 64> instructions = {};
+    std::array<RSPInstruction, 64> secondary = {};
 
     uint32_t memRead32(uint8_t* ptr);
     void handleDma(SPDma dma);
@@ -190,4 +258,24 @@ public:
     static void sb(RSP* rsp, uint32_t instruction);
     static void sh(RSP* rsp, uint32_t instruction);
     static void sw(RSP* rsp, uint32_t instruction);
+
+    static void sll(RSP* rsp, uint32_t instruction);
+    static void srl(RSP* rsp, uint32_t instruction);
+    static void sra(RSP* rsp, uint32_t instruction);
+    static void sllv(RSP* rsp, uint32_t instruction);
+    static void srlv(RSP* rsp, uint32_t instruction);
+    static void srav(RSP* rsp, uint32_t instruction);
+    static void jr(RSP* rsp, uint32_t instruction);
+    static void jalr(RSP* rsp, uint32_t instruction);
+    static void break_(RSP* rsp, uint32_t instruction);
+    static void add(RSP* rsp, uint32_t instruction);
+    static void addu(RSP* rsp, uint32_t instruction);
+    static void sub(RSP* rsp, uint32_t instruction);
+    static void subu(RSP* rsp, uint32_t instruction);
+    static void and_(RSP* rsp, uint32_t instruction);
+    static void or_(RSP* rsp, uint32_t instruction);
+    static void xor_(RSP* rsp, uint32_t instruction);
+    static void nor(RSP* rsp, uint32_t instruction);
+    static void slt(RSP* rsp, uint32_t instruction);
+    static void sltu(RSP* rsp, uint32_t instruction);
 };

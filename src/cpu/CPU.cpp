@@ -198,10 +198,8 @@ void CPU::checkIrqs() {
         enterException();
     }
 }
-// the bool is a hacky way to get things to work properly.
-// TODO: properly check delay slot to determine what to set
-// the EPC to instead.
-void CPU::enterException(bool usePreviousPc) {
+
+void CPU::enterException() {
     if (((cop0.status >> 1) & 0b1) == 0) {
         if (inDelaySlot) {
             cop0.epc = pc - 4;
@@ -211,6 +209,8 @@ void CPU::enterException(bool usePreviousPc) {
             cop0.cause &= ~(1 << 31);
         }
     }
+
+
 
     cop0.status |= 1 << 1;
 
@@ -298,6 +298,7 @@ void CPU::step() {
     discarded = false;
     nextPc += 4;
 
+    bool oldDelaySlot = inDelaySlot;
 
     // if ((!visited.contains(previousPc) && debugOn) || previousPc == 0xffffffff80327788) {
     //     uint32_t actualCommand = command;
@@ -367,6 +368,10 @@ void CPU::step() {
                 bus.finishPiDma();
                 break;
         }
+    }
+
+    if (oldDelaySlot && inDelaySlot) {
+        inDelaySlot = false;
     }
 }
 

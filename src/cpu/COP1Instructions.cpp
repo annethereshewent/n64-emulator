@@ -15,14 +15,14 @@ union convu32
 union convi32
 {
     int32_t i32; // here_write_bits
-    float    f32; // here_read_float
+    float   f32; // here_read_float
 };
 
 void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -48,7 +48,7 @@ void COP1::lwc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -76,7 +76,7 @@ void COP1::sdc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -94,7 +94,7 @@ void COP1::swc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -113,7 +113,7 @@ void COP1::cfc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
     cpu->r[CPU::getRt(instruction)] = (int32_t)(int64_t)(uint64_t)cpu->cop1.readRegister(CPU::getRd(instruction));
@@ -138,7 +138,7 @@ void COP1::cop1_s_instrs(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -149,7 +149,7 @@ void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -171,7 +171,7 @@ void COP1::ctc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -204,7 +204,7 @@ void COP1::dmtc1(CPU* cpu, uint32_t instruction) {
 void COP1::mfc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
 
@@ -224,7 +224,7 @@ void COP1::mfc1(CPU* cpu, uint32_t instruction) {
 void COP1::mtc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
-        cpu->enterException(true);
+        cpu->enterException();
         return;
     }
     uint32_t value = (uint32_t)cpu->r[CPU::getRt(instruction)];

@@ -34,8 +34,12 @@ void RSP::blez(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::bne(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: bne\n";
-    exit(1);
+    if (rsp->r[CPU::getRs(instruction)] != rsp->r[CPU::getRt(instruction)]) {
+        rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
+
+        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
+    }
+    rsp->inDelaySlot = true;
 }
 void RSP::j(RSP* rsp, uint32_t instruction) {
     rsp->nextPc = (rsp->pc & 0xf0000000) | ((instruction & 0x3ffffff) << 2);
@@ -43,8 +47,10 @@ void RSP::j(RSP* rsp, uint32_t instruction) {
     rsp->inDelaySlot = true;
 }
 void RSP::jal(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: jal\n";
-    exit(1);
+    rsp->r[31] = rsp->nextPc;
+
+    rsp->nextPc = (rsp->pc & 0xf0000000) | ((instruction & 0x3ffffff) << 2);
+    rsp->inDelaySlot = true;
 }
 void RSP::lb(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lb\n";
@@ -138,8 +144,9 @@ void RSP::srav(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::jr(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: jr\n";
-    exit(1);
+    rsp->nextPc = rsp->r[CPU::getRs(instruction)];
+    std::cout << "nextPc = " << std::hex << rsp->nextPc << "\n";
+    rsp->inDelaySlot = true;
 }
 void RSP::jalr(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: jalr\n";
@@ -192,14 +199,18 @@ void RSP::sltu(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::mtc0(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: mtc0\n";
-    exit(1);
+    rsp->writeRegisters(CPU::getRd(instruction), rsp->r[CPU::getRt(instruction)]);
+
+    if (rsp->status.halted) {
+        rsp->status.halted = 0;
+        rsp->cpuHalted = true;
+    }
+
     rsp->isRunning = false;
 }
 
 void RSP::mfc0(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->readRegisters(CPU::getRd(instruction));
-
 
     rsp->cycleCounter += 4;
     rsp->isRunning = false;

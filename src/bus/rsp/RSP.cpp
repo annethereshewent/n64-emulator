@@ -210,8 +210,45 @@ uint32_t RSP::readRegisters(uint32_t offset) {
         case 5:
             return status.dmaFull;
             break;
+        case 6:
+            return status.dmaBusy;
+            break;
         default:
-            std::cout << "not yet implemented: " << std::dec << offset << "\n";
+            std::cout << "(rsp read registers)not yet implemented: " << std::dec << offset << "\n";
+            exit(1);
+            break;
+    }
+}
+
+void RSP::writeRegisters(uint32_t offset, uint32_t value) {
+    switch (offset) {
+        case 0:
+            dmaMemAddress = value & 0x1ffc;
+            break;
+        case 1:
+            dmaRamAddress = value & 0xfffffc;
+            break;
+        case 2:
+            spReadLength.value = value;
+
+            pushDma(Read);
+            break;
+        case 3:
+            spWriteLength.value = value;
+
+            pushDma(Write);
+            break;
+        case 4:
+            updateStatus(value);
+            break;
+        case 5:
+            status.dmaFull = value & 0b1;
+            break;
+        case 7:
+            semaphore = 0;
+            break;
+        default:
+            std::cout << "(rsp write registers)not yet implemented: " << std::dec << offset << "\n";
             exit(1);
             break;
     }

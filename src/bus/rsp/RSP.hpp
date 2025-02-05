@@ -33,6 +33,8 @@ public:
     uint32_t pc = 0;
     uint32_t nextPc = 0;
 
+    uint32_t semaphore;
+
     Bus& bus;
 
     RSP(Bus& bus) : bus(bus) {
@@ -236,6 +238,7 @@ public:
     void restartRsp();
 
     uint32_t readRegisters(uint32_t offset);
+    void writeRegisters(uint32_t offset, uint32_t value);
 
     static void reserved(RSP* rsp, uint32_t instruction);
     static void j(RSP* rsp, uint32_t instruction);

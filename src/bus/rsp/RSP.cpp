@@ -170,7 +170,12 @@ void RSP::updateStatus(uint32_t value) {
     }
 
     if (!status.halted && previousHalt) {
-        runRsp();
+        std::cout << "starting RSP CPU\n";
+        cpuHalted = false;
+        isRunning = true;
+        cpuBroken = false;
+
+        startRsp();
     }
 }
 
@@ -186,6 +191,38 @@ void RSP::popDma() {
     }
 }
 
+void RSP::startRsp() {
+
+    uint64_t cycles = runRsp();
+
+    bus.cpu.scheduler.addEvent(Event(RunRspPc, bus.cpu.cop0.count + cycles));
+}
+
 uint64_t RSP::runRsp() {
-    return 0;
+    cpuBroken = false;
+    cycleCounter = 0;
+
+    while (isRunning) {
+        uint32_t instruction = imemRead32(pc);
+
+        previousPc = pc;
+
+        pc = nextPc;
+
+        nextPc += 4;
+
+        break;
+    }
+
+    std::cout << "TODO: RSP CPU\n";
+    exit(1);
+
+    return cycleCounter;
+}
+
+uint32_t RSP::imemRead32(uint32_t address) {
+    return std::byteswap(*(uint32_t*)&imem[address]);
+
+    std::cout << "invalid address given to imem: " << std::hex << address << "\n";
+    exit(1);
 }

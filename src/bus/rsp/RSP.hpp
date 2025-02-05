@@ -233,6 +233,9 @@ public:
     void updateStatus(uint32_t value);
     uint64_t runRsp();
     void startRsp();
+    void restartRsp();
+
+    uint32_t readRegisters(uint32_t offset);
 
     static void reserved(RSP* rsp, uint32_t instruction);
     static void j(RSP* rsp, uint32_t instruction);
@@ -278,4 +281,7 @@ public:
     static void nor(RSP* rsp, uint32_t instruction);
     static void slt(RSP* rsp, uint32_t instruction);
     static void sltu(RSP* rsp, uint32_t instruction);
+
+    static void mfc0(RSP* rsp, uint32_t instruction);
+    static void mtc0(RSP* rsp, uint32_t instruction);
 };

@@ -362,7 +362,7 @@ void CPU::step() {
                 bus.rsp.popDma();
                 break;
             case RunRspPc:
-                // do something
+                bus.rsp.restartRsp();
                 break;
             case PIDma:
                 bus.finishPiDma();

@@ -191,10 +191,30 @@ void RSP::popDma() {
 }
 
 void RSP::startRsp() {
-
     uint64_t cycles = runRsp();
 
     bus.cpu.scheduler.addEvent(Event(RunRspPc, bus.cpu.cop0.count + cycles));
+}
+
+uint32_t RSP::readRegisters(uint32_t offset) {
+    switch (offset) {
+        case 2:
+            return spReadLength.value;
+            break;
+        case 3:
+            return spWriteLength.value;
+            break;
+        case 4:
+            return status.value;
+            break;
+        case 5:
+            return status.dmaFull;
+            break;
+        default:
+            std::cout << "not yet implemented: " << std::dec << offset << "\n";
+            exit(1);
+            break;
+    }
 }
 
 uint64_t RSP::runRsp() {
@@ -223,8 +243,16 @@ uint64_t RSP::runRsp() {
                 exit(1);
                 break;
             case 16:
-                std::cout << "TODO: cop0 instructions\n";
-                exit(1);
+                switch ((instruction >> 21) & 0x1f) {
+                    case 0:
+                        RSP::mfc0(this, instruction);
+                        break;
+                    case 4:
+                        RSP::mtc0(this, instruction);
+                        break;
+                    default:
+                        RSP::reserved(this, instruction);
+                }
                 break;
             case 18:
                 std::cout << "TODO: cop2 instructions\n";
@@ -251,9 +279,29 @@ uint64_t RSP::runRsp() {
         cycleCounter++;
     }
 
-    return cycleCounter;
+    return (uint64_t)((double)cycleCounter * 1.5);
 }
 
 uint32_t RSP::memRead32(uint8_t* ptr) {
     return std::byteswap(*(uint32_t*)&ptr[0]);
+}
+
+void RSP::restartRsp() {
+    if (cpuBroken) {
+        status.broke = 1;
+        status.halted = 1;
+
+        if (status.intBreak) {
+            bus.setInterrupt(SP_INTERRUPT_FLAG);
+        }
+
+        return;
+    }
+    if (cpuHalted) {
+        status.halted = 1;
+        return;
+    }
+
+    isRunning = true;
+    startRsp();
 }

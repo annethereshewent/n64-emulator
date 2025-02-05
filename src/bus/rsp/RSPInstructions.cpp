@@ -190,3 +190,17 @@ void RSP::sltu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: sltu\n";
     exit(1);
 }
+
+void RSP::mtc0(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: mtc0\n";
+    exit(1);
+    rsp->isRunning = false;
+}
+
+void RSP::mfc0(RSP* rsp, uint32_t instruction) {
+    rsp->r[CPU::getRt(instruction)] = rsp->readRegisters(CPU::getRd(instruction));
+
+
+    rsp->cycleCounter += 4;
+    rsp->isRunning = false;
+}

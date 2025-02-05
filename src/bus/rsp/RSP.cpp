@@ -203,7 +203,9 @@ uint64_t RSP::runRsp() {
     cycleCounter = 0;
 
     while (isRunning) {
-        uint32_t instruction = imemRead32(pc);
+        uint32_t instruction = memRead32(&imem[pc]);
+
+        uint32_t command = instruction >> 26;
 
         previousPc = pc;
 
@@ -211,18 +213,156 @@ uint64_t RSP::runRsp() {
 
         nextPc += 4;
 
-        break;
-    }
+        bool previousDelaySlot = inDelaySlot;
 
-    std::cout << "TODO: RSP CPU\n";
-    exit(1);
+        switch (command) {
+            case 0:
+                std::cout << "TODO: secondary instructions\n";
+                exit(1);
+                break;
+            case 1:
+                std::cout << "TODO: regImm instructions\n";
+                exit(1);
+                break;
+            case 16:
+                std::cout << "TODO: cop0 instructions\n";
+                exit(1);
+                break;
+            case 18:
+                std::cout << "TODO: cop2 instructions\n";
+                exit(1);
+                break;
+            case 50:
+                std::cout << "TODO: lwc2 instructions\n";
+                exit(1);
+            case 58:
+                std::cout << "TODO: swc2 instructions\n";
+                exit(1);
+            default:
+                instructions[command](this, instruction);
+                break;
+        }
+
+        if (previousDelaySlot && inDelaySlot) {
+            inDelaySlot = false;
+        }
+
+        pc &= 0xffc;
+    }
 
     return cycleCounter;
 }
 
-uint32_t RSP::imemRead32(uint32_t address) {
-    return std::byteswap(*(uint32_t*)&imem[address]);
+uint32_t RSP::memRead32(uint8_t* ptr) {
+    return std::byteswap(*(uint32_t*)&ptr[0]);
+}
 
-    std::cout << "invalid address given to imem: " << std::hex << address << "\n";
+void RSP::addi(RSP* rsp, uint32_t instruction) {
+    rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] + (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    std::cout << "added together " << std::hex << rsp->r[CPU::getRs(instruction)] << " and " << (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << " which = " << rsp->r[CPU::getRt(instruction)] << "\n";
+}
+void RSP::addiu(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: addiu\n";
+    exit(1);
+}
+void RSP::andi(RSP* rsp, uint32_t instruction) {
+    std::cout << "and'd " << std::hex << rsp->r[CPU::getRs(instruction)] << " and " << CPU::getImmediate(instruction) << " together\n";
+    rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] & CPU::getImmediate(instruction);
+}
+void RSP::beq(RSP* rsp, uint32_t instruction) {
+    if (rsp->r[CPU::getRs(instruction)] == rsp->r[CPU::getRt(instruction)]) {
+        rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
+
+        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
+    }
+    rsp->inDelaySlot = true;
+}
+void RSP::bgtz(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: bgtz\n";
+    exit(1);
+}
+void RSP::blez(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: blez\n";
+    exit(1);
+}
+void RSP::bne(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: bne\n";
+    exit(1);
+}
+void RSP::j(RSP* rsp, uint32_t instruction) {
+    rsp->nextPc = (rsp->pc & 0xf0000000) | ((instruction & 0x3ffffff) << 2);
+    std::cout << "set nextPc = " << std::hex << rsp->nextPc << "\n";
+    rsp->inDelaySlot = true;
+}
+void RSP::jal(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: jal\n";
+    exit(1);
+}
+void RSP::lb(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lb\n";
+    exit(1);
+}
+void RSP::lbu(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lbu\n";
+    exit(1);
+}
+void RSP::lh(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lh\n";
+    exit(1);
+}
+void RSP::lhu(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lhu\n";
+    exit(1);
+}
+void RSP::lui(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lui\n";
+    exit(1);
+}
+void RSP::lw(RSP* rsp, uint32_t instruction) {
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t value = rsp->memRead32(&rsp->dmem[address & 0xfff]);
+
+    rsp->r[CPU::getRt(instruction)] = value;
+
+    std::cout << "set register " << std::dec << CPU::getRt(instruction) << " to value " << std::hex << value << "\n";
+}
+void RSP::lwu(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lwu\n";
+    exit(1);
+}
+void RSP::ori(RSP* rsp, uint32_t instruction) {
+    std::cout << "or'd " << std::hex << rsp->r[CPU::getRs(instruction)] << " and " << CPU::getImmediate(instruction) << " together\n";
+    rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] | CPU::getImmediate(instruction);
+}
+void RSP::reserved(RSP* rsp, uint32_t instruction) {
+    std::cout << "reserved RSP instruction received\n";
+    exit(1);
+}
+void RSP::sb(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: sb\n";
+    exit(1);
+}
+void RSP::sh(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: sh\n";
+    exit(1);
+}
+void RSP::slti(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: slti\n";
+    exit(1);
+}
+void RSP::sltiu(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: sltiu\n";
+    exit(1);
+}
+void RSP::sw(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: sw\n";
+    exit(1);
+}
+void RSP::xori(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: xori\n";
     exit(1);
 }

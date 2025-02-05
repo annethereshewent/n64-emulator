@@ -310,6 +310,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
             break;
         case 0x4080000:
             rsp.pc = value & 0xffc;
+            rsp.nextPc = rsp.pc + 4;
             break;
         case 0x410000c:
             rdp.status.value = value;

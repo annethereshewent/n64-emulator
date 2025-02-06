@@ -477,7 +477,7 @@ void RSP::setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value) 
     }
 }
 
-int16_t RSP::getVecS16(uint8_t vt, uint8_t element) {
+int16_t RSP::getVec16(uint8_t vt, uint8_t element) {
     return std::byteswap(*(uint16_t*)&vpr[vt][element * 2]);
 }
 
@@ -514,6 +514,10 @@ void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool ac
     }
 }
 
+void RSP::updateAccumulatorLow32(int element, uint32_t result, bool accumulate) {
+    updateAccumulatorHiLo(element, 0, result, accumulate);
+}
+
 void RSP::writeAcc32(int offset, uint32_t value) {
     std::cout << "writing to accumulator 32 bit value " << std::hex << value << " at offset " << std::dec << offset << "\n";
     for (int i = 0; i < 4; i++) {
@@ -534,6 +538,23 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
             result = (himid & 0xffff8000) ? 0x7fff : himid;
         } else {
             result = (~himid & 0xffff8000) ? 0x8000 : himid;
+        }
+
+        setVec16(vd, i, (uint16_t)result);
+    }
+}
+
+void RSP::setVecFromAccSignedLow(uint8_t vd) {
+    for (int i = 0; i < 8; i++) {
+        int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];
+        int16_t lo = *(int16_t*)&vAcc[(i * 4) * 2];
+
+        int16_t result;
+
+        if (himid >= 0) {
+            result = (himid & 0xffff8000) ? 0x7fff : lo;
+        } else {
+            result = (~himid & 0xffff8000) ? 0x8000 : lo;
         }
 
         setVec16(vd, i, (uint16_t)result);

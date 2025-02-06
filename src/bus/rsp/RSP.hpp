@@ -357,12 +357,14 @@ public:
     void setVec8(uint8_t vt, uint8_t velement, uint8_t value);
     void setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value);
     uint8_t getVec8(uint8_t vt, uint8_t velement);
-    int16_t getVecS16(uint8_t vt, uint8_t element);
+    int16_t getVec16(uint8_t vt, uint8_t element);
     void setVec16(uint8_t vt, uint8_t element, uint16_t value);
 
     void updateAccumulatorMid32(int element, int32_t result, bool accumulate);
     void updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate);
+    void updateAccumulatorLow32(int element, uint32_t result, bool accumulate);
     void setVecFromAccSignedMid(uint8_t vd);
+    void setVecFromAccSignedLow(uint8_t vd);
 
     void writeAcc32(int offset, uint32_t value);
 
@@ -499,6 +501,7 @@ public:
     static void bgez(RSP* rsp, uint32_t instruction);
 
     static void vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulate, int32_t round);
+    static void vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumulate);
 
     static uint32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);

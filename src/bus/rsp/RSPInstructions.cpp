@@ -76,8 +76,7 @@ void RSP::lhu(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = value;
 }
 void RSP::lui(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lui\n";
-    exit(1);
+    rsp->r[CPU::getRt(instruction)] = CPU::getImmediate(instruction) << 16;
 }
 void RSP::lw(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
@@ -179,8 +178,7 @@ void RSP::subu(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::and_(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: and\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] & rsp->r[CPU::getRt(instruction)];
 }
 void RSP::or_(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: or\n";
@@ -412,12 +410,27 @@ void RSP::vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulat
     uint8_t vs = getVs(instruction);
 
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
-        int16_t s = rsp->getVecS16(vs, el);
-        int16_t t = rsp->getVecS16(vt, select & 0x7);
+        int16_t s = (int16_t)rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
 
         int32_t result = (int32_t)s * (int32_t)t * 2 + round;
 
         rsp->updateAccumulatorMid32(el, result, accumulate);
+    }
+}
+
+void RSP::vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumulate) {
+    uint8_t vte = getVte(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vs = getVs(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        uint16_t s = rsp->getVec16(vs, el);
+        uint16_t t = rsp->getVec16(vt, select & 0x7);
+
+        uint32_t result = ((uint32_t)s * (u_char)t * 2) >> 16;
+
+        rsp->updateAccumulatorLow32(el, result, accumulate);
     }
 }
 
@@ -466,8 +479,8 @@ void RSP::vmacq(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vmadl(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmadl\n";
-    exit(1);
+    vectorMultiplyPartialLow(rsp, instruction, true);
+    rsp->setVecFromAccSignedLow(getVd(instruction));
 }
 void RSP::vmadm(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmadm\n";

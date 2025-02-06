@@ -303,9 +303,16 @@ uint64_t RSP::runRsp() {
                 std::cout << "TODO: cop2 instructions\n";
                 exit(1);
                 break;
-            case 50:
-                std::cout << "TODO: lwc2 instructions\n";
-                exit(1);
+            case 50: {
+                uint32_t op = (instruction >> 11) & 0x1f;
+
+                if (op < lwc2.size()) {
+                    lwc2[op](this, instruction);
+                } else {
+                    RSP::reserved(this, instruction);
+                }
+                break;
+            }
             case 58:
                 std::cout << "TODO: swc2 instructions\n";
                 exit(1);

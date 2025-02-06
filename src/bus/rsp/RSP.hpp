@@ -192,6 +192,21 @@ public:
             RSP::reserved,
             RSP::reserved,
         };
+
+        lwc2 = {
+            RSP::lbv,
+            RSP::lsv,
+            RSP::llv,
+            RSP::ldv,
+            RSP::lqv,
+            RSP::lrv,
+            RSP::lpv,
+            RSP::luv,
+            RSP::lhv,
+            RSP::lfv,
+            RSP::lwv,
+            RSP::ltv,
+        };
     };
 
     std::array<uint32_t, 32> r = {};
@@ -226,6 +241,7 @@ public:
 
     std::array<RSPInstruction, 64> instructions = {};
     std::array<RSPInstruction, 64> secondary = {};
+    std::array<RSPInstruction, 12> lwc2 = {};
 
     uint16_t memRead16(uint32_t address);
     // this one uses a ptr because need to read from either imem or dmem, other methods just read from dmem
@@ -292,4 +308,17 @@ public:
 
     static void mfc0(RSP* rsp, uint32_t instruction);
     static void mtc0(RSP* rsp, uint32_t instruction);
+
+    static void lbv(RSP* rsp, uint32_t instruction);
+    static void lsv(RSP* rsp, uint32_t instruction);
+    static void llv(RSP* rsp, uint32_t instruction);
+    static void ldv(RSP* rsp, uint32_t instruction);
+    static void lqv(RSP* rsp, uint32_t instruction);
+    static void lrv(RSP* rsp, uint32_t instruction);
+    static void lpv(RSP* rsp, uint32_t instruction);
+    static void luv(RSP* rsp, uint32_t instruction);
+    static void lhv(RSP* rsp, uint32_t instruction);
+    static void lfv(RSP* rsp, uint32_t instruction);
+    static void lwv(RSP* rsp, uint32_t instruction);
+    static void ltv(RSP* rsp, uint32_t instruction);
 };

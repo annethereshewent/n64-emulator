@@ -229,3 +229,52 @@ void RSP::mfc0(RSP* rsp, uint32_t instruction) {
     rsp->cycleCounter += 4;
     rsp->isRunning = false;
 }
+
+void RSP::lbv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lbv\n";
+    exit(1);
+}
+void RSP::lsv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lsv\n";
+    exit(1);
+}
+void RSP::llv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: llv\n";
+    exit(1);
+}
+void RSP::ldv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: ldv\n";
+    exit(1);
+}
+void RSP::lqv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lqv\n";
+    exit(1);
+}
+void RSP::lrv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lrv\n";
+    exit(1);
+}
+void RSP::lpv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lpv\n";
+    exit(1);
+}
+void RSP::luv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: luv\n";
+    exit(1);
+}
+void RSP::lhv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lhv\n";
+    exit(1);
+}
+void RSP::lfv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lfv\n";
+    exit(1);
+}
+void RSP::lwv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: lwv\n";
+    exit(1);
+}
+void RSP::ltv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: ltv\n";
+    exit(1);
+}

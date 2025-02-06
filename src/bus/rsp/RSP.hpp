@@ -224,7 +224,7 @@ public:
     };
 
     std::array<uint32_t, 32> r = {};
-    std::array<uint8_t, 512> vpr = {};
+    std::array<std::array<uint8_t, 16>, 32> vpr = {};
 
     uint16_t vuVCO = 0;
     uint16_t vuVCC = 0;

@@ -418,11 +418,11 @@ void RSP::memWrite8(uint32_t address, uint8_t value) {
 }
 
 uint8_t RSP::getVec8(uint8_t vt, uint8_t velement) {
-    return vpr[16 * vt + velement];
+    return vpr[vt][velement];
 }
 
 void RSP::setVec8(uint8_t vt, uint8_t velement, uint8_t value) {
-    vpr[16 * vt + velement] = value;
+    vpr[vt][velement] = value;
 }
 
 void RSP::setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value) {

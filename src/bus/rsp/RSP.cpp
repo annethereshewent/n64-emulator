@@ -285,8 +285,23 @@ uint64_t RSP::runRsp() {
                 secondary[instruction & 0x3f](this, instruction);
                 break;
             case 1:
-                std::cout << "TODO: regImm instructions\n";
-                exit(1);
+                switch ((instruction >> 16) & 0x1f) {
+                    case 0:
+                        RSP::bltz(this, instruction);
+                        break;
+                    case 1:
+                        RSP::bgez(this, instruction);
+                        break;
+                    case 16:
+                        RSP::bltzal(this, instruction);
+                        break;
+                    case 17:
+                        RSP::bgezal(this, instruction);
+                        break;
+                    default:
+                        RSP::reserved(this, instruction);
+                        break;
+                }
                 break;
             case 16:
                 switch ((instruction >> 21) & 0x1f) {

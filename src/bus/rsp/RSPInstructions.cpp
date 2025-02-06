@@ -596,3 +596,25 @@ void RSP::vnop(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vnop\n";
     exit(1);
 }
+void RSP::bgez(RSP* rsp, uint32_t instrution) {
+    std::cout << "TODO: bgez\n";
+    exit(1);
+}
+
+void RSP::bltz(RSP* rsp, uint32_t instruction) {
+    if ((int32_t)rsp->r[CPU::getRs(instruction)] < 0) {
+        rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
+    }
+
+    rsp->inDelaySlot = true;
+}
+
+void RSP::bltzal(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: bltzal\n";
+    exit(1);
+}
+
+void RSP::bgezal(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: bgezal\n";
+    exit(1);
+}

@@ -493,6 +493,10 @@ public:
     static void vrsql(RSP* rsp, uint32_t instruction);
     static void vrsqh(RSP* rsp, uint32_t instruction);
     static void vnop(RSP* rsp, uint32_t instruction);
+    static void bgezal(RSP* rsp, uint32_t instruction);
+    static void bltzal(RSP* rsp, uint32_t instruction);
+    static void bltz(RSP* rsp, uint32_t instruction);
+    static void bgez(RSP* rsp, uint32_t instruction);
 
     static void vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulate, int32_t round);
 

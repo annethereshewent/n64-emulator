@@ -243,11 +243,14 @@ public:
     std::array<RSPInstruction, 64> secondary = {};
     std::array<RSPInstruction, 12> lwc2 = {};
 
+
+    uint8_t memRead8(uint32_t address);
     uint16_t memRead16(uint32_t address);
     // this one uses a ptr because need to read from either imem or dmem, other methods just read from dmem
     uint32_t memRead32(uint8_t* ptr);
     void memWrite32(uint32_t address, uint32_t value);
     void memWrite16(uint32_t address, uint16_t value);
+
     void handleDma(SPDma dma);
 
     void pushDma(DmaDirection direction);
@@ -257,6 +260,8 @@ public:
     uint64_t runRsp();
     void startRsp();
     void restartRsp();
+
+    void setVec8(uint8_t vt, uint8_t velement, uint8_t value);
 
     uint32_t readRegisters(uint32_t offset);
     void writeRegisters(uint32_t offset, uint32_t value);
@@ -321,4 +326,8 @@ public:
     static void lfv(RSP* rsp, uint32_t instruction);
     static void lwv(RSP* rsp, uint32_t instruction);
     static void ltv(RSP* rsp, uint32_t instruction);
+
+    static uint32_t getVOffset(uint32_t instruction);
+    static uint8_t getVElement(uint32_t instruction);
+    static uint8_t getVt(uint32_t instruction);
 };

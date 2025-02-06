@@ -243,8 +243,16 @@ void RSP::llv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::ldv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: ldv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 3;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    for (int i = 0; i < 8; i++) {
+        rsp->setVec8(vt, (velement + i), rsp->memRead8(address + i));
+    }
 }
 void RSP::lqv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lqv\n";

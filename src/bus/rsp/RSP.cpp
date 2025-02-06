@@ -370,3 +370,23 @@ void RSP::restartRsp() {
     isRunning = true;
     startRsp();
 }
+
+uint32_t RSP::getVOffset(uint32_t instruction) {
+    return (int8_t)(int32_t)(uint32_t)(((instruction & 0x7f) << 1) >> 1);
+}
+
+uint8_t RSP::getVElement(uint32_t instruction) {
+    return (uint8_t)((instruction >> 7) & 0xf);
+}
+
+uint8_t RSP::getVt(uint32_t instruction) {
+    return (uint8_t)((instruction >> 16) & 0x1f);
+}
+
+uint8_t RSP::memRead8(uint32_t address) {
+    return dmem[address & 0xfff];
+}
+
+void RSP::setVec8(uint8_t vt, uint8_t velement, uint8_t value) {
+    vpr[16 * vt + velement] = value;
+}

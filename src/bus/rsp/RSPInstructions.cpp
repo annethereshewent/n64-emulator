@@ -356,3 +356,33 @@ void RSP::stv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: stv\n";
     exit(1);
 }
+
+void RSP::mtc2(RSP* rsp, uint32_t instruction) {
+    uint32_t rd = CPU::getRd(instruction);
+    uint8_t velement = getVElement(instruction);
+    uint32_t value = rsp->r[CPU::getRt(instruction)];
+
+    std::cout << "setting vector register " << std::hex << rd << "'s  to value " << (uint16_t)value << " from register " << std::dec << CPU::getRt(instruction) << "\n";
+
+    rsp->setVec16UnalignedNoWrap(rd, velement, (uint16_t)value);
+}
+
+void RSP::ctc2(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: ctc2\n";
+    exit(1);
+}
+
+void RSP::mfc2(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: mfc2\n";
+    exit(1);
+}
+
+void RSP::cfc2(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: cfc2\n";
+    exit(1);
+}
+
+void RSP::vecInstructions(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vecInstructions\n";
+    exit(1);
+}

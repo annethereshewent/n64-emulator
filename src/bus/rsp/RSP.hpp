@@ -258,7 +258,6 @@ public:
     std::array<RSPInstruction, 12> lwc2 = {};
     std::array<RSPInstruction, 12> swc2 = {};
 
-
     uint8_t memRead8(uint32_t address);
     uint16_t memRead16(uint32_t address);
     // this one uses a ptr because need to read from either imem or dmem, other methods just read from dmem
@@ -278,6 +277,7 @@ public:
     void restartRsp();
 
     void setVec8(uint8_t vt, uint8_t velement, uint8_t value);
+    void setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value);
     uint8_t getVec8(uint8_t vt, uint8_t velement);
 
     uint32_t readRegisters(uint32_t offset);
@@ -356,6 +356,13 @@ public:
     static void sfv(RSP* rsp, uint32_t instruction);
     static void swv(RSP* rsp, uint32_t instruction);
     static void stv(RSP* rsp, uint32_t instruction);
+
+    static void mtc2(RSP* rsp, uint32_t instruction);
+    static void ctc2(RSP* rsp, uint32_t instruction);
+    static void mfc2(RSP* rsp, uint32_t instruction);
+    static void cfc2(RSP* rsp, uint32_t instruction);
+
+    static void vecInstructions(RSP* rsp, uint32_t instruction);
 
     static uint32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);

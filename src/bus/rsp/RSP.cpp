@@ -300,8 +300,27 @@ uint64_t RSP::runRsp() {
                 }
                 break;
             case 18:
-                std::cout << "TODO: cop2 instructions\n";
-                exit(1);
+                switch ((instruction >> 21) & 0x1f) {
+                    case 0:
+                        RSP::mfc2(this, instruction);
+                        break;
+                    case 2:
+                        RSP::cfc2(this, instruction);
+                        break;
+                    case 4:
+                        RSP::mtc2(this, instruction);
+                        break;
+                    case 6:
+                        RSP::ctc2(this, instruction);
+                        break;
+                    default:
+                        if (((instruction >> 21) & 0x1f) > 15) {
+                            RSP::vecInstructions(this, instruction);
+                        } else {
+                            RSP::reserved(this, instruction);
+                        }
+                        break;
+                }
                 break;
             case 50: {
                 uint32_t op = (instruction >> 11) & 0x1f;
@@ -404,4 +423,12 @@ uint8_t RSP::getVec8(uint8_t vt, uint8_t velement) {
 
 void RSP::setVec8(uint8_t vt, uint8_t velement, uint8_t value) {
     vpr[16 * vt + velement] = value;
+}
+
+void RSP::setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value) {
+    setVec8(vt, velement, (uint8_t)(value >> 8));
+
+    if (velement < 15) {
+        setVec8(vt, velement + 1, (uint8_t)value);
+    }
 }

@@ -382,7 +382,182 @@ void RSP::cfc2(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 
-void RSP::vecInstructions(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vecInstructions\n";
+void RSP::vmulf(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmulf\n";
+    exit(1);
+}
+void RSP::vmulu(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmulu\n";
+    exit(1);
+}
+void RSP::vrndp(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vrndp\n";
+    exit(1);
+}
+void RSP::vmulq(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmulq\n";
+    exit(1);
+}
+void RSP::vmudl(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmudl\n";
+    exit(1);
+}
+void RSP::vmudm(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmudm\n";
+    exit(1);
+}
+void RSP::vmudn(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmudn\n";
+    exit(1);
+}
+void RSP::vmudh(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmudh\n";
+    exit(1);
+}
+void RSP::vmacf(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmacf\n";
+    exit(1);
+}
+void RSP::vmacu(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmacu\n";
+    exit(1);
+}
+void RSP::vrndn(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vrndn\n";
+    exit(1);
+}
+void RSP::vmacq(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmacq\n";
+    exit(1);
+}
+void RSP::vmadl(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmadl\n";
+    exit(1);
+}
+void RSP::vmadm(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmadm\n";
+    exit(1);
+}
+void RSP::vmadn(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmadn\n";
+    exit(1);
+}
+void RSP::vmadh(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmadh\n";
+    exit(1);
+}
+void RSP::vadd(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vadd\n";
+    exit(1);
+}
+void RSP::vsub(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vsub\n";
+    exit(1);
+}
+void RSP::vzero(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vzero\n";
+    exit(1);
+}
+void RSP::vabs(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vabs\n";
+    exit(1);
+}
+void RSP::vaddc(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vaddc\n";
+    exit(1);
+}
+void RSP::vsubc(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vsubc\n";
+    exit(1);
+}
+void RSP::vsar(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vsar\n";
+    exit(1);
+}
+void RSP::vlt(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vlt\n";
+    exit(1);
+}
+void RSP::veq(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: veq\n";
+    exit(1);
+}
+void RSP::vne(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vne\n";
+    exit(1);
+}
+void RSP::vge(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vge\n";
+    exit(1);
+}
+void RSP::vcl(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vcl\n";
+    exit(1);
+}
+void RSP::vch(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vch\n";
+    exit(1);
+}
+void RSP::vcr(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vcr\n";
+    exit(1);
+}
+void RSP::vmrg(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmrg\n";
+    exit(1);
+}
+void RSP::vand(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vand\n";
+    exit(1);
+}
+void RSP::vnand(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vnand\n";
+    exit(1);
+}
+void RSP::vor(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vor\n";
+    exit(1);
+}
+void RSP::vnor(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vnor\n";
+    exit(1);
+}
+void RSP::vxor(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vxor\n";
+    exit(1);
+}
+void RSP::vnxor(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vnxor\n";
+    exit(1);
+}
+void RSP::vrcp(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vrcp\n";
+    exit(1);
+}
+void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
+
+}
+void RSP::vrcph(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vrcph\n";
+    exit(1);
+}
+void RSP::vmov(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vmov\n";
+    exit(1);
+}
+void RSP::vrsq(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vrsq\n";
+    exit(1);
+}
+void RSP::vrsql(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vrsql\n";
+    exit(1);
+}
+void RSP::vrsqh(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vrsqh\n";
+    exit(1);
+}
+void RSP::vnop(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: vnop\n";
     exit(1);
 }

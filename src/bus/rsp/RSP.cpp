@@ -268,6 +268,7 @@ uint64_t RSP::runRsp() {
 
     while (isRunning) {
         uint32_t instruction = memRead32(&imem[pc]);
+        instructionType = Scalar;
 
         uint32_t command = instruction >> 26;
 
@@ -315,7 +316,8 @@ uint64_t RSP::runRsp() {
                         break;
                     default:
                         if (((instruction >> 21) & 0x1f) > 15) {
-                            RSP::vecInstructions(this, instruction);
+                            instructionType = Vector;
+                            vecInstructions[instruction & 0xf](this, instruction);
                         } else {
                             RSP::reserved(this, instruction);
                         }
@@ -354,7 +356,19 @@ uint64_t RSP::runRsp() {
         pc &= 0xffc;
         nextPc &= 0xffc;
 
-        cycleCounter++;
+        if (instructionType == lastInstructionType) {
+            cycleCounter++;
+            pipelineFull = false;
+        } else {
+            lastInstructionType = instructionType;
+
+            if (pipelineFull) {
+                cycleCounter++;
+                pipelineFull = false;
+            } else {
+                pipelineFull = true;
+            }
+        }
     }
 
     return (uint64_t)((double)cycleCounter * 1.5);

@@ -11,6 +11,11 @@ enum DmaDirection {
     Write
 };
 
+enum InstructionType {
+    Scalar,
+    Vector
+};
+
 class SPDma {
 public:
     DmaDirection direction = Read;
@@ -29,6 +34,11 @@ typedef void (*RSPInstruction)(RSP* rsp, uint32_t instruction);
 class RSP {
 public:
     SPStatus status;
+
+    InstructionType lastInstructionType = Scalar;
+    InstructionType instructionType = Scalar;
+
+    bool pipelineFull = false;
 
     uint32_t previousPc = 0;
     uint32_t pc = 0;
@@ -221,6 +231,73 @@ public:
             RSP::swv,
             RSP::stv
         };
+
+        vecInstructions = {
+            RSP::vmulf,
+            RSP::vmulu,
+            RSP::vrndp,
+            RSP::vmulq,
+            RSP::vmudl,
+            RSP::vmudm,
+            RSP::vmudn,
+            RSP::vmudh,
+            RSP::vmacf,
+            RSP::vmacu,
+            RSP::vrndn,
+            RSP::vmacq,
+            RSP::vmadl,
+            RSP::vmadm,
+            RSP::vmadn,
+            RSP::vmadh,
+            RSP::vadd,
+            RSP::vsub,
+            RSP::vzero,
+            RSP::vabs,
+            RSP::vaddc,
+            RSP::vsubc,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vsar,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vlt,
+            RSP::veq,
+            RSP::vne,
+            RSP::vge,
+            RSP::vcl,
+            RSP::vch,
+            RSP::vcr,
+            RSP::vmrg,
+            RSP::vand,
+            RSP::vnand,
+            RSP::vor,
+            RSP::vnor,
+            RSP::vxor,
+            RSP::vnxor,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vrcp,
+            RSP::vrcpl,
+            RSP::vrcph,
+            RSP::vmov,
+            RSP::vrsq,
+            RSP::vrsql,
+            RSP::vrsqh,
+            RSP::vnop,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vzero,
+            RSP::vnop,
+        };
     };
 
     std::array<uint32_t, 32> r = {};
@@ -257,6 +334,7 @@ public:
     std::array<RSPInstruction, 64> secondary = {};
     std::array<RSPInstruction, 12> lwc2 = {};
     std::array<RSPInstruction, 12> swc2 = {};
+    std::array<RSPInstruction, 64> vecInstructions = {};
 
     uint8_t memRead8(uint32_t address);
     uint16_t memRead16(uint32_t address);
@@ -362,9 +440,55 @@ public:
     static void mfc2(RSP* rsp, uint32_t instruction);
     static void cfc2(RSP* rsp, uint32_t instruction);
 
-    static void vecInstructions(RSP* rsp, uint32_t instruction);
+    static void vmulf(RSP* rsp, uint32_t instruction);
+    static void vmulu(RSP* rsp, uint32_t instruction);
+    static void vrndp(RSP* rsp, uint32_t instruction);
+    static void vmulq(RSP* rsp, uint32_t instruction);
+    static void vmudl(RSP* rsp, uint32_t instruction);
+    static void vmudm(RSP* rsp, uint32_t instruction);
+    static void vmudn(RSP* rsp, uint32_t instruction);
+    static void vmudh(RSP* rsp, uint32_t instruction);
+    static void vmacf(RSP* rsp, uint32_t instruction);
+    static void vmacu(RSP* rsp, uint32_t instruction);
+    static void vrndn(RSP* rsp, uint32_t instruction);
+    static void vmacq(RSP* rsp, uint32_t instruction);
+    static void vmadl(RSP* rsp, uint32_t instruction);
+    static void vmadm(RSP* rsp, uint32_t instruction);
+    static void vmadn(RSP* rsp, uint32_t instruction);
+    static void vmadh(RSP* rsp, uint32_t instruction);
+    static void vadd(RSP* rsp, uint32_t instruction);
+    static void vsub(RSP* rsp, uint32_t instruction);
+    static void vzero(RSP* rsp, uint32_t instruction);
+    static void vabs(RSP* rsp, uint32_t instruction);
+    static void vaddc(RSP* rsp, uint32_t instruction);
+    static void vsubc(RSP* rsp, uint32_t instruction);
+    static void vsar(RSP* rsp, uint32_t instruction);
+    static void vlt(RSP* rsp, uint32_t instruction);
+    static void veq(RSP* rsp, uint32_t instruction);
+    static void vne(RSP* rsp, uint32_t instruction);
+    static void vge(RSP* rsp, uint32_t instruction);
+    static void vcl(RSP* rsp, uint32_t instruction);
+    static void vch(RSP* rsp, uint32_t instruction);
+    static void vcr(RSP* rsp, uint32_t instruction);
+    static void vmrg(RSP* rsp, uint32_t instruction);
+    static void vand(RSP* rsp, uint32_t instruction);
+    static void vnand(RSP* rsp, uint32_t instruction);
+    static void vor(RSP* rsp, uint32_t instruction);
+    static void vnor(RSP* rsp, uint32_t instruction);
+    static void vxor(RSP* rsp, uint32_t instruction);
+    static void vnxor(RSP* rsp, uint32_t instruction);
+    static void vrcp(RSP* rsp, uint32_t instruction);
+    static void vrcpl(RSP* rsp, uint32_t instruction);
+    static void vrcph(RSP* rsp, uint32_t instruction);
+    static void vmov(RSP* rsp, uint32_t instruction);
+    static void vrsq(RSP* rsp, uint32_t instruction);
+    static void vrsql(RSP* rsp, uint32_t instruction);
+    static void vrsqh(RSP* rsp, uint32_t instruction);
+    static void vnop(RSP* rsp, uint32_t instruction);
 
     static uint32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);
     static uint8_t getVt(uint32_t instruction);
+
+
 };

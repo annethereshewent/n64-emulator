@@ -376,7 +376,7 @@ void CPU::sdr(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::sh(CPU* cpu, uint32_t instruction) {
-    uint8_t half = (uint16_t)cpu->r[getRt(instruction)];
+    uint16_t half = (uint16_t)cpu->r[getRt(instruction)];
 
     uint64_t immediate = getSignedImmediate(instruction);
 

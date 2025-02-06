@@ -277,8 +277,6 @@ uint64_t RSP::runRsp() {
 
         nextPc += 4;
 
-        std::cout << "pc = " << std::hex << previousPc << "\n";
-
         bool previousDelaySlot = inDelaySlot;
 
         switch (command) {

@@ -6,52 +6,40 @@
 
 void RSP::addi(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] + (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
-
-    std::cout << "added together " << std::hex << rsp->r[CPU::getRs(instruction)] << " and " << (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << " which = " << rsp->r[CPU::getRt(instruction)] << "\n";
 }
 void RSP::addiu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: addiu\n";
     exit(1);
 }
 void RSP::andi(RSP* rsp, uint32_t instruction) {
-    std::cout << "and'd " << std::hex << rsp->r[CPU::getRs(instruction)] << " and " << CPU::getImmediate(instruction) << " together\n";
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] & CPU::getImmediate(instruction);
 }
 void RSP::beq(RSP* rsp, uint32_t instruction) {
     if (rsp->r[CPU::getRs(instruction)] == rsp->r[CPU::getRt(instruction)]) {
         rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
-
-        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
     }
     rsp->inDelaySlot = true;
 }
 void RSP::bgtz(RSP* rsp, uint32_t instruction) {
     if ((int32_t)rsp->r[CPU::getRs(instruction)] > 0) {
         rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
-
-        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
     }
     rsp->inDelaySlot = true;
 }
 void RSP::blez(RSP* rsp, uint32_t instruction) {
     if ((int32_t)rsp->r[CPU::getRs(instruction)] <= 0) {
         rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
-
-        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
     }
     rsp->inDelaySlot = true;
 }
 void RSP::bne(RSP* rsp, uint32_t instruction) {
     if (rsp->r[CPU::getRs(instruction)] != rsp->r[CPU::getRt(instruction)]) {
         rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
-
-        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
     }
     rsp->inDelaySlot = true;
 }
 void RSP::j(RSP* rsp, uint32_t instruction) {
     rsp->nextPc = (rsp->pc & 0xf0000000) | ((instruction & 0x3ffffff) << 2);
-    std::cout << "set nextPc = " << std::hex << rsp->nextPc << "\n";
     rsp->inDelaySlot = true;
 }
 void RSP::jal(RSP* rsp, uint32_t instruction) {
@@ -76,8 +64,6 @@ void RSP::lh(RSP* rsp, uint32_t instruction) {
     uint32_t value = (int16_t)(int32_t)(uint32_t)rsp->memRead16(address & 0xfff);
 
     rsp->r[CPU::getRt(instruction)] = value;
-
-    std::cout << "set register " << std::dec << CPU::getRt(instruction) << " to value " << std::hex << value << "\n";
 }
 void RSP::lhu(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
@@ -87,8 +73,6 @@ void RSP::lhu(RSP* rsp, uint32_t instruction) {
     uint32_t value = (uint32_t)rsp->memRead16(address & 0xfff);
 
     rsp->r[CPU::getRt(instruction)] = value;
-
-    std::cout << "set register " << std::dec << CPU::getRt(instruction) << " to value " << std::hex << value << "\n";
 }
 void RSP::lui(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lui\n";
@@ -102,15 +86,12 @@ void RSP::lw(RSP* rsp, uint32_t instruction) {
     uint32_t value = rsp->memRead32(&rsp->dmem[address & 0xfff]);
 
     rsp->r[CPU::getRt(instruction)] = value;
-
-    std::cout << "set register " << std::dec << CPU::getRt(instruction) << " to value " << std::hex << value << "\n";
 }
 void RSP::lwu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lwu\n";
     exit(1);
 }
 void RSP::ori(RSP* rsp, uint32_t instruction) {
-    std::cout << "or'd " << std::hex << rsp->r[CPU::getRs(instruction)] << " and " << CPU::getImmediate(instruction) << " together\n";
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] | CPU::getImmediate(instruction);
 }
 void RSP::reserved(RSP* rsp, uint32_t instruction) {
@@ -173,7 +154,6 @@ void RSP::srav(RSP* rsp, uint32_t instruction) {
 }
 void RSP::jr(RSP* rsp, uint32_t instruction) {
     rsp->nextPc = rsp->r[CPU::getRs(instruction)];
-    std::cout << "nextPc = " << std::hex << rsp->nextPc << "\n";
     rsp->inDelaySlot = true;
 }
 void RSP::jalr(RSP* rsp, uint32_t instruction) {

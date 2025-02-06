@@ -207,6 +207,20 @@ public:
             RSP::lwv,
             RSP::ltv,
         };
+        swc2 = {
+            RSP::sbv,
+            RSP::ssv,
+            RSP::slv,
+            RSP::sdv,
+            RSP::sqv,
+            RSP::srv,
+            RSP::spv,
+            RSP::suv,
+            RSP::shv,
+            RSP::sfv,
+            RSP::swv,
+            RSP::stv
+        };
     };
 
     std::array<uint32_t, 32> r = {};
@@ -242,6 +256,7 @@ public:
     std::array<RSPInstruction, 64> instructions = {};
     std::array<RSPInstruction, 64> secondary = {};
     std::array<RSPInstruction, 12> lwc2 = {};
+    std::array<RSPInstruction, 12> swc2 = {};
 
 
     uint8_t memRead8(uint32_t address);
@@ -250,6 +265,7 @@ public:
     uint32_t memRead32(uint8_t* ptr);
     void memWrite32(uint32_t address, uint32_t value);
     void memWrite16(uint32_t address, uint16_t value);
+    void memWrite8(uint32_t address, uint8_t value);
 
     void handleDma(SPDma dma);
 
@@ -262,6 +278,7 @@ public:
     void restartRsp();
 
     void setVec8(uint8_t vt, uint8_t velement, uint8_t value);
+    uint8_t getVec8(uint8_t vt, uint8_t velement);
 
     uint32_t readRegisters(uint32_t offset);
     void writeRegisters(uint32_t offset, uint32_t value);
@@ -326,6 +343,19 @@ public:
     static void lfv(RSP* rsp, uint32_t instruction);
     static void lwv(RSP* rsp, uint32_t instruction);
     static void ltv(RSP* rsp, uint32_t instruction);
+
+    static void sbv(RSP* rsp, uint32_t instruction);
+    static void ssv(RSP* rsp, uint32_t instruction);
+    static void slv(RSP* rsp, uint32_t instruction);
+    static void sdv(RSP* rsp, uint32_t instruction);
+    static void sqv(RSP* rsp, uint32_t instruction);
+    static void srv(RSP* rsp, uint32_t instruction);
+    static void spv(RSP* rsp, uint32_t instruction);
+    static void suv(RSP* rsp, uint32_t instruction);
+    static void shv(RSP* rsp, uint32_t instruction);
+    static void sfv(RSP* rsp, uint32_t instruction);
+    static void swv(RSP* rsp, uint32_t instruction);
+    static void stv(RSP* rsp, uint32_t instruction);
 
     static uint32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);

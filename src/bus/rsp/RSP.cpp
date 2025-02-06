@@ -313,9 +313,16 @@ uint64_t RSP::runRsp() {
                 }
                 break;
             }
-            case 58:
-                std::cout << "TODO: swc2 instructions\n";
-                exit(1);
+            case 58: {
+                uint32_t op = (instruction >> 11) & 0x1f;
+
+                if (op < swc2.size()) {
+                    swc2[op](this, instruction);
+                } else {
+                    RSP::reserved(this, instruction);
+                }
+                break;
+            }
             default:
                 instructions[command](this, instruction);
                 break;
@@ -385,6 +392,14 @@ uint8_t RSP::getVt(uint32_t instruction) {
 
 uint8_t RSP::memRead8(uint32_t address) {
     return dmem[address & 0xfff];
+}
+
+void RSP::memWrite8(uint32_t address, uint8_t value) {
+    dmem[address & 0xfff] = value;
+}
+
+uint8_t RSP::getVec8(uint8_t vt, uint8_t velement) {
+    return vpr[16 * vt + velement];
 }
 
 void RSP::setVec8(uint8_t vt, uint8_t velement, uint8_t value) {

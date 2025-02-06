@@ -2,6 +2,7 @@
 
 #include "RSP.hpp"
 #include <iostream>
+#include <algorithm>
 #include "../Bus.hpp"
 
 void RSP::addi(RSP* rsp, uint32_t instruction) {
@@ -255,8 +256,20 @@ void RSP::ldv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::lqv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lqv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 4;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    uint32_t end = (address & 0xff0) + 16;
+
+    uint32_t length = std::min(end - address, 16 - (uint32_t)velement);
+
+    for (int i = 0; i < length; i++) {
+        rsp->setVec8(vt, velement + i, rsp->memRead8(address + i));
+    }
 }
 void RSP::lrv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lrv\n";
@@ -284,5 +297,62 @@ void RSP::lwv(RSP* rsp, uint32_t instruction) {
 }
 void RSP::ltv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: ltv\n";
+    exit(1);
+}
+
+void RSP::sbv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: sbv\n";
+    exit(1);
+}
+void RSP::ssv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: ssv\n";
+    exit(1);
+}
+void RSP::slv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: slv\n";
+    exit(1);
+}
+void RSP::sdv(RSP* rsp, uint32_t instruction) {
+    uint32_t offset = getVOffset(instruction) << 3;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    for (int i = 0; i < 8; i++) {
+        rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
+    }
+}
+void RSP::sqv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: sqv\n";
+    exit(1);
+}
+void RSP::srv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: srv\n";
+    exit(1);
+}
+void RSP::spv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: spv\n";
+    exit(1);
+}
+void RSP::suv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: suv\n";
+    exit(1);
+}
+void RSP::shv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: shv\n";
+    exit(1);
+}
+void RSP::sfv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: sfv\n";
+    exit(1);
+}
+void RSP::swv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: swv\n";
+    exit(1);
+}
+void RSP::stv(RSP* rsp, uint32_t instruction) {
+    std::cout << "TODO: stv\n";
     exit(1);
 }

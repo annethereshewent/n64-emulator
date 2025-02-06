@@ -431,7 +431,7 @@ void CPU::sll(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
     uint32_t shift = shiftAmount(instruction);
 
-    cpu->r[rd] = cpu->r[rt] << shift;
+    cpu->r[rd] = (int32_t)(uint32_t)(uint64_t)(cpu->r[rt] << shift);
 }
 void CPU::srl(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
@@ -623,7 +623,7 @@ void CPU::subu(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
 
-    cpu->r[rd] = cpu->r[rs] - cpu->r[rt];
+    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rs] - (uint32_t)cpu->r[rt]);
 }
 void CPU::and_(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

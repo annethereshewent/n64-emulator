@@ -351,6 +351,11 @@ uint64_t RSP::runRsp() {
 
         if (previousDelaySlot && inDelaySlot) {
             inDelaySlot = false;
+            if (cpuBroken) {
+                break;
+            }
+        } else if (cpuBroken) {
+            break;
         }
 
         pc &= 0xffc;
@@ -473,23 +478,29 @@ void RSP::updateAccumulatorMid32(int element, int32_t result, bool accumulate) {
 
 void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate) {
     if (accumulate) {
-        int32_t x1 = *(int32_t*)&vAcc[element * 2 + 1];
-        int32_t x0 = *(int32_t*)&vAcc[element * 2];
+        int32_t x1 = *(int32_t*)&vAcc[(element * 2 + 1) * 4];
+        int32_t x0 = *(int32_t*)&vAcc[(element * 2) * 4];
 
         int32_t z0 = (int64_t)x0 + (int64_t)result;
 
         int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
         int32_t z1 = x1 + v1 + c;
 
-        writeAcc32(element * 2 + 1, (uint32_t)((z1 << 16) >> 16));
-        writeAcc32(element * 2, (uint32_t)z0);
+        writeAcc32((element * 2 + 1) * 4, (uint32_t)((z1 << 16) >> 16));
+        writeAcc32((element * 2) * 4, (uint32_t)z0);
     } else {
-        writeAcc32(element * 2 + 1, v1);
-        writeAcc32(element * 2, result);
+
+        std::cout << "writing to accumulate " << std::hex << v1 << " and " << result << "\n";
+
+        writeAcc32((element * 2 + 1) * 4, v1);
+        writeAcc32((element * 2) * 4, result);
+
+
     }
 }
 
 void RSP::writeAcc32(int offset, uint32_t value) {
+    std::cout << "writing to accumulator 32 bit value " << std::hex << value << " at offset " << std::dec << offset << "\n";
     for (int i = 0; i < 4; i++) {
         int shift = 8 * i;
         vAcc[offset + i] = (uint8_t)(value >> shift);
@@ -498,7 +509,9 @@ void RSP::writeAcc32(int offset, uint32_t value) {
 
 void RSP::setVecFromAccSignedMid(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
-        int32_t himid = *(int32_t*)&vAcc[(vd * 4) + 1];
+        int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];
+
+        std::cout << "himid = " << std::hex << himid << "\n";
 
         int16_t result;
 

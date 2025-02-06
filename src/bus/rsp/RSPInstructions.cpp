@@ -162,8 +162,7 @@ void RSP::jalr(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::break_(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: break\n";
-    exit(1);
+    rsp->cpuBroken = true;
 }
 void RSP::add(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] + rsp->r[CPU::getRt(instruction)];
@@ -305,8 +304,16 @@ void RSP::sbv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::ssv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: ssv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 1;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    for (int i = 0; i < 2; i++) {
+        rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
+    }
 }
 void RSP::slv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: slv\n";
@@ -325,8 +332,21 @@ void RSP::sdv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::sqv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sqv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 4;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    uint32_t end = (address & 0xff0) + 16;
+
+    uint32_t len = end - address;
+
+    for (int i = 0; i < len; i++) {
+        std::cout << "writing value " << std::hex << +rsp->getVec8(vt, (velement + i) & 0xf) << "\n";
+        rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
+    }
 }
 void RSP::srv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: srv\n";

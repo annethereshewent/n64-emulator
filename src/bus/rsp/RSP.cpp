@@ -213,6 +213,14 @@ uint32_t RSP::readRegisters(uint32_t offset) {
         case 6:
             return status.dmaBusy;
             break;
+        case 7: {
+            uint32_t returnVal = semaphore;
+
+            semaphore = 1;
+
+            return returnVal;
+            break;
+        }
         default:
             std::cout << "(rsp read registers)not yet implemented: " << std::dec << offset << "\n";
             exit(1);

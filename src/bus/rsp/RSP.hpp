@@ -4,6 +4,7 @@
 #include "SPStatus.hpp"
 #include "SPLength.hpp"
 
+const uint32_t NUM_RSP_REGISTERS = 8;
 
 enum DmaDirection {
     Read,

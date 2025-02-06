@@ -30,8 +30,12 @@ void RSP::bgtz(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::blez(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: blez\n";
-    exit(1);
+    if ((int32_t)rsp->r[CPU::getRs(instruction)] <= 0) {
+        rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
+
+        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
+    }
+    rsp->inDelaySlot = true;
 }
 void RSP::bne(RSP* rsp, uint32_t instruction) {
     if (rsp->r[CPU::getRs(instruction)] != rsp->r[CPU::getRt(instruction)]) {
@@ -157,8 +161,7 @@ void RSP::break_(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::add(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: add\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] + rsp->r[CPU::getRt(instruction)];
 }
 void RSP::addu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: addu\n";
@@ -210,7 +213,16 @@ void RSP::mtc0(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::mfc0(RSP* rsp, uint32_t instruction) {
-    rsp->r[CPU::getRt(instruction)] = rsp->readRegisters(CPU::getRd(instruction));
+    std::cout << "got instruction " << std::hex << instruction << "\n";
+
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    if (rd < NUM_RSP_REGISTERS) {
+        rsp->r[rt] = rsp->readRegisters(CPU::getRd(instruction));
+    } else {
+        rsp->r[rt] = rsp->bus.rdp.readRegisters(rd - NUM_RSP_REGISTERS);
+    }
 
     rsp->cycleCounter += 4;
     rsp->isRunning = false;

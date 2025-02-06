@@ -8,6 +8,7 @@
 #include "rsp/RSP.cpp"
 #include "mips_interface/MIPSInterface.cpp"
 #include "peripheral_interface/PeripheralInterface.cpp"
+#include "rdp/RDP.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);

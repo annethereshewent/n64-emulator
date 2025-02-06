@@ -383,6 +383,11 @@ void RSP::cfc2(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::vmulf(RSP* rsp, uint32_t instruction) {
+    vectorMultiplyFractions(rsp, instruction, false, 0x8000);
+    rsp->setVecFromAccSignedMid(getVd(instruction));
+}
+
+void RSP::vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulate, int32_t round) {
     uint8_t vte = getVte(instruction);
     uint8_t vt = getVt(instruction);
     uint8_t vs = getVs(instruction);
@@ -391,13 +396,12 @@ void RSP::vmulf(RSP* rsp, uint32_t instruction) {
         int16_t s = rsp->getVecS16(vs, el);
         int16_t t = rsp->getVecS16(vt, select & 0x7);
 
-        int32_t result = (int32_t)s * (int32_t)t * 2 + 0x8000;
+        int32_t result = (int32_t)s * (int32_t)t * 2 + round;
 
-        rsp->updateAccumulatorMid32(el, result, false);
+        rsp->updateAccumulatorMid32(el, result, accumulate);
     }
-
-    rsp->setVecFromAccSignedMid(getVd(instruction));
 }
+
 void RSP::vmulu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmulu\n";
     exit(1);
@@ -427,8 +431,8 @@ void RSP::vmudh(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vmacf(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmacf\n";
-    exit(1);
+    vectorMultiplyFractions(rsp, instruction, true, 0);
+    rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vmacu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmacu\n";

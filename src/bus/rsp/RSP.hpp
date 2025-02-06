@@ -494,6 +494,8 @@ public:
     static void vrsqh(RSP* rsp, uint32_t instruction);
     static void vnop(RSP* rsp, uint32_t instruction);
 
+    static void vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulate, int32_t round);
+
     static uint32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);
     static uint8_t getVt(uint32_t instruction);

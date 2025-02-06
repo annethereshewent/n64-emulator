@@ -309,7 +309,7 @@ public:
 
     bool divDp = false;
 
-    std::array<uint64_t, 8> vAcc = {};
+    std::array<uint8_t, 64> vAcc = {};
 
     std::array<uint32_t, 16> vecSelect;
 
@@ -357,6 +357,14 @@ public:
     void setVec8(uint8_t vt, uint8_t velement, uint8_t value);
     void setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value);
     uint8_t getVec8(uint8_t vt, uint8_t velement);
+    int16_t getVecS16(uint8_t vt, uint8_t element);
+    void setVec16(uint8_t vt, uint8_t element, uint16_t value);
+
+    void updateAccumulatorMid32(int element, int32_t result, bool accumulate);
+    void updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate);
+    void setVecFromAccSignedMid(uint8_t vd);
+
+    void writeAcc32(int offset, uint32_t value);
 
     uint32_t readRegisters(uint32_t offset);
     void writeRegisters(uint32_t offset, uint32_t value);
@@ -489,6 +497,8 @@ public:
     static uint32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);
     static uint8_t getVt(uint32_t instruction);
-
+    static uint8_t getVs(uint32_t instruction);
+    static uint8_t getVte(uint32_t instruction);
+    static uint8_t getVd(uint32_t instruction);
 
 };

@@ -422,6 +422,16 @@ uint8_t RSP::getVElement(uint32_t instruction) {
 uint8_t RSP::getVt(uint32_t instruction) {
     return (uint8_t)((instruction >> 16) & 0x1f);
 }
+uint8_t RSP::getVs(uint32_t instruction) {
+    return (uint8_t)((instruction >> 11) & 0x1f);
+}
+uint8_t RSP::getVte(uint32_t instruction) {
+    return (uint8_t)((instruction >> 21) & 0xf);
+}
+
+uint8_t RSP::getVd(uint32_t instruction) {
+    return (uint8_t)((instruction >> 6) & 0x1f);
+}
 
 uint8_t RSP::memRead8(uint32_t address) {
     return dmem[address & 0xfff];
@@ -444,5 +454,60 @@ void RSP::setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value) 
 
     if (velement < 15) {
         setVec8(vt, velement + 1, (uint8_t)value);
+    }
+}
+
+int16_t RSP::getVecS16(uint8_t vt, uint8_t element) {
+    return std::byteswap(*(uint16_t*)&vpr[vt][element * 2]);
+}
+
+void RSP::setVec16(uint8_t vt, uint8_t element, uint16_t value) {
+    Bus::writeHalf(&vpr[vt][element * 2], value);
+}
+
+void RSP::updateAccumulatorMid32(int element, int32_t result, bool accumulate) {
+    int32_t v1 = result >= 0 ? 0 : -1;
+
+    updateAccumulatorHiLo(element, v1, result, accumulate);
+}
+
+void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate) {
+    if (accumulate) {
+        int32_t x1 = *(int32_t*)&vAcc[element * 2 + 1];
+        int32_t x0 = *(int32_t*)&vAcc[element * 2];
+
+        int32_t z0 = (int64_t)x0 + (int64_t)result;
+
+        int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
+        int32_t z1 = x1 + v1 + c;
+
+        writeAcc32(element * 2 + 1, (uint32_t)((z1 << 16) >> 16));
+        writeAcc32(element * 2, (uint32_t)z0);
+    } else {
+        writeAcc32(element * 2 + 1, v1);
+        writeAcc32(element * 2, result);
+    }
+}
+
+void RSP::writeAcc32(int offset, uint32_t value) {
+    for (int i = 0; i < 4; i++) {
+        int shift = 8 * i;
+        vAcc[offset + i] = (uint8_t)(value >> shift);
+    }
+}
+
+void RSP::setVecFromAccSignedMid(uint8_t vd) {
+    for (int i = 0; i < 8; i++) {
+        int32_t himid = *(int32_t*)&vAcc[(vd * 4) + 1];
+
+        int16_t result;
+
+        if (himid >= 0) {
+            result = (himid & 0xffff8000) ? 0x7fff : himid;
+        } else {
+            result = (~himid & 0xffff8000) ? 0x8000 : himid;
+        }
+
+        setVec16(vd, i, (uint16_t)result);
     }
 }

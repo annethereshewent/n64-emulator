@@ -383,8 +383,20 @@ void RSP::cfc2(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::vmulf(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmulf\n";
-    exit(1);
+    uint8_t vte = getVte(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vs = getVs(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t s = rsp->getVecS16(vs, el);
+        int16_t t = rsp->getVecS16(vt, select & 0x7);
+
+        int32_t result = (int32_t)s * (int32_t)t * 2 + 0x8000;
+
+        rsp->updateAccumulatorMid32(el, result, false);
+    }
+
+    rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vmulu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmulu\n";

@@ -150,8 +150,7 @@ void RSP::srlv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::srav(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: srav\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = (uint32_t)((int32_t)rsp->r[CPU::getRt(instruction)] >> (rsp->r[CPU::getRs(instruction)] & 31));
 }
 void RSP::jr(RSP* rsp, uint32_t instruction) {
     rsp->nextPc = rsp->r[CPU::getRs(instruction)];

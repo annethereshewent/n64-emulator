@@ -227,7 +227,11 @@ public:
     std::array<RSPInstruction, 64> instructions = {};
     std::array<RSPInstruction, 64> secondary = {};
 
+    uint16_t memRead16(uint32_t address);
+    // this one uses a ptr because need to read from either imem or dmem, other methods just read from dmem
     uint32_t memRead32(uint8_t* ptr);
+    void memWrite32(uint32_t address, uint32_t value);
+    void memWrite16(uint32_t address, uint16_t value);
     void handleDma(SPDma dma);
 
     void pushDma(DmaDirection direction);

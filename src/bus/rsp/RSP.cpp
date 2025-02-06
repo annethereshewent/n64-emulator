@@ -26,7 +26,7 @@ void RSP::handleDma(SPDma dma) {
 
                 uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
 
-                bus.writeWord(ramPtr, value);
+                Bus::writeWord(ramPtr, value);
 
                 memAddress += 4;
                 dramAddress += 4;
@@ -40,7 +40,7 @@ void RSP::handleDma(SPDma dma) {
 
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
 
-                bus.writeWord(&bus.rdram[dramAddress], value);
+                Bus::writeWord(&bus.rdram[dramAddress], value);
 
                 memAddress += 4;
                 dramAddress += 4;
@@ -277,6 +277,8 @@ uint64_t RSP::runRsp() {
 
         nextPc += 4;
 
+        std::cout << "pc = " << std::hex << previousPc << "\n";
+
         bool previousDelaySlot = inDelaySlot;
 
         switch (command) {
@@ -327,8 +329,21 @@ uint64_t RSP::runRsp() {
     return (uint64_t)((double)cycleCounter * 1.5);
 }
 
+void RSP::memWrite32(uint32_t address, uint32_t value) {
+    Bus::writeWord(&dmem[address & 0xfff], value);
+}
+
+
+void RSP::memWrite16(uint32_t address, uint16_t value) {
+    Bus::writeHalf(&dmem[address & 0xfff], value);
+}
+
 uint32_t RSP::memRead32(uint8_t* ptr) {
     return std::byteswap(*(uint32_t*)&ptr[0]);
+}
+
+uint16_t RSP::memRead16(uint32_t address) {
+    return std::byteswap(*(uint16_t*)&dmem[address]);
 }
 
 void RSP::restartRsp() {

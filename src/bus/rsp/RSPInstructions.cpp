@@ -26,8 +26,12 @@ void RSP::beq(RSP* rsp, uint32_t instruction) {
     rsp->inDelaySlot = true;
 }
 void RSP::bgtz(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: bgtz\n";
-    exit(1);
+    if ((int32_t)rsp->r[CPU::getRs(instruction)] > 0) {
+        rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
+
+        std::cout << "set nextPC to " << std::hex << rsp->nextPc << "\n";
+    }
+    rsp->inDelaySlot = true;
 }
 void RSP::blez(RSP* rsp, uint32_t instruction) {
     if ((int32_t)rsp->r[CPU::getRs(instruction)] <= 0) {
@@ -65,12 +69,26 @@ void RSP::lbu(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::lh(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lh\n";
-    exit(1);
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t value = (int16_t)(int32_t)(uint32_t)rsp->memRead16(address & 0xfff);
+
+    rsp->r[CPU::getRt(instruction)] = value;
+
+    std::cout << "set register " << std::dec << CPU::getRt(instruction) << " to value " << std::hex << value << "\n";
 }
 void RSP::lhu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lhu\n";
-    exit(1);
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t value = (uint32_t)rsp->memRead16(address & 0xfff);
+
+    rsp->r[CPU::getRt(instruction)] = value;
+
+    std::cout << "set register " << std::dec << CPU::getRt(instruction) << " to value " << std::hex << value << "\n";
 }
 void RSP::lui(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lui\n";
@@ -104,8 +122,12 @@ void RSP::sb(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::sh(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sh\n";
-    exit(1);
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    rsp->memWrite16(address & 0xfff, (uint16_t)rsp->r[CPU::getRt(instruction)]);
+
 }
 void RSP::slti(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: slti\n";
@@ -116,8 +138,11 @@ void RSP::sltiu(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::sw(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sw\n";
-    exit(1);
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    rsp->memWrite32(address & 0xfff, rsp->r[CPU::getRt(instruction)]);
 }
 void RSP::xori(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: xori\n";
@@ -128,8 +153,7 @@ void RSP::sll(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRt(instruction)] << CPU::shiftAmount(instruction);
 }
 void RSP::srl(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: srl\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRt(instruction)] >> CPU::shiftAmount(instruction);
 }
 void RSP::sra(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: sra\n";
@@ -213,8 +237,6 @@ void RSP::mtc0(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::mfc0(RSP* rsp, uint32_t instruction) {
-    std::cout << "got instruction " << std::hex << instruction << "\n";
-
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 

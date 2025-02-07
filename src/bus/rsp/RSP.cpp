@@ -560,3 +560,10 @@ void RSP::setVecFromAccSignedLow(uint8_t vd) {
         setVec16(vd, i, (uint16_t)result);
     }
 }
+
+void RSP::setVecFromAccMid(uint8_t vd) {
+    for (int i = 0; i < 8; i++) {
+        int16_t mid = *(int16_t*)&vAcc[(i * 4 + 1) * 2];
+        setVec16(vd, i, (uint16_t)mid);
+    }
+}

@@ -313,8 +313,16 @@ void RSP::ssv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::slv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: slv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 2;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    for (int i = 0; i < 4; i++) {
+        rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
+    }
 }
 void RSP::sdv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = getVOffset(instruction) << 3;
@@ -419,6 +427,21 @@ void RSP::vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulat
     }
 }
 
+void RSP::vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate) {
+    uint8_t vte = getVte(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vs = getVs(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t s = (int16_t)rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
+
+        int32_t result = (int32_t)s * (int32_t)t;
+
+        rsp->updateAccumulatorMid32(el, result, accumulate);
+    }
+}
+
 void RSP::vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumulate) {
     uint8_t vte = getVte(instruction);
     uint8_t vt = getVt(instruction);
@@ -451,8 +474,8 @@ void RSP::vmudl(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vmudm(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmudm\n";
-    exit(1);
+    vectorMulPartialMidM(rsp, instruction, false);
+    rsp->setVecFromAccMid(getVd(instruction));
 }
 void RSP::vmudn(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmudn\n";

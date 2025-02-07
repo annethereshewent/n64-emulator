@@ -364,7 +364,6 @@ void RSP::sqv(RSP* rsp, uint32_t instruction) {
     uint32_t len = end - address;
 
     for (int i = 0; i < len; i++) {
-        std::cout << "writing value " << std::hex << +rsp->getVec8(vt, (velement + i) & 0xf) << "\n";
         rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
     }
 }
@@ -401,8 +400,6 @@ void RSP::mtc2(RSP* rsp, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint8_t velement = getVElement(instruction);
     uint32_t value = rsp->r[CPU::getRt(instruction)];
-
-    std::cout << "setting vector register " << std::hex << rd << "'s  to value " << (uint16_t)value << " from register " << std::dec << CPU::getRt(instruction) << "\n";
 
     rsp->setVec16UnalignedNoWrap(rd, velement, (uint16_t)value);
 }

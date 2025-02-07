@@ -414,7 +414,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache) {
         case 0x460000c:
             peripheralInterface.wrLen = value & 0xffffff;
 
-            std::cout << "dma write event happened!\n";
             dmaWrite();
             break;
         case 0x4600010:
@@ -795,7 +794,6 @@ void Bus::checkIrqs() {
 }
 
 void Bus::finishPiDma() {
-    std::cout << "setting PI interrupt flag\n";
     peripheralInterface.piStatus.ioBusy = 0;
     peripheralInterface.piStatus.dmaBusy = 0;
     peripheralInterface.piStatus.dmaCompleted = 1;

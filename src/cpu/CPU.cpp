@@ -194,7 +194,6 @@ void CPU::checkIrqs() {
     if ((cop0.status & cop0.cause & 0b1111111100000000) != 0 &&
         (cop0.status & 0b111) == 0b1
     ) {
-        std::cout << "entering interrupt\n";
         enterException(false);
     }
 }
@@ -341,7 +340,6 @@ void CPU::step() {
 
         switch (event.eventType) {
             case VideoInterrupt:
-                std::cout << "setting VI interrupt flag\n";
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));

@@ -5,7 +5,6 @@
 #include "RSPInstructions.cpp"
 
 void RSP::handleDma(SPDma dma) {
-    std::cout << "doing an RSP dma....\n";
     uint32_t length = dma.length.length + 1;
     uint32_t count = dma.length.count + 1;
     uint32_t skip = dma.length.skip;
@@ -104,7 +103,6 @@ void RSP::updateStatus(uint32_t value) {
         bus.clearInterrupt(SP_INTERRUPT_FLAG);
     }
     if (((value >> 3) & 0b1) == 0 && ((value >> 4) & 0b1) == 1) {
-        std::cout << "setting SP interrupt flag\n";
         bus.setInterrupt(SP_INTERRUPT_FLAG);
     }
     if (((value >> 5) & 0b1) == 1 && ((value >> 6) & 0b1) == 0) {
@@ -169,7 +167,6 @@ void RSP::updateStatus(uint32_t value) {
     }
 
     if (!status.halted && previousHalt) {
-        std::cout << "starting RSP CPU\n";
         cpuHalted = false;
         isRunning = true;
         cpuBroken = false;

@@ -10,7 +10,7 @@
 
 class CPU {
 public:
-    std::array<uint64_t, 32> r;
+    std::array<uint64_t, 32> r = {};
 
     uint32_t clock = 93750000;
     bool llbit = false;
@@ -50,7 +50,7 @@ public:
     void loadRom(std::string filename);
 
     void checkIrqs();
-    void enterException();
+    void enterException(bool usePreviousPc = true);
 
     // instructions
     static void reserved(CPU* cpu, uint32_t instruction);

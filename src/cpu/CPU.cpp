@@ -195,22 +195,20 @@ void CPU::checkIrqs() {
         (cop0.status & 0b111) == 0b1
     ) {
         std::cout << "entering interrupt\n";
-        enterException();
+        enterException(false);
     }
 }
 
-void CPU::enterException() {
+void CPU::enterException(bool usePreviousPc) {
     if (((cop0.status >> 1) & 0b1) == 0) {
         if (inDelaySlot) {
-            cop0.epc = pc - 4;
+            cop0.epc = usePreviousPc ? previousPc - 4 : pc - 4;
             cop0.cause |= 1 << 31;
         } else {
-            cop0.epc = pc;
+            cop0.epc = usePreviousPc ? previousPc : pc;
             cop0.cause &= ~(1 << 31);
         }
     }
-
-
 
     cop0.status |= 1 << 1;
 
@@ -286,7 +284,7 @@ void CPU::step() {
     uint32_t opcode = bus.memRead32(pc, true);
     uint32_t command = opcode >> 26;
 
-    previousPc = pc;
+    previousPc = Bus::translateAddress(pc);
 
     if (!discarded) {
         pc = nextPc;

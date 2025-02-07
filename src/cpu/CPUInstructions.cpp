@@ -538,14 +538,15 @@ void CPU::multu(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(4);
 }
 void CPU::div(CPU* cpu, uint32_t instruction) {
-    uint64_t numerator = (int32_t)(int64_t)(uint64_t)cpu->r[getRs(instruction)];
-    uint64_t denominator = (int32_t)(int64_t)(uint64_t)cpu->r[getRt(instruction)];
+    int32_t numerator = (int32_t)cpu->r[getRs(instruction)];
+    int32_t denominator = (int32_t)cpu->r[getRt(instruction)];
+
 
     if (denominator != 0) {
-        cpu->lo = numerator / denominator;
-        cpu->hi = numerator % denominator;
+        cpu->lo = (int64_t)(uint64_t)(numerator / denominator);
+        cpu->hi = (int64_t)(uint64_t)(numerator % denominator);
     } else {
-        if ((int32_t)numerator < 0) {
+        if (numerator < 0) {
             cpu->lo = 1;
         } else {
             cpu->lo = 0xffffffffffffffff;

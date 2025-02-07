@@ -268,8 +268,23 @@ void RSP::lqv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::lrv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lrv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 4;
+
+    uint32_t end = rsp->r[CPU::getRs(instruction)] + offset;
+    uint32_t address = end & 0xff0;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    uint8_t elOffset = end & 0xf;
+
+    uint8_t startElement = (16 - elOffset) + velement;
+
+    uint8_t length = std::min(elOffset, (uint8_t)(16 - startElement));
+
+    for (int i = 0; i < length; i++) {
+        rsp->setVec8(vt, velement + i, rsp->memRead8(address + i));
+    }
 }
 void RSP::lpv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lpv\n";
@@ -457,6 +472,21 @@ void RSP::vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumula
     }
 }
 
+void RSP::vectorMultiplyPartialHigh(RSP* rsp, uint32_t instruction, bool accumulate) {
+    uint8_t vte = getVte(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vs = getVs(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t s = (int16_t)rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
+
+        int32_t result = (int32_t)s * (int32_t)t;
+
+        rsp->updateAccumulatorHigh32(el, result, accumulate);
+    }
+}
+
 void RSP::vmulu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmulu\n";
     exit(1);
@@ -482,8 +512,8 @@ void RSP::vmudn(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vmudh(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmudh\n";
-    exit(1);
+    vectorMultiplyPartialHigh(rsp, instruction, false);
+    rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vmacf(RSP* rsp, uint32_t instruction) {
     vectorMultiplyFractions(rsp, instruction, true, 0);
@@ -514,8 +544,8 @@ void RSP::vmadn(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vmadh(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmadh\n";
-    exit(1);
+    vectorMultiplyPartialHigh(rsp, instruction, true);
+    rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vadd(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vadd\n";

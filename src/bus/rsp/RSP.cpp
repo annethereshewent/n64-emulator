@@ -504,13 +504,8 @@ void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool ac
         writeAcc32((element * 2 + 1) * 4, (uint32_t)((z1 << 16) >> 16));
         writeAcc32((element * 2) * 4, (uint32_t)z0);
     } else {
-
-        std::cout << "writing to accumulate " << std::hex << v1 << " and " << result << "\n";
-
         writeAcc32((element * 2 + 1) * 4, v1);
         writeAcc32((element * 2) * 4, result);
-
-
     }
 }
 
@@ -518,8 +513,12 @@ void RSP::updateAccumulatorLow32(int element, uint32_t result, bool accumulate) 
     updateAccumulatorHiLo(element, 0, result, accumulate);
 }
 
+void RSP::updateAccumulatorHigh32(int element, uint32_t result, bool accumulate) {
+    updateAccumulatorHiLo(element, result >> 16, result << 16, accumulate);
+}
+
+
 void RSP::writeAcc32(int offset, uint32_t value) {
-    std::cout << "writing to accumulator 32 bit value " << std::hex << value << " at offset " << std::dec << offset << "\n";
     for (int i = 0; i < 4; i++) {
         int shift = 8 * i;
         vAcc[offset + i] = (uint8_t)(value >> shift);
@@ -529,8 +528,6 @@ void RSP::writeAcc32(int offset, uint32_t value) {
 void RSP::setVecFromAccSignedMid(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
         int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];
-
-        std::cout << "himid = " << std::hex << himid << "\n";
 
         int16_t result;
 

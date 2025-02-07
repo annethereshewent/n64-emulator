@@ -169,7 +169,7 @@ uint64_t Bus::memRead64(uint64_t address) {
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
-        return (uint64_t)readDataCache(address) << 32 | (uint64_t)readDataCache(address + 4);
+        return ((uint64_t)readDataCache(address) << 32) | (uint64_t)readDataCache(address + 4);
     }
 
     if (actualAddress <= 0x03EFFFFF) {

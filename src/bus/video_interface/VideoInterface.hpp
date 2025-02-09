@@ -8,15 +8,15 @@
 
 class VideoInterface {
 public:
-    uint16_t vInterrupt = 0;
-    uint16_t hVideo = 0;
+    uint32_t vInterrupt = 0;
+    uint32_t hVideo = 0;
     VCurrent vcurrent;
     VCtrl ctrl;
     uint32_t origin = 0;
-    uint16_t width = 0;
+    uint32_t width = 0;
     uint32_t viBurst = 0;
-    uint16_t vTotal = 0;
-    uint16_t hTotal = 0;
+    uint32_t vTotal = 0;
+    uint32_t hTotal = 0;
     HTotalLeap hTotalLeap;
     VVideo vVideo;
     uint32_t vBurst = 0;

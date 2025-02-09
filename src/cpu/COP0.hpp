@@ -17,7 +17,7 @@ public:
     uint32_t pageMask = 0;
     uint32_t wired = 0;
     uint64_t badVAddress = 0;
-    uint32_t count = 0;
+    uint64_t count = 0;
     uint64_t entryHi = 0;
     uint32_t compare = 0;
     uint32_t status = 0;
@@ -36,6 +36,8 @@ public:
     uint64_t errorEpc = 0;
 
     uint64_t latch = 0;
+
+    bool pendingInterrupt = false;
 
     COP0();
 

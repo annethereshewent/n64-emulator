@@ -39,6 +39,7 @@ public:
     InstructionType instructionType = Scalar;
 
     bool pipelineFull = false;
+    bool runAfterDma = false;
 
     uint32_t previousPc = 0;
     uint32_t pc = 0;
@@ -320,7 +321,7 @@ public:
 
     uint64_t cycleCounter = 0;
 
-    uint16_t dmaMemAddress = 0;
+    uint32_t dmaMemAddress = 0;
     uint32_t dmaRamAddress = 0;
     SPLength spReadLength;
     SPLength spWriteLength;

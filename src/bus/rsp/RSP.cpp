@@ -12,6 +12,8 @@ void RSP::handleDma(SPDma dma) {
     uint32_t memAddress = dma.memAddress;
     uint32_t dramAddress = dma.dramAddress;
 
+    // std::cout << "dma memAddress = " << std::hex << memAddress << ", dramAddress = " << dramAddress << "\n";
+
     bool isImem = (memAddress & 0x1000) != 0;
 
     if (isImem) {
@@ -19,11 +21,19 @@ void RSP::handleDma(SPDma dma) {
     }
 
     if (dma.direction == Read) {
+        // std::cout << "doing a dma write towards rsp memory\n";
+        // if (isImem) {
+        //     std::cout << "it's to imem\n";
+        // }
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
                 uint32_t value = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress]);
 
                 uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
+
+                // if (memAddress == 0x3d4 && isImem) {
+                //     std::cout << "yes im being overwritten!!!!! writing to 3d4 value " << std::hex << value << "\n";
+                // }
 
                 Bus::writeWord(ramPtr, value);
 
@@ -33,8 +43,10 @@ void RSP::handleDma(SPDma dma) {
             dramAddress += skip;
         }
     } else {
+        // std::cout << "doing a dma write towards rdram\n";
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
+
                 uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
 
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
@@ -48,7 +60,7 @@ void RSP::handleDma(SPDma dma) {
         }
     }
 
-    dmaMemAddress = memAddress;
+    dmaMemAddress = isImem ? memAddress + 0x1000 : memAddress;
     dmaRamAddress = dramAddress;
     spReadLength.value = 0xff8;
     spWriteLength.value = 0xff8;
@@ -184,13 +196,22 @@ void RSP::popDma() {
         handleDma(fifo[0]);
     } else {
         status.dmaBusy = 0;
+
+        if (runAfterDma) {
+            runAfterDma = false;
+            startRsp();
+        }
     }
 }
 
 void RSP::startRsp() {
-    uint64_t cycles = runRsp();
+    if (status.dmaBusy) {
+        runAfterDma = true;
+    } else {
+        uint64_t cycles = runRsp();
 
-    bus.cpu.scheduler.addEvent(Event(RunRspPc, bus.cpu.cop0.count + cycles));
+        bus.cpu.scheduler.addEvent(Event(RunRspPc, bus.cpu.cop0.count + cycles));
+    }
 }
 
 uint32_t RSP::readRegisters(uint32_t offset) {
@@ -276,6 +297,8 @@ uint64_t RSP::runRsp() {
         nextPc += 4;
 
         bool previousDelaySlot = inDelaySlot;
+
+        // std::cout << "rsp pc = " << std::hex << previousPc << ", command = " << std::dec << command << "\n";
 
         switch (command) {
             case 0:

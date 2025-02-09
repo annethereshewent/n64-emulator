@@ -190,11 +190,16 @@ CPU::CPU(): bus(*this) {
     };
 }
 
-void CPU::checkIrqs() {
-    if ((cop0.status & cop0.cause & 0b1111111100000000) != 0 &&
+void CPU::checkIrqs(bool usePreviousPc) {
+    if ((bus.mips.mipsInterrupt.value & bus.mips.mipsMask.value) == 0 && cop0.pendingInterrupt) {
+        cop0.pendingInterrupt = false;
+        cop0.cause = 1 << 15;
+    }
+
+    if ((cop0.status & cop0.cause & 0xff00) != 0 &&
         (cop0.status & 0b111) == 0b1
     ) {
-        enterException(false);
+        enterException(usePreviousPc);
     }
 }
 
@@ -297,7 +302,11 @@ void CPU::step() {
 
     bool oldDelaySlot = inDelaySlot;
 
-    // if ((!visited.contains(previousPc) && debugOn) || previousPc == 0xffffffff80327788) {
+    // if (previousPc == 0x31557c) {
+    //     debugOn = true;
+    // }
+
+    // if (!visited.contains(previousPc)) {
     //     uint32_t actualCommand = command;
     //     if (command == 0) {
     //         std::cout << "command is secondary\n";
@@ -306,9 +315,22 @@ void CPU::step() {
     //         std::cout << "command is cop0\n";
     //         actualCommand = (opcode >> 21) & 0x1f;
     //     }
-    //     std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
+    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
     //     // std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << "\n";
     //     visited.insert(previousPc);
+    // }
+
+    // if (previousPc == 0x327ff4 || previousPc == 0x327df8 || previousPc == 0x324a30 || previousPc == 0x324a04 || previousPc == 0x247be0) {
+    //     uint32_t actualCommand = command;
+    //     if (command == 0) {
+    //         std::cout << "command is secondary\n";
+    //         actualCommand = opcode & 0x3f;
+    //     } else if (command == 16) {
+    //         std::cout << "command is cop0\n";
+    //         actualCommand = (opcode >> 21) & 0x1f;
+    //     }
+    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
+    //     // std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << "\n";
     // }
 
     switch(command) {
@@ -362,6 +384,14 @@ void CPU::step() {
                 break;
             case PIDma:
                 bus.finishPiDma();
+                break;
+            case CompareCount:
+                std::cout << "setting pendingInterrupt to true, checking irqs...\n";
+                cop0.pendingInterrupt = true;
+
+                scheduler.addEvent(Event(CompareCount, scheduler.getTimeToNext() + 0xffffffff));
+
+                checkIrqs();
                 break;
         }
     }

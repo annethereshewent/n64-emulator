@@ -4,10 +4,33 @@
 #include <iostream>
 
 void Scheduler::addEvent(Event event) {
-    queue.push(event);
+    if (!currentEvents.contains(event.eventType)) {
+        queue.push(event);
+        currentEvents.insert(event.eventType);
+    } else {
+        // TODO: optimize this, probably need to use
+        // something other than priority queue
+
+        std::vector<Event> events;
+        while (!queue.empty()) {
+            Event compare = queue.top();
+            events.push_back(compare);
+            queue.pop();
+
+            if (compare.eventType == event.eventType) {
+                break;
+            }
+        }
+
+        queue.push(event);
+
+        for (Event oldEvent: events) {
+            queue.push(oldEvent);
+        }
+    }
 }
 
-bool Scheduler::hasNextEvent(uint32_t cycles) {
+bool Scheduler::hasNextEvent(uint64_t cycles) {
     if (!queue.empty() && queue.top().cycles <= cycles) {
         return true;
     }
@@ -23,7 +46,11 @@ Event Scheduler::getNextEvent() {
     return event;
 }
 
-void Scheduler::rebaseEvents(uint32_t oldCycles, uint32_t newCycles) {
+uint64_t Scheduler::getTimeToNext() {
+    return queue.top().cycles;
+}
+
+void Scheduler::rebaseEvents(uint64_t oldCycles, uint64_t newCycles) {
     std::vector<Event> events;
     while (!queue.empty()) {
         events.push_back(queue.top());

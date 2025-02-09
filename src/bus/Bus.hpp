@@ -84,7 +84,7 @@ public:
     void dcacheWriteback(uint64_t line);
 
     void memWrite64(uint64_t address, uint64_t value);
-    void memWrite32(uint64_t address, uint32_t value, bool ignoreCache = false);
+    void memWrite32(uint64_t address, uint32_t value, bool ignoreCache = false, int64_t mask = -1);
     void memWrite16(uint64_t address, uint16_t value);
     void memWrite8(uint64_t address, uint8_t value);
 
@@ -111,4 +111,6 @@ public:
     static void writeHalf(uint8_t* ptr, uint16_t value);
     static void writeDoubleWord(uint8_t* ptr, uint64_t value);
     static uint32_t calculateRdRamCycles(uint32_t length);
+
+    static void writeWithMask32(uint32_t* oldVal, uint32_t newVal, uint32_t mask);
 };

@@ -316,7 +316,11 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
     uint32_t value = cpu->bus.memRead32(address);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
-}
+
+    // if (cpu->previousPc == 0x324a04) {
+    //     std::cout << "loaded value " << std::hex << cpu->r[rt] << " into register " << std::dec << rt << " from address " << std::hex << address << "\n";
+    // }
+ }
 void CPU::lwl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lwl\n";
     exit(1);
@@ -412,15 +416,45 @@ void CPU::sw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
+    // if (cpu->previousPc == 0x50) {
+    //     std::cout << "storing " << std::hex << (uint32_t)cpu->r[rt] << " at address " << address << "\n";
+    // }
+
     cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
 }
 void CPU::swl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: swl\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = immediate + cpu->r[rs];
+
+    uint32_t shift = (address & 0x3) * 8;
+
+    uint32_t maskShift = 8 * (4 - (address & 0x3));
+
+    uint32_t mask = (address & 0x3) == 0 ? -1 : (1 << maskShift) - 1;
+
+    uint32_t value = (uint32_t)(cpu->r[rt] >> shift);
+
+    cpu->bus.memWrite32(address & ~3, value, false, mask);
 }
 void CPU::swr(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: swr\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = immediate + cpu->r[rs];
+
+    uint32_t shift = 8 * (3 - (address & 0x3));
+
+    uint32_t mask = ~((1 << shift) - 1);
+
+    uint32_t value = (uint32_t)(cpu->r[rt] << shift);
+
+    cpu->bus.memWrite32(address & ~3, value, false, mask);
 }
 void CPU::xori(CPU* cpu, uint32_t instruction) {
     cpu->r[getRt(instruction)] = cpu->r[getRs(instruction)] ^ (uint64_t)getImmediate(instruction);

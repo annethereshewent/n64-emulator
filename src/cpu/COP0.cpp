@@ -101,9 +101,8 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
             wired = (uint32_t)value & 0x3f;
             break;
         case 9: {
-            uint32_t newCount = (uint32_t)value;
+            uint64_t newCount = value & 0xffffffff;
             newCount <<= 1;
-
 
             scheduler->rebaseEvents(count, newCount);
 
@@ -113,10 +112,27 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
         case 10:
             entryHi = value & 0xc00000ffffffe0ff;
             break;
-        case 11:
+        case 11: {
             compare = (uint32_t)value;
-            // TODO: do some additional stuff here related to compare register once scheduler is in place.
+            uint32_t currentCount = count >> 1;
+
+            uint32_t diff = value - currentCount;
+
+            if (diff == 0) {
+                diff = 0xffffffff;
+            }
+
+            uint64_t newCycles = (uint64_t)diff << 1;
+
+            std::cout << "scheduling next event in " << std::hex << newCycles << "\n";
+
+            scheduler->addEvent(Event(CompareCount, (uint64_t)count + ((uint64_t)diff << 1)));
+
+            cause &= ~(1 << 15);
+            pendingInterrupt = false;
+
             break;
+        }
         case 12:
             status = (uint32_t)value & 0xff57ffff;
             // TODO: check if fgr registers need to be set

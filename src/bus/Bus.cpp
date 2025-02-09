@@ -8,6 +8,7 @@
 #include "rsp/RSP.cpp"
 #include "mips_interface/MIPSInterface.cpp"
 #include "peripheral_interface/PeripheralInterface.cpp"
+#include "serial_interface/SerialInterface.cpp"
 #include "rdp/RDP.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
@@ -295,28 +296,23 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
     switch (actualAddress) {
         case 0x4040000:
-            // rsp.dmaMemAddress = value & 0x1ffc;
             Bus::writeWithMask32(&rsp.dmaMemAddress, value & 0x1ffc, mask);
             break;
         case 0x4040004:
-            // rsp.dmaRamAddress = value & 0xfffffc;
             Bus::writeWithMask32(&rsp.dmaRamAddress, value & 0xfffffc, mask);
             break;
         case 0x4040008:
-            // rsp.spReadLength.value = value;
             Bus::writeWithMask32(&rsp.spReadLength.value, value, mask);
-            rsp.pushDma(Read);
+            rsp.pushDma(DmaDirection::Read);
             break;
         case 0x4040010:
             rsp.updateStatus(value);
             break;
         case 0x4080000:
-            // rsp.pc = value & 0xffc;
             Bus::writeWithMask32(&rsp.pc, value & 0xffc, mask);
             rsp.nextPc = rsp.pc + 4;
             break;
         case 0x410000c:
-            // rdp.status.value = value;
             Bus::writeWithMask32(&rdp.status.value, value, mask);
             break;
         case 0x4300000:
@@ -331,32 +327,26 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             cpu.checkIrqs();
             break;
         case 0x4400000:
-            // videoInterface.ctrl.value = value & 0x1ffff;
             Bus::writeWithMask32(&videoInterface.ctrl.value, value & 0x1ffff, mask);
             videoInterface.ctrl.unused = 0;
             break;
         case 0x4400004:
-            // videoInterface.origin = value & 0xffffff;
             Bus::writeWithMask32(&videoInterface.origin, value & 0xffffff, mask);
             break;
         case 0x4400008:
-            // videoInterface.width = value & 0xfff;
             Bus::writeWithMask32(&videoInterface.width, value & 0xfff, mask);
             break;
         case 0x440000c:
-            // videoInterface.vInterrupt = value & 0x3ff;
             Bus::writeWithMask32(&videoInterface.vInterrupt, value & 0x3ff, mask);
             break;
         case 0x4400010:
             clearInterrupt(VI_INTERRUPT_FLAG);
             break;
         case 0x4400014:
-            // videoInterface.viBurst = value & 0x3fffffff;
             Bus::writeWithMask32(&videoInterface.viBurst, value & 0x3fffffff, mask);
             break;
         case 0x4400018:
             if (videoInterface.vTotal != (value & 0x3ff)) {
-                // videoInterface.vTotal = value & 0x3ff;
                 Bus::writeWithMask32(&videoInterface.vTotal, value & 0x3ff, mask);
 
                 recalculateDelay();
@@ -370,31 +360,25 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         case 0x440001c:
             if (videoInterface.hTotal != (value & 0xfff)) {
-                // videoInterface.hTotal = value & 0xfff;
                 Bus::writeWithMask32(&videoInterface.hTotal, value & 0xfff, mask);
                 recalculateDelay();
             }
             break;
         case 0x4400020:
-            // videoInterface.hTotalLeap.value = value & 0xfffffff;
             Bus::writeWithMask32(&videoInterface.hTotalLeap.value, value & 0xfffffff, mask);
             videoInterface.hTotalLeap.unused = 0;
             break;
         case 0x4400024:
-            // videoInterface.hVideo = value & 0x3ff;
             Bus::writeWithMask32(&videoInterface.hVideo, value & 0x3ff, mask);
             break;
         case 0x4400028:
-            // videoInterface.vVideo.value = value & 0x3ffffff;
             Bus::writeWithMask32(&videoInterface.vVideo.value, value & 0x3ffffff, mask);
             videoInterface.vVideo.unused = 0;
             break;
         case 0x440002c:
-            // videoInterface.vBurst = value & 0x3ffffff;
             Bus::writeWithMask32(&videoInterface.vBurst, value & 0x3ffffff, mask);
             break;
         case 0x4400030:
-            // videoInterface.xScale.value = value & 0xfffffff;
             Bus::writeWithMask32(&videoInterface.xScale.value, value & 0xfffffff, mask);
             videoInterface.xScale.unused = 0;
             break;
@@ -466,6 +450,25 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         case 0x4800000:
             Bus::writeWithMask32(&serialInterface.dramAddress, value & 0xffffff, mask);
+            break;
+        case 0x4800004: {
+            serialInterface.dir = DmaDirection::Read;
+
+            serialInterface.status.dmaBusy = 1;
+
+            uint64_t cycles = serialInterface.getPIFRamCycles(*this);
+
+            cpu.scheduler.addEvent(Event(SIDma, cpu.cop0.count + cycles));
+            break;
+        }
+        case 0x4800010:
+            serialInterface.dir = DmaDirection::Write;
+
+            serialInterface.handleDma(*this);
+
+            serialInterface.status.dmaBusy = 1;
+
+            cpu.scheduler.addEvent(Event(SIDma, cpu.cop0.count + 6000));
             break;
         case 0x4800018:
             serialInterface.status.interrupt = 0;

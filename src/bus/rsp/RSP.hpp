@@ -3,13 +3,9 @@
 #include <cstdint>
 #include "SPStatus.hpp"
 #include "SPLength.hpp"
+#include "../DmaDirection.hpp"
 
 const uint32_t NUM_RSP_REGISTERS = 8;
-
-enum DmaDirection {
-    Read,
-    Write
-};
 
 enum InstructionType {
     Scalar,
@@ -18,7 +14,7 @@ enum InstructionType {
 
 class SPDma {
 public:
-    DmaDirection direction = Read;
+    DmaDirection direction = DmaDirection::Read;
     SPLength length;
     uint32_t dramAddress = 0;
     uint32_t memAddress = 0;

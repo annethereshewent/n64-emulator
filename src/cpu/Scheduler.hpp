@@ -11,7 +11,8 @@ enum EventType {
     RspDmaPop,
     RunRspPc,
     PIDma,
-    CompareCount
+    CompareCount,
+    SIDma
 };
 
 class Event {

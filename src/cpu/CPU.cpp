@@ -393,6 +393,21 @@ void CPU::step() {
 
                 checkIrqs();
                 break;
+            case SIDma:
+                if (bus.serialInterface.dir == DmaDirection::Write) {
+                    bus.pif.executeCommand();
+                } else {
+                    bus.serialInterface.handleDma(bus);
+                }
+
+                bus.serialInterface.dir = DmaDirection::None;
+
+                bus.serialInterface.status.dmaBusy = 0;
+                bus.serialInterface.status.ioBusy = 0;
+                bus.serialInterface.status.interrupt = 1;
+
+                bus.setInterrupt(SI_INTERRUPT_FLAG);
+                break;
         }
     }
 

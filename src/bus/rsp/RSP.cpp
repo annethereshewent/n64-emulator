@@ -257,12 +257,12 @@ void RSP::writeRegisters(uint32_t offset, uint32_t value) {
         case 2:
             spReadLength.value = value;
 
-            pushDma(Read);
+            pushDma(DmaDirection::Read);
             break;
         case 3:
             spWriteLength.value = value;
 
-            pushDma(Write);
+            pushDma(DmaDirection::Write);
             break;
         case 4:
             updateStatus(value);

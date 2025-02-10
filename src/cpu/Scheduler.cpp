@@ -30,6 +30,32 @@ void Scheduler::addEvent(Event event) {
     }
 }
 
+void Scheduler::removeEvent(EventType eventType) {
+    // TODO: optimize this, probably need to use
+    // something other than priority queue
+
+    if (currentEvents.contains(eventType)) {
+        std::vector<Event> events;
+        while (!queue.empty()) {
+            Event compare = queue.top();
+            events.push_back(compare);
+            queue.pop();
+
+            if (compare.eventType == eventType) {
+                break;
+            }
+        }
+
+        for (Event oldEvent: events) {
+            queue.push(oldEvent);
+        }
+
+        currentEvents.erase(eventType);
+    }
+
+
+}
+
 bool Scheduler::hasNextEvent(uint64_t cycles) {
     if (!queue.empty() && queue.top().cycles <= cycles) {
         return true;

@@ -38,7 +38,9 @@ private:
     std::priority_queue<Event, std::vector<Event>, Comparator> queue;
 public:
     std::unordered_set<EventType> currentEvents;
+
     void addEvent(Event event);
+    void removeEvent(EventType eventType);
 
     bool hasNextEvent(uint64_t cycles);
 

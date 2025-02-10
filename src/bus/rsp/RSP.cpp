@@ -106,7 +106,8 @@ void RSP::updateStatus(uint32_t value) {
     }
     if ((value & 0b1) == 0 & ((value >> 1) & 0b1) == 1) {
         status.halted = 1;
-        // todo: remove from scheduler "run rsp" event
+        std::cout << "halting CPU, removing RSP event\n";
+        bus.cpu.scheduler.removeEvent(EventType::RunRspPc);
     }
     if (((value >> 2) & 0b1) == 1) {
         status.broke = 0;
@@ -180,7 +181,6 @@ void RSP::updateStatus(uint32_t value) {
 
     if (!status.halted && previousHalt) {
         cpuHalted = false;
-        isRunning = true;
         cpuBroken = false;
 
         startRsp();
@@ -205,6 +205,7 @@ void RSP::popDma() {
 }
 
 void RSP::startRsp() {
+    isRunning = true;
     if (status.dmaBusy) {
         runAfterDma = true;
     } else {

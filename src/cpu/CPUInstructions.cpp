@@ -322,12 +322,43 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
     // }
  }
 void CPU::lwl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lwl\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint32_t shift = 8 * (address & 0x3);
+
+    uint32_t mask = ((1 << shift) - 1);
+
+    uint32_t value = cpu->bus.memRead32(address & ~0x3);
+
+    std::cout << "read value " << std::hex << value << "\n";
+
+    cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value << shift));
+
+    std::cout << "loaded into reg " << std::dec << rt << " " << std::hex << cpu->r[rt] << " from address " << address << ", mask = " << mask << "\n";
 }
 void CPU::lwr(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lwr\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint32_t shift = 8 * (3 - (address & 0x3));
+    uint32_t maskShift = 8 * ((address & 0x3) + 1);
+
+    uint32_t mask = (address & 0x3) == 3 ? 0 : ~(1 << maskShift);
+
+    uint32_t value = cpu->bus.memRead32(address & ~0x3);
+
+    std::cout << "read value " << std::hex << value << "\n";
+
+    cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value >> shift));
+
+    std::cout << "loaded into reg " << std::dec << rt << " " << std::hex << cpu->r[rt] << " from address " << address << ", mask = " << mask << "\n";
 }
 void CPU::lwu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lwu\n";

@@ -96,11 +96,18 @@ std::array<uint8_t, 1984> PIF_BOOT_ROM = {
 class PIF {
 public:
     std::array<uint8_t, 64> ram = {};
-    PIFChannel channel;
+    std::array<PIFChannel, 5> channels;
 
     std::array<uint8_t, 1984> rom = PIF_BOOT_ROM;
 
     void executeCommand();
+    void setupChannels();
+
+    int setupPIFChannel(int channel, int buf);
+    void disablePIFChannel(int channel);
+
+    void processController(int channelId, Bus& bus);
+    void processCartridge(Bus& bus);
 
     PIF();
 };

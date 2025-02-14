@@ -47,7 +47,6 @@ void PIF::setupChannels() {
     int i = 0;
     int j = 0;
 
-    std::cout << "ayyy lmao im going in setupChannels!\n";
     while (i < ram.size() && j < channels.size()) {
         std::cout << "received byte " << std::hex << +ram[i] << "\n";
         switch (ram[i]) {

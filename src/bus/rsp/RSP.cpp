@@ -12,8 +12,6 @@ void RSP::handleDma(SPDma dma) {
     uint32_t memAddress = dma.memAddress;
     uint32_t dramAddress = dma.dramAddress;
 
-    // std::cout << "dma memAddress = " << std::hex << memAddress << ", dramAddress = " << dramAddress << "\n";
-
     bool isImem = (memAddress & 0x1000) != 0;
 
     if (isImem) {
@@ -21,19 +19,11 @@ void RSP::handleDma(SPDma dma) {
     }
 
     if (dma.direction == Read) {
-        // std::cout << "doing a dma write towards rsp memory\n";
-        // if (isImem) {
-        //     std::cout << "it's to imem\n";
-        // }
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
                 uint32_t value = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress]);
 
                 uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
-
-                // if (memAddress == 0x3d4 && isImem) {
-                //     std::cout << "yes im being overwritten!!!!! writing to 3d4 value " << std::hex << value << "\n";
-                // }
 
                 Bus::writeWord(ramPtr, value);
 
@@ -43,7 +33,6 @@ void RSP::handleDma(SPDma dma) {
             dramAddress += skip;
         }
     } else {
-        // std::cout << "doing a dma write towards rdram\n";
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
 
@@ -106,7 +95,6 @@ void RSP::updateStatus(uint32_t value) {
     }
     if ((value & 0b1) == 0 & ((value >> 1) & 0b1) == 1) {
         status.halted = 1;
-        std::cout << "halting CPU, removing RSP event\n";
         bus.cpu.scheduler.removeEvent(EventType::RunRspPc);
     }
     if (((value >> 2) & 0b1) == 1) {
@@ -298,8 +286,6 @@ uint64_t RSP::runRsp() {
         nextPc += 4;
 
         bool previousDelaySlot = inDelaySlot;
-
-        // std::cout << "rsp pc = " << std::hex << previousPc << ", command = " << std::dec << command << "\n";
 
         switch (command) {
             case 0:

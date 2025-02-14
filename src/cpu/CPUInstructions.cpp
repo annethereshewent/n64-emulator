@@ -316,10 +316,6 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
     uint32_t value = cpu->bus.memRead32(address);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
-
-    // if (cpu->previousPc == 0x324a04) {
-    //     std::cout << "loaded value " << std::hex << cpu->r[rt] << " into register " << std::dec << rt << " from address " << std::hex << address << "\n";
-    // }
  }
 void CPU::lwl(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -334,11 +330,7 @@ void CPU::lwl(CPU* cpu, uint32_t instruction) {
 
     uint32_t value = cpu->bus.memRead32(address & ~0x3);
 
-    std::cout << "read value " << std::hex << value << "\n";
-
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value << shift));
-
-    std::cout << "loaded into reg " << std::dec << rt << " " << std::hex << cpu->r[rt] << " from address " << address << ", mask = " << mask << "\n";
 }
 void CPU::lwr(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -354,11 +346,7 @@ void CPU::lwr(CPU* cpu, uint32_t instruction) {
 
     uint32_t value = cpu->bus.memRead32(address & ~0x3);
 
-    std::cout << "read value " << std::hex << value << "\n";
-
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value >> shift));
-
-    std::cout << "loaded into reg " << std::dec << rt << " " << std::hex << cpu->r[rt] << " from address " << address << ", mask = " << mask << "\n";
 }
 void CPU::lwu(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lwu\n";
@@ -446,10 +434,6 @@ void CPU::sw(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
 
     uint64_t address = immediate + cpu->r[rs];
-
-    // if (cpu->previousPc == 0x50) {
-    //     std::cout << "storing " << std::hex << (uint32_t)cpu->r[rt] << " at address " << address << "\n";
-    // }
 
     cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
 }
@@ -831,7 +815,6 @@ void CPU::bgezl(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::tgei(CPU* cpu, uint32_t instruction) {
-    std::cout << "inside tgei\n";
     uint32_t rs = getRs(instruction);
 
     int64_t immediate = (int64_t)getSignedImmediate(instruction);

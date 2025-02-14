@@ -11,8 +11,6 @@ void SerialInterface::handleDma(Bus& bus) {
         for (int i = 0; i < bus.pif.ram.size(); i+= 4) {
             uint32_t data = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress + i]);
 
-            std::cout << "writing " << std::hex << data << " to pif ram address " << i << " from dram address " << dramAddress + i << "\n";
-
             Bus::writeWord(&bus.pif.ram[i], data);
         }
     } else {

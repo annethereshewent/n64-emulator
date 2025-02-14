@@ -124,8 +124,6 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
 
             uint64_t newCycles = (uint64_t)diff << 1;
 
-            std::cout << "scheduling next event in " << std::hex << newCycles << "\n";
-
             scheduler->addEvent(Event(CompareCount, (uint64_t)count + ((uint64_t)diff << 1)));
 
             cause &= ~(1 << 15);

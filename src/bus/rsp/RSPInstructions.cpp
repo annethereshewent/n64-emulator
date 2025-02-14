@@ -22,9 +22,6 @@ void RSP::beq(RSP* rsp, uint32_t instruction) {
     rsp->inDelaySlot = true;
 }
 void RSP::bgtz(RSP* rsp, uint32_t instruction) {
-    // if (rsp->previousPc == 0x3fc) {
-    //     std::cout << "checking if " << std::dec << (int32_t)rsp->r[CPU::getRs(instruction)] << " is greater than 0\n";
-    // }
     if ((int32_t)rsp->r[CPU::getRs(instruction)] > 0) {
         rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
     }
@@ -37,9 +34,6 @@ void RSP::blez(RSP* rsp, uint32_t instruction) {
     rsp->inDelaySlot = true;
 }
 void RSP::bne(RSP* rsp, uint32_t instruction) {
-    // if (rsp->previousPc == 0x28) {
-    //     std::cout << "comparing " << std::hex << rsp->r[CPU::getRs(instruction)] << " and " << rsp->r[CPU::getRt(instruction)] << "\n";
-    // }
     if (rsp->r[CPU::getRs(instruction)] != rsp->r[CPU::getRt(instruction)]) {
         rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
     }
@@ -90,10 +84,6 @@ void RSP::lw(RSP* rsp, uint32_t instruction) {
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
     uint32_t value = rsp->memRead32(&rsp->dmem[address & 0xfff]);
-
-    // if (rsp->previousPc == 0xc) {
-    //     std::cout << "loaded value " << std::hex << value << " from address " << address << "\n";
-    // }
 
     rsp->r[CPU::getRt(instruction)] = value;
 }
@@ -366,8 +356,6 @@ void RSP::sqv(RSP* rsp, uint32_t instruction) {
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
-    // std::cout << "got called at rsp pc = " << std::hex << rsp->previousPc << "\n";
-
     uint8_t velement = getVElement(instruction);
     uint8_t vt = getVt(instruction);
 
@@ -375,10 +363,9 @@ void RSP::sqv(RSP* rsp, uint32_t instruction) {
 
     uint32_t len = end - address;
 
-    // for (int i = 0; i < len; i++) {
-    //     rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
-    //     std::cout << "wrote value " << std::hex << +rsp->getVec8(vt, (velement + i) & 0xf) << "\n";
-    // }
+    for (int i = 0; i < len; i++) {
+        rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
+    }
 }
 void RSP::srv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: srv\n";

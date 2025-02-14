@@ -714,6 +714,11 @@ void CPU::sltu(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
 
+    if (cpu->previousPc == 0x323d5c) {
+        std::cout << "comparing " << std::hex << cpu->r[rs] << " and " << cpu->r[rt] << "\n";
+        exit(1);
+    }
+
     if (cpu->r[rs] < cpu->r[rt]) {
         cpu->r[rd] = 1;
     } else {

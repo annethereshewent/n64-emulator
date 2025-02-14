@@ -192,52 +192,74 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
 
     switch (actualAddress) {
         case 0x4040010:
+            cpu.cop0.addCycles(20);
             return rsp.status.value;
             break;
         case 0x4040018:
+            cpu.cop0.addCycles(20);
             return rsp.status.dmaBusy;
             break;
         case 0x4080000:
+            cpu.cop0.addCycles(20);
             return rsp.pc;
             break;
         case 0x410000c:
+            cpu.cop0.addCycles(20);
             return rdp.status.value;
             break;
         case 0x4300008:
+            cpu.cop0.addCycles(20);
             return mips.mipsInterrupt.value;
             break;
         case 0x430000c:
+            cpu.cop0.addCycles(20);
             return mips.mipsMask.value;
             break;
         case 0x4400010:
+            cpu.cop0.addCycles(20);
             // TODO: implement V_CURRENT
             return videoInterface.vcurrent.value;
             break;
         case 0x4500004:
             // TODO: actually return the current audio length
+            cpu.cop0.addCycles(20);
             return audioInterface.audioLength;
             break;
         case 0x450000c:
             // TODO: implement this audio register
+            cpu.cop0.addCycles(20);
             return 0;
             break;
         case 0x4600010:
+            cpu.cop0.addCycles(20);
             return peripheralInterface.piStatus.value;
             break;
         case 0x470000C:
             // just return 0x14 to skip the initialization process
             // TODO: actually implement rdInterface related stuff
+            cpu.cop0.addCycles(20);
+            // if (!rdInterface.init) {
+            //     // simulate initialization of rdInterface
+            //     cpu.cop0.addCycles(cpu.clock / 2);
+            //     rdInterface.init = true;
+            // }
             return 0x14;
             // return rdInterface.select.value;
             break;
         case 0x4800000:
+            cpu.cop0.addCycles(20);
             return serialInterface.dramAddress;
             break;
         case 0x4800018:
+            cpu.cop0.addCycles(20);
             return serialInterface.status.value;
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
+                uint32_t cycles = ignoreCache ? 9 : 32;
+
+                cpu.cop0.addCycles(cycles);
+
                 return std::byteswap(*(uint32_t*)&rdram[actualAddress]);
             }
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
@@ -248,10 +270,14 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;
 
+                cpu.cop0.addCycles(1);
+
                 return std::byteswap(*(uint32_t*)&rsp.dmem[offset]);
             }
             if (actualAddress >= 0x4001000 && actualAddress <= 0x4001FFF) {
                 uint64_t offset = actualAddress - 0x4001000;
+
+                cpu.cop0.addCycles(1);
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
@@ -266,10 +292,10 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
                 exit(1);
             }
             if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
-
+                cpu.cop0.addCycles(3000);
                 uint64_t pifAddress = actualAddress - 0x1FC00000;
 
-                return std::byteswap(*(uint32_t*)&PIF_BOOT_ROM[pifAddress]);
+                return std::byteswap(*(uint32_t*)&pif.rom[pifAddress]);
             }
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 cpu.cop0.addCycles(3000);
@@ -476,10 +502,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                uint32_t cycles = ignoreCache ? 9 : 32;
-
-                cpu.cop0.addCycles(cycles);
-
                 uint32_t returnVal = std::byteswap(*(uint32_t*)&rdram[actualAddress]);
 
                 Bus::writeWithMask32(&returnVal, value, mask);

@@ -106,6 +106,8 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
 
             scheduler->rebaseEvents(count, newCount);
 
+            std::cout << "setting count to " << std::hex << newCount << "\n";
+
             count = newCount;
             break;
         }
@@ -220,6 +222,7 @@ uint64_t COP0::readRegister(uint32_t index) {
             return badVAddress;
             break;
         case 9:
+            std::cout << "count = " << std::hex << count << "\n";
             return count >> 1;
             break;
         case 10:

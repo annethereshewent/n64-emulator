@@ -41,8 +41,6 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     } else {
         cpu->cop1.fgr64[index] = doubleWord;
     }
-
-
 }
 void COP1::lwc1(CPU* cpu, uint32_t instruction) {
     if (((cpu->cop0.status >> 29) & 0b1) == 0) {

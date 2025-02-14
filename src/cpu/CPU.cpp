@@ -216,6 +216,8 @@ void CPU::enterException(bool usePreviousPc) {
 
     cop0.status |= 1 << 1;
 
+    discarded = false;
+
     if (((cop0.status >> 22) & 0b1) == 0) {
         pc = 0x80000180;
         nextPc = 0x80000184;

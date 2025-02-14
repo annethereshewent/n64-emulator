@@ -9,7 +9,7 @@ class Bus;
 void SerialInterface::handleDma(Bus& bus) {
     if (dir == DmaDirection::Write) {
         for (int i = 0; i < bus.pif.ram.size(); i+= 4) {
-            uint32_t data = *(uint32_t*)&bus.rdram[dramAddress + i];
+            uint32_t data = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress + i]);
 
             Bus::writeWord(&bus.pif.ram[i], data);
         }
@@ -25,13 +25,16 @@ void SerialInterface::handleDma(Bus& bus) {
 uint64_t SerialInterface::getPIFRamCycles(Bus& bus) {
     uint64_t activeChannels = 0;
 
-    for (int i = 0; i < 5; i++) {
-        activeChannels += processChannel(i, bus);
-    }
+    activeChannels += processChannel(0, bus);
 
     return (24000 + (activeChannels * 30000));
 }
 
-uint64_t SerialInterface::processChannel(int channel, Bus& bus) {
-    return 0;
+uint64_t SerialInterface::processChannel(int _channelId, Bus& bus) {
+    if (bus.pif.channel.tx == -1) {
+        return 0;
+    }
+
+
+    return 1;
 }

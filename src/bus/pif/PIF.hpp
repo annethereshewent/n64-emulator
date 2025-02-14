@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "PIFChannel.hpp"
 
 // boot rom code gotten from https://github.com/gopher64/gopher64
 std::array<uint8_t, 1984> PIF_BOOT_ROM = {
@@ -95,6 +96,9 @@ std::array<uint8_t, 1984> PIF_BOOT_ROM = {
 class PIF {
 public:
     std::array<uint8_t, 64> ram = {};
+    PIFChannel channel;
+
+    std::array<uint8_t, 1984> rom = PIF_BOOT_ROM;
 
     void executeCommand();
 

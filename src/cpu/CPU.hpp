@@ -49,7 +49,7 @@ public:
 
     void loadRom(std::string filename);
 
-    void checkIrqs(bool usePreviousPc = false);
+    void checkIrqs(bool usePreviousPc = true);
     void enterException(bool usePreviousPc = true);
 
     // instructions

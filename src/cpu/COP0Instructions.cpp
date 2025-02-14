@@ -79,5 +79,5 @@ void COP0::eret(CPU* cpu, uint32_t instruction) {
 
     cpu->llbit = false;
 
-    cpu->checkIrqs();
+    cpu->checkIrqs(false);
 }

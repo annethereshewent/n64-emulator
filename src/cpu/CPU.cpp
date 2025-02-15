@@ -199,17 +199,17 @@ void CPU::checkIrqs(bool usePreviousPc) {
     if ((cop0.status & cop0.cause & 0xff00) != 0 &&
         (cop0.status & 0b111) == 0b1
     ) {
-        enterException(usePreviousPc);
+        enterException(true);
     }
 }
 
 void CPU::enterException(bool usePreviousPc) {
     if (((cop0.status >> 1) & 0b1) == 0) {
         if (inDelaySlot) {
-            cop0.epc = usePreviousPc ? previousPc - 4 : pc - 4;
+            cop0.epc = pc - 4;
             cop0.cause |= 1 << 31;
         } else {
-            cop0.epc = usePreviousPc ? previousPc : pc;
+            cop0.epc = pc;
             cop0.cause &= ~(1 << 31);
         }
     }
@@ -342,11 +342,16 @@ void CPU::step() {
 
     cop0.addCycles(1);
 
+    if (oldDelaySlot && inDelaySlot) {
+        inDelaySlot = false;
+    }
+
     while (scheduler.hasNextEvent(cop0.count)) {
         Event event = scheduler.getNextEvent();
 
         switch (event.eventType) {
             case VideoInterrupt:
+                std::cout << "setting VI interrupt\n";
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
@@ -358,7 +363,7 @@ void CPU::step() {
                 bus.serialInterface.status.ioBusy = 0;
                 bus.serialInterface.status.interrupt = 1;
 
-                std::cout << "setting SI interrupt flag\n";
+                std::cout << "setting SI interrupt\n";
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
             case RspDmaPop:
@@ -390,13 +395,10 @@ void CPU::step() {
                 bus.serialInterface.status.ioBusy = 0;
                 bus.serialInterface.status.interrupt = 1;
 
+                std::cout << "setting SI interrupt\n";
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
         }
-    }
-
-    if (oldDelaySlot && inDelaySlot) {
-        inDelaySlot = false;
     }
 }
 

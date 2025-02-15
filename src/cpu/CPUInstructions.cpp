@@ -480,14 +480,14 @@ void CPU::sll(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
     uint32_t shift = shiftAmount(instruction);
 
-    cpu->r[rd] = (int32_t)(uint32_t)(uint64_t)(cpu->r[rt] << shift);
+    cpu->r[rd] = (int32_t)(uint32_t)(uint64_t)((uint32_t)cpu->r[rt] << shift);
 }
 void CPU::srl(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
     uint32_t shift = shiftAmount(instruction);
 
-    cpu->r[rd] = (int32_t)(uint32_t)(uint64_t)(cpu->r[rt] >> shift);
+    cpu->r[rd] = (int32_t)(uint32_t)(uint64_t)((uint32_t)cpu->r[rt] >> shift);
 }
 void CPU::sra(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
@@ -516,7 +516,7 @@ void CPU::srlv(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rt] >> shift);
 }
 void CPU::srav(CPU* cpu, uint32_t instruction) {
-
+    std::cout << "TODO: srav\n";
     exit(1);
 }
 void CPU::jr(CPU* cpu, uint32_t instruction) {
@@ -713,11 +713,6 @@ void CPU::sltu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint32_t rt = getRt(instruction);
     uint32_t rd = getRd(instruction);
-
-    if (cpu->previousPc == 0x323d5c) {
-        std::cout << "comparing " << std::hex << cpu->r[rs] << " and " << cpu->r[rt] << "\n";
-        exit(1);
-    }
 
     if (cpu->r[rs] < cpu->r[rt]) {
         cpu->r[rd] = 1;

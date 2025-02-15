@@ -856,6 +856,7 @@ void Bus::finishPiDma() {
     peripheralInterface.piStatus.dmaBusy = 0;
     peripheralInterface.piStatus.dmaCompleted = 1;
 
+    std::cout << "setting PI interrupt\n";
     setInterrupt(PI_INTERRUPT_FLAG);
 }
 

@@ -106,8 +106,6 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
 
             scheduler->rebaseEvents(count, newCount);
 
-            std::cout << "setting count to " << std::hex << newCount << "\n";
-
             count = newCount;
             break;
         }

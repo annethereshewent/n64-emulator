@@ -48,7 +48,6 @@ void PIF::setupChannels() {
     int j = 0;
 
     while (i < ram.size() && j < channels.size()) {
-        std::cout << "received byte " << std::hex << +ram[i] << "\n";
         switch (ram[i]) {
             case 0:
                 disablePIFChannel(j);
@@ -89,7 +88,6 @@ void PIF::setupChannels() {
 }
 
 int PIF::setupPIFChannel(int channel, int buf) {
-    std::cout << "setting up a PIF channel...\n";
     uint8_t tx = ram[buf] & 0x3f;
     uint8_t rx = ram[buf + 1] & 0x3f;
 
@@ -102,7 +100,6 @@ int PIF::setupPIFChannel(int channel, int buf) {
 }
 
 void PIF::disablePIFChannel(int channel) {
-    std::cout << "disabling a PIF channel...\n";
     channels[channel].tx = -1;
     channels[channel].txBuf = -1;
     channels[channel].rx = -1;

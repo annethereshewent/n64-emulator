@@ -199,17 +199,18 @@ void CPU::checkIrqs(bool usePreviousPc) {
     if ((cop0.status & cop0.cause & 0xff00) != 0 &&
         (cop0.status & 0b111) == 0b1
     ) {
-        enterException(true);
+        enterException(false);
     }
 }
 
+// TODO: fix this hack with usePreviousPc because it kind of sucks
 void CPU::enterException(bool usePreviousPc) {
     if (((cop0.status >> 1) & 0b1) == 0) {
         if (inDelaySlot) {
             cop0.epc = pc - 4;
             cop0.cause |= 1 << 31;
         } else {
-            cop0.epc = pc;
+            cop0.epc = usePreviousPc ? previousPc : pc;
             cop0.cause &= ~(1 << 31);
         }
     }

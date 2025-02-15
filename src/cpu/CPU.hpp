@@ -50,7 +50,7 @@ public:
     void loadRom(std::string filename);
 
     void checkIrqs(bool usePreviousPc = true);
-    void enterException(bool usePreviousPc = true);
+    void enterException(bool usePreviousPc = false);
 
     // instructions
     static void reserved(CPU* cpu, uint32_t instruction);

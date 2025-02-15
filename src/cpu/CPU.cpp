@@ -399,6 +399,15 @@ void CPU::step() {
                 std::cout << "setting SI interrupt\n";
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
+            case AIDma:
+                if (bus.audioInterface.lastRead != 0) {
+                    bus.audioInterface.lastRead = 0;
+
+                    // TODO: actually play audio!
+                }
+
+                bus.audioInterface.popDma();
+                break;
         }
     }
 }

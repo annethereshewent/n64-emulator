@@ -34,7 +34,7 @@ public:
     CPU& cpu;
     RSP rsp;
 
-    Bus(CPU& cpu): cpu(cpu), rsp(*this) {
+    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this) {
         rdram.resize(0x800000);
         rdram9.resize(0x800000);
         spdmem.resize(0x1000);

@@ -10,6 +10,7 @@
 #include "peripheral_interface/PeripheralInterface.cpp"
 #include "serial_interface/SerialInterface.cpp"
 #include "rdp/RDP.cpp"
+#include "audio_interface/AudioInterface.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -417,6 +418,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         case 0x4500004:
             Bus::writeWithMask32(&audioInterface.audioLength, value & 0x3ffff, mask);
+
+            // start audio DMA
+            audioInterface.pushDma();
             break;
         case 0x4500008:
             audioInterface.dmaEnable = (value & 0b1) == 1;

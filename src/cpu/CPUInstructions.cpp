@@ -697,8 +697,11 @@ void CPU::xor_(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = cpu->r[rs] ^ cpu->r[rt];
 }
 void CPU::nor(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: nor\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    cpu->r[rd] = ~(cpu->r[rs] | cpu->r[rt]);
 }
 void CPU::slt(CPU* cpu, uint32_t instruction) {
     uint64_t value = 0;

@@ -872,8 +872,6 @@ void Bus::dmaWrite() {
     uint64_t cycles = peripheralInterface.calculateCycles(1, length);
 
     cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
-
-    // setInterrupt(PI_INTERRUPT_FLAG);
 }
 
 // TODO: move this to mips interface. currently having compile

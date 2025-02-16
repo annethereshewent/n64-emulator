@@ -15,6 +15,11 @@ Event UniqueQueue::pop() {
     Event event = elements[0];
 
     elements.erase(elements.begin() + 0);
+
+    for (int i = 0; i < elements.size(); i++) {
+        events[elements[i].eventType]--;
+    }
+
     events.erase(event.eventType);
 
     return event;
@@ -25,45 +30,62 @@ void UniqueQueue::insert(Event event) {
         int index = events[event.eventType];
 
         if (index != -1) {
-            elements[index] = event;
+            elements.erase(elements.begin() + index);
+
+            for (int i = index; i < elements.size(); i++) {
+                if (events[elements[i].eventType] != 0) {
+                    events[elements[i].eventType]--;
+                }
+            }
         }
-    } else {
-        int low = 0;
-        int high = elements.size() - 1;
-        int mid = (high - low) / 2;
+    }
 
-        int i = -1;
+    int low = 0;
+    int high = elements.size() - 1;
+    int mid = (high - low) / 2;
 
-        while (low <= high) {
-            if (mid < 0 || mid >= elements.size()) {
+    int i = -1;
+
+    while (low <= high) {
+        if (mid < 0 || mid >= elements.size()) {
+            break;
+        }
+
+        if (event.cycles < elements[mid].cycles) {
+            if (mid - 1 >= 0 && elements[mid-1].cycles < event.cycles) {
+                i = mid;
                 break;
             }
 
-            if (event.cycles < elements[mid].cycles) {
-                if (mid - 1 >= 0 && elements[mid-1].cycles < event.cycles) {
-                    i = mid;
-                    break;
-                }
-
-                high = mid - 1;
-            } else if (event.cycles > elements[mid].cycles) {
-                if (mid + 1 < elements.size() && elements[mid + 1].cycles > event.cycles) {
-                    i = mid + 1;
-                    break;
-                }
-
-                low = mid + 1;
+            high = mid - 1;
+        } else if (event.cycles > elements[mid].cycles) {
+            if (mid + 1 < elements.size() && elements[mid + 1].cycles > event.cycles) {
+                i = mid + 1;
+                break;
             }
 
-            mid = low + (high - low) / 2;
+            low = mid + 1;
         }
 
-        if (i == -1) {
-            i = mid <= 0 ? 0 : elements.size();
-        }
+        mid = low + (high - low) / 2;
+    }
 
-        elements.insert(elements.begin() + i, event);
-        events.insert({event.eventType, i});
+    if (i == -1) {
+        i = mid <= 0 ? 0 : elements.size();
+    }
+
+    elements.insert(elements.begin() + i, event);
+    events.insert({event.eventType, i});
+
+
+    for (int j = i + 1; j < elements.size(); j++) {
+        Event event = elements[j];
+
+        if (events.contains(event.eventType)) {
+            int index = events[event.eventType];
+
+            events[elements[j].eventType]++;
+        }
     }
 }
 

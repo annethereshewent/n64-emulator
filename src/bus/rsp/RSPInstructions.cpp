@@ -54,8 +54,13 @@ void RSP::lb(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::lbu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lbu\n";
-    exit(1);
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t value = (uint32_t)rsp->memRead8(address & 0xfff);
+
+    rsp->r[CPU::getRt(instruction)] = value;
 }
 void RSP::lh(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
@@ -137,8 +142,7 @@ void RSP::srl(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRt(instruction)] >> CPU::shiftAmount(instruction);
 }
 void RSP::sra(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sra\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = (uint32_t)((int32_t)rsp->r[CPU::getRt(instruction)] >> CPU::shiftAmount(instruction));
 }
 void RSP::sllv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: sllv\n";
@@ -170,8 +174,7 @@ void RSP::addu(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::sub(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sub\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] - rsp->r[CPU::getRt(instruction)];
 }
 void RSP::subu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: subu\n";
@@ -203,7 +206,14 @@ void RSP::sltu(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::mtc0(RSP* rsp, uint32_t instruction) {
-    rsp->writeRegisters(CPU::getRd(instruction), rsp->r[CPU::getRt(instruction)]);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    if (rd < NUM_RSP_REGISTERS) {
+        rsp->writeRegisters(CPU::getRd(instruction), rsp->r[rt]);
+    } else {
+        rsp->bus.rdp.writeRegisters(rd - NUM_RSP_REGISTERS, rsp->r[rt]);
+    }
 
     if (rsp->status.halted) {
         rsp->status.halted = 0;

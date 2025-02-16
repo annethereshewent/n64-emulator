@@ -202,9 +202,5 @@ void PIF::writeEeprom(Bus& bus) {
 
     memcpy(&bus.backup[address], &ram[channels[CART_CHANNEL].txBuf + 2], 8);
 
-    for (int i = 0; i < 8; i++) {
-        std::cout << "backup value " << std::dec << i << " = " << std::hex << +bus.backup[address + i] << "\n";
-    }
-
     ram[channels[CART_CHANNEL].rxBuf] = 0;
 }

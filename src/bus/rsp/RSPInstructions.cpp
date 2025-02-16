@@ -145,8 +145,13 @@ void RSP::sra(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = (uint32_t)((int32_t)rsp->r[CPU::getRt(instruction)] >> CPU::shiftAmount(instruction));
 }
 void RSP::sllv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sllv\n";
-    exit(1);
+    uint32_t rs = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+    uint32_t rd = CPU::getRd(instruction);
+
+    uint32_t shift = rsp->r[rs] & 0x1f;
+
+    rsp->r[rd] = rsp->r[rs] << shift;
 }
 void RSP::srlv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: srlv\n";
@@ -184,12 +189,10 @@ void RSP::and_(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] & rsp->r[CPU::getRt(instruction)];
 }
 void RSP::or_(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: or\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] | rsp->r[CPU::getRt(instruction)];
 }
 void RSP::xor_(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: xor\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] ^ rsp->r[CPU::getRt(instruction)];
 }
 void RSP::nor(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: nor\n";
@@ -643,7 +646,8 @@ void RSP::vrcp(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
-
+    std::cout << "TODO: vrcpl\n";
+    exit(1);
 }
 void RSP::vrcph(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vrcph\n";
@@ -669,9 +673,12 @@ void RSP::vnop(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vnop\n";
     exit(1);
 }
-void RSP::bgez(RSP* rsp, uint32_t instrution) {
-    std::cout << "TODO: bgez\n";
-    exit(1);
+void RSP::bgez(RSP* rsp, uint32_t instruction) {
+    if ((int32_t)rsp->r[CPU::getRs(instruction)] >= 0) {
+        rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
+    }
+
+    rsp->inDelaySlot = true;
 }
 
 void RSP::bltz(RSP* rsp, uint32_t instruction) {

@@ -124,7 +124,9 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
 
             uint64_t newCycles = (uint64_t)diff << 1;
 
-            scheduler->addEvent(Event(CompareCount, (uint64_t)count + ((uint64_t)diff << 1)));
+            std::cout << "scheduling a compare count event in " << std::hex << newCycles << "\n";
+
+            scheduler->addEvent(Event(CompareCount, count + newCycles));
 
             cause &= ~(1 << 15);
             pendingInterrupt = false;
@@ -220,6 +222,7 @@ uint64_t COP0::readRegister(uint32_t index) {
             return badVAddress;
             break;
         case 9:
+            std::cout << "count = " << std::hex << count << "\n";
             return count >> 1;
             break;
         case 10:

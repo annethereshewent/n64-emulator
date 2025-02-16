@@ -289,7 +289,7 @@ void CPU::loadRom(std::string filename) {
 
 void CPU::step() {
 
-    uint32_t opcode = pc & 0x20000000 != 0 ? bus.memRead32(pc) : bus.readInstructionCache(pc);
+    uint32_t opcode = (pc & 0x20000000) != 0 ? bus.memRead32(pc) : bus.readInstructionCache(pc);
     uint32_t command = opcode >> 26;
 
     previousPc = Bus::translateAddress(pc);
@@ -379,6 +379,8 @@ void CPU::step() {
                 break;
             case CompareCount:
                 cop0.pendingInterrupt = true;
+
+                std::cout << "setting pendingInterrupt to true, should do irqs soon\n";
 
                 scheduler.addEvent(Event(CompareCount, scheduler.getTimeToNext() + 0xffffffff));
 

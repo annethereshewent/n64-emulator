@@ -317,6 +317,8 @@ public:
 
     uint64_t cycleCounter = 0;
 
+    uint32_t lastStatus = 0;
+
     uint32_t dmaMemAddress = 0;
     uint32_t dmaRamAddress = 0;
     SPLength spReadLength;

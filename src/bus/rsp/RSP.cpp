@@ -212,15 +212,22 @@ uint32_t RSP::readRegisters(uint32_t offset) {
             return spWriteLength.value;
             break;
         case 4:
+            if (status.dmaBusy || status.dmaFull || (status.value != 0 && status.value == lastStatus)) {
+                isRunning = false;
+            }
+            lastStatus = status.value;
             return status.value;
             break;
         case 5:
+            isRunning = false;
             return status.dmaFull;
             break;
         case 6:
+            isRunning = false;
             return status.dmaBusy;
             break;
         case 7: {
+            isRunning = false;
             uint32_t returnVal = semaphore;
 
             semaphore = 1;

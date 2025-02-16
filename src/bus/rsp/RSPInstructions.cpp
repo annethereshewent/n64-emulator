@@ -222,8 +222,6 @@ void RSP::mtc0(RSP* rsp, uint32_t instruction) {
         rsp->status.halted = 0;
         rsp->cpuHalted = true;
     }
-
-    rsp->isRunning = false;
 }
 
 void RSP::mfc0(RSP* rsp, uint32_t instruction) {
@@ -237,7 +235,6 @@ void RSP::mfc0(RSP* rsp, uint32_t instruction) {
     }
 
     rsp->cycleCounter += 4;
-    rsp->isRunning = false;
 }
 
 void RSP::lbv(RSP* rsp, uint32_t instruction) {

@@ -78,9 +78,13 @@ public:
     uint8_t memRead8(uint64_t address);
 
     uint32_t readDataCache(uint64_t address);
+    uint32_t readInstructionCache(uint64_t address);
+
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);
+    bool icacheHit(uint32_t lineIndex, uint64_t address);
     void fillDataCache(uint32_t lineIndex, uint64_t address);
+    void fillInstructionCache(uint32_t lineIndex, uint64_t address);
     void dcacheWriteback(uint64_t line);
 
     void memWrite64(uint64_t address, uint64_t value);

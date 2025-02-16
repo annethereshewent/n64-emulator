@@ -239,11 +239,11 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
             // just return 0x14 to skip the initialization process
             // TODO: actually implement rdInterface related stuff
             cpu.cop0.addCycles(20);
-            // if (!rdInterface.init) {
-            //     // simulate initialization of rdInterface
-            //     cpu.cop0.addCycles(cpu.clock / 2);
-            //     rdInterface.init = true;
-            // }
+            if (!rdInterface.init) {
+                // simulate initialization of rdInterface
+                cpu.cop0.addCycles(cpu.clock / 2);
+                rdInterface.init = true;
+            }
             return 0x14;
             // return rdInterface.select.value;
             break;
@@ -559,29 +559,61 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
     }
 }
 
-uint32_t Bus::readDataCache(uint64_t address) {
-    uint32_t lineIndex = (address >> 4) & 0x1ff;
+uint32_t Bus::readInstructionCache(uint64_t address) {
+    uint64_t actualAddress = Bus::translateAddress(address);
 
-    if (!(dcacheHit(lineIndex, address))) {
+    uint32_t lineIndex = ((actualAddress >> 5) & 0x1FF);
+
+    if (!icacheHit(lineIndex, actualAddress)) {
+        fillInstructionCache(lineIndex, actualAddress);
+    }
+
+    return icache[lineIndex].words[((actualAddress >> 2) & 7)];
+}
+
+bool Bus::icacheHit(uint32_t lineIndex, uint64_t address) {
+    return icache[lineIndex].valid && (icache[lineIndex].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff);
+}
+
+void Bus::fillInstructionCache(uint32_t lineIndex, uint64_t address) {
+    cpu.cop0.addCycles(8);
+
+    icache[lineIndex].valid = true;
+    icache[lineIndex].tag = (uint32_t)(address & ~0xfff);
+
+    uint64_t cacheAddress = (uint64_t)((uint32_t)((icache[lineIndex].tag) | (icache[lineIndex].index)) & 0x1ffffffc);
+
+    for (int i = 0; i < 8; i++) {
+        icache[lineIndex].words[i] = memRead32(cacheAddress + i * 4, true);
+    }
+}
+
+uint32_t Bus::readDataCache(uint64_t address) {
+    uint64_t actualAddress = Bus::translateAddress(address);
+
+    uint32_t lineIndex = (actualAddress >> 4) & 0x1ff;
+
+    if (!(dcacheHit(lineIndex, actualAddress))) {
         if (dcache[lineIndex].valid && dcache[lineIndex].dirty) {
             dcacheWriteback(lineIndex);
         }
-        fillDataCache(lineIndex, address);
+        fillDataCache(lineIndex, actualAddress);
     } else {
         cpu.cop0.addCycles(1);
     }
 
-    return dcache[lineIndex].words[(address >> 2) & 3];
+    return dcache[lineIndex].words[(actualAddress >> 2) & 3];
 }
 
 void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
-    uint32_t lineIndex = (address >> 4) & 0x1ff;
+    uint64_t actualAddress = Bus::translateAddress(address);
+    uint32_t lineIndex = (actualAddress >> 4) & 0x1ff;
 
-    if (!dcacheHit(lineIndex, address)) {
+    if (!dcacheHit(lineIndex, actualAddress)) {
         if (dcache[lineIndex].valid && dcache[lineIndex].dirty) {
             dcacheWriteback(lineIndex);
         }
-        fillDataCache(lineIndex, address);
+        fillDataCache(lineIndex, actualAddress);
     } else {
         cpu.cop0.addCycles(1);
     }
@@ -593,7 +625,7 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
         returnValue = (oldValue & ~mask) | (value & mask);
     }
 
-    dcache[lineIndex].words[(address >> 2) & 3] = returnValue;
+    dcache[lineIndex].words[(actualAddress >> 2) & 3] = returnValue;
     dcache[lineIndex].dirty = true;
 }
 

@@ -93,6 +93,7 @@ std::array<uint8_t, 1984> PIF_BOOT_ROM = {
     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
+// TODO: move bus as a reference property of PIF
 class PIF {
 public:
     std::array<uint8_t, 64> ram = {};
@@ -108,6 +109,10 @@ public:
 
     void processController(int channelId, Bus& bus);
     void processCartridge(Bus& bus);
+
+    void readEeprom(Bus& bus);
+    void formatEeprom(Bus& bus);
+    void writeEeprom(Bus& bus);
 
     PIF();
 };

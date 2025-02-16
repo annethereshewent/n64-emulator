@@ -40,9 +40,10 @@ uint64_t SerialInterface::processChannel(int channelId, Bus& bus) {
     bus.pif.ram[bus.pif.channels[channelId].tx] &= 0x3f;
     bus.pif.ram[bus.pif.channels[channelId].rx] &= 0x3f;
 
+    // TODO: process other controllers, but for now just do the first controller
     if (channelId == 0) {
         bus.pif.processController(channelId, bus);
-    } else if (channelId == 4) {
+    } else if (channelId == CART_CHANNEL) {
        bus.pif.processCartridge(bus);
     } else {
         bus.pif.ram[bus.pif.channels[channelId].rx] |= 0x80;

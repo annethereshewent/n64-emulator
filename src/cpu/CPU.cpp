@@ -323,6 +323,7 @@ void CPU::loadRom(std::string filename) {
                 break;
         }
     } else {
+        // TODO: actually determine this
         bus.saveType = EEPROM_4K;
     }
 }

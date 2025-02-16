@@ -5,6 +5,8 @@
 
 class Bus;
 
+const uint32_t CART_CHANNEL = 4;
+
 PIF::PIF() {
     // TODO: actually calculate these. it's hardcoded to get super mario 64 booting for now.
     ram = {};
@@ -109,27 +111,25 @@ void PIF::disablePIFChannel(int channel) {
 }
 
 void PIF::processCartridge(Bus& bus) {
-    uint32_t command = ram[channels[4].txBuf];
-
+    uint8_t command = ram[channels[CART_CHANNEL].txBuf];
 
     switch (command) {
         case 0:
         case 0xff: {
             if (bus.saveType != -1) {
-                ram[channels[4].rxBuf] = (uint8_t)bus.saveType;
-                ram[channels[4].rxBuf + 1] = (uint8_t)(bus.saveType >> 8);
-                ram[channels[4].rxBuf + 2] = 0;
+                ram[channels[CART_CHANNEL].rxBuf] = (uint8_t)bus.saveType;
+                ram[channels[CART_CHANNEL].rxBuf + 1] = (uint8_t)(bus.saveType >> 8);
+                ram[channels[CART_CHANNEL].rxBuf + 2] = 0;
             } else {
-                ram[channels[4].rxBuf] |= 0x80;
+                ram[channels[CART_CHANNEL].rxBuf] |= 0x80;
             }
             break;
         }
         case 4:
-            Bus::writeWord(&ram[channels[4].rxBuf + 1], 0xffffffff);
+            readEeprom(bus);
             break;
         case 5:
-            std::cout << "TODO: EEPROM_WRITE\n";
-            exit(1);
+            writeEeprom(bus);
             break;
         case 6:
             std::cout << "TODO: RTC_STATUS\n";
@@ -178,4 +178,33 @@ void PIF::processController(int channel, Bus& bus) {
             exit(1);
             break;
     }
+}
+
+void PIF::readEeprom(Bus& bus) {
+    formatEeprom(bus);
+
+    uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;
+
+    memcpy(&ram[channels[CART_CHANNEL].rxBuf], &bus.backup[address], 8);
+}
+
+void PIF::formatEeprom(Bus& bus) {
+    if (bus.backup.size() == 0) {
+        bus.backup.resize(0x800);
+        std::fill(bus.backup.begin(), bus.backup.end(), 0xff);
+    }
+}
+
+void PIF::writeEeprom(Bus& bus) {
+    formatEeprom(bus);
+
+    uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;
+
+    memcpy(&bus.backup[address], &ram[channels[CART_CHANNEL].txBuf + 2], 8);
+
+    for (int i = 0; i < 8; i++) {
+        std::cout << "backup value " << std::dec << i << " = " << std::hex << +bus.backup[address + i] << "\n";
+    }
+
+    ram[channels[CART_CHANNEL].rxBuf] = 0;
 }

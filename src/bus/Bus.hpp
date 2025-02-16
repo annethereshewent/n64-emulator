@@ -34,6 +34,8 @@ public:
 
     std::array<TlbEntry, 32> tlbEntries;
 
+    std::vector<uint8_t> backup;
+
     char gameId[4];
     int32_t saveType = -1;
 

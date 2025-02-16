@@ -125,8 +125,7 @@ void PIF::processCartridge(Bus& bus) {
             break;
         }
         case 4:
-            std::cout << "TODO: EEPROM_READ\n";
-            exit(1);
+            Bus::writeWord(&ram[channels[4].rxBuf + 1], 0xffffffff);
             break;
         case 5:
             std::cout << "TODO: EEPROM_WRITE\n";

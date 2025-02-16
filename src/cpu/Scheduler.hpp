@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <queue>
 #include <vector>
-#include <unordered_set>
+#include <unordered_map>
 
 enum EventType {
     VideoInterrupt,
@@ -27,19 +27,22 @@ public:
     };
 };
 
-class Comparator {
+class UniqueQueue {
+private:
+    std::vector<Event> elements = {};
+    std::unordered_map<EventType, int> events;
 public:
-    bool operator() (Event l, Event r) {
-        return l.cycles > r.cycles;
-    }
+    void insert(Event event);
+    void remove(EventType eventType);
+    bool empty();
+    Event peek();
+    Event pop();
 };
 
 class Scheduler {
 private:
-    std::priority_queue<Event, std::vector<Event>, Comparator> queue;
+    UniqueQueue queue;
 public:
-    std::unordered_set<EventType> currentEvents;
-
     void addEvent(Event event);
     void removeEvent(EventType eventType);
 

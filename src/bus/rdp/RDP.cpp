@@ -44,7 +44,7 @@ void RDP::writeRegisters(uint32_t offset, uint32_t value) {
                 status.startPending = 0;
             }
             if (!status.freeze) {
-                std::cout << "holy shit it's starting the RDP now!!!!!!\n";
+                // TODO: start rdp
             } else {
                 isFrozen = true;
             }

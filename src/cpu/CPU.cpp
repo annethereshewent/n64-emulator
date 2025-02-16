@@ -294,8 +294,6 @@ void CPU::loadRom(std::string filename) {
     memcpy(header, &bus.cartridge[0x3c], 2);
     header[2] = 0;
 
-    std::cout << header << "\n";
-
     if (strcmp(header, "ED") == 0) {
         uint8_t saveType = bus.cartridge[0x3f] >> 4;
 
@@ -356,7 +354,7 @@ void CPU::step() {
     //         std::cout << "command is cop0\n";
     //         actualCommand = (opcode >> 21) & 0x1f;
     //     }
-    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
+    //      std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
     //     // std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << "\n";
     //     visited.insert(previousPc);
     // }
@@ -394,7 +392,6 @@ void CPU::step() {
 
         switch (event.eventType) {
             case VideoInterrupt:
-                std::cout << "setting VI interrupt\n";
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
@@ -406,7 +403,6 @@ void CPU::step() {
                 bus.serialInterface.status.ioBusy = 0;
                 bus.serialInterface.status.interrupt = 1;
 
-                std::cout << "setting SI interrupt\n";
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
             case RspDmaPop:
@@ -420,8 +416,6 @@ void CPU::step() {
                 break;
             case CompareCount:
                 cop0.pendingInterrupt = true;
-
-                std::cout << "setting pendingInterrupt to true, should do irqs soon\n";
 
                 scheduler.addEvent(Event(CompareCount, scheduler.getTimeToNext() + 0xffffffff));
 
@@ -440,7 +434,6 @@ void CPU::step() {
                 bus.serialInterface.status.ioBusy = 0;
                 bus.serialInterface.status.interrupt = 1;
 
-                std::cout << "setting SI interrupt\n";
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
             case AIDma:

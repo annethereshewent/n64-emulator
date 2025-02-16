@@ -104,7 +104,6 @@ void RSP::updateStatus(uint32_t value) {
         bus.clearInterrupt(SP_INTERRUPT_FLAG);
     }
     if (((value >> 3) & 0b1) == 0 && ((value >> 4) & 0b1) == 1) {
-        std::cout << "setting SP interrupt\n";
         bus.setInterrupt(SP_INTERRUPT_FLAG);
     }
     if (((value >> 5) & 0b1) == 1 && ((value >> 6) & 0b1) == 0) {
@@ -425,7 +424,6 @@ void RSP::restartRsp() {
         status.halted = 1;
 
         if (status.intBreak) {
-            std::cout << "setting SP interrupt\n";
             bus.setInterrupt(SP_INTERRUPT_FLAG);
         }
 

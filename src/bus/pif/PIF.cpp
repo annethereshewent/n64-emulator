@@ -25,8 +25,10 @@ void PIF::executeCommand() {
         setupChannels();
     }
     if (commandByte & 0x2) {
+        // TODO: cic challenge
         mask |= 0x2;
         std::cout << "received command 0x2\n";
+        exit(1);
     }
     if (commandByte & 0x8) {
         mask |= 0x8;

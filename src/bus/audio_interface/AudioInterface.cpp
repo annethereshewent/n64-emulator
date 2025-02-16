@@ -59,6 +59,5 @@ void AudioInterface::handleDma() {
 
     bus.cpu.scheduler.addEvent(Event(AIDma, bus.cpu.cop0.count + dma.duration));
 
-    std::cout << "setting AI interrupt\n";
     bus.setInterrupt(AI_INTERRUPT_FLAG);
 }

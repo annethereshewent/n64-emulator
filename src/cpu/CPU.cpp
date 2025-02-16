@@ -285,6 +285,46 @@ void CPU::loadRom(std::string filename) {
     }
 
     bus.cartridge = formattedRom;
+
+    memcpy(&bus.gameId, &bus.cartridge[0x3b], 3);
+    bus.gameId[3] = 0;
+
+    char header[3];
+
+    memcpy(header, &bus.cartridge[0x3c], 2);
+    header[2] = 0;
+
+    std::cout << header << "\n";
+
+    if (strcmp(header, "ED") == 0) {
+        uint8_t saveType = bus.cartridge[0x3f] >> 4;
+
+        switch (saveType) {
+            case 0:
+                bus.saveType = -1;
+                break;
+            case 1:
+                bus.saveType = EEPROM_4K;
+                break;
+            case 2:
+                bus.saveType = EEPROM_16K;
+                break;
+            case 3:
+                bus.saveType = -1;
+                std::cout << "TODO: implement SRAM save type\n";
+                break;
+            case 5:
+                bus.saveType = -1;
+                std::cout << "TODO: implement flash save type\n";
+                break;
+            default:
+                std::cout << "unknown save type detected: " << std::dec << saveType << "\n";
+                exit(1);
+                break;
+        }
+    } else {
+        bus.saveType = EEPROM_4K;
+    }
 }
 
 void CPU::step() {

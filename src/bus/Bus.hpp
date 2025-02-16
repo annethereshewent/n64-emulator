@@ -8,7 +8,7 @@
 #include "audio_interface/AudioInterface.hpp"
 #include "serial_interface/SerialInterface.hpp"
 #include "rdp/RDP.hpp"
-#include "pif/PIF.cpp"
+#include "pif/PIF.hpp"
 #include "rdram_interface/RDInterface.hpp"
 #include "mips_interface/MIPSInterface.hpp"
 #include "cache/ICache.hpp"
@@ -21,6 +21,9 @@ const uint32_t AI_INTERRUPT_FLAG = 1 << 2;
 const uint32_t VI_INTERRUPT_FLAG = 1 << 3;
 const uint32_t PI_INTERRUPT_FLAG = 1 << 4;
 
+const uint32_t EEPROM_4K = 0x8000;
+const uint32_t EEPROM_16K = 0xc000;
+
 class Bus {
 public:
     std::vector<uint8_t> rdram;
@@ -30,6 +33,9 @@ public:
     std::vector<TlbLut> tlbWriteLut;
 
     std::array<TlbEntry, 32> tlbEntries;
+
+    char gameId[4];
+    int32_t saveType = -1;
 
     CPU& cpu;
     RSP rsp;

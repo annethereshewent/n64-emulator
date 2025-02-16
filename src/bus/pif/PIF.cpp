@@ -3,6 +3,8 @@
 #include "PIF.hpp"
 #include <iostream>
 
+class Bus;
+
 PIF::PIF() {
     // TODO: actually calculate these. it's hardcoded to get super mario 64 booting for now.
     ram = {};
@@ -79,8 +81,8 @@ void PIF::setupChannels() {
                     continue;
                 }
 
-                j++;
                 i += setupPIFChannel(j, i);
+                j++;
 
                 break;
         }
@@ -107,7 +109,46 @@ void PIF::disablePIFChannel(int channel) {
 }
 
 void PIF::processCartridge(Bus& bus) {
+    uint32_t command = ram[channels[4].txBuf];
 
+
+    switch (command) {
+        case 0:
+        case 0xff: {
+            if (bus.saveType != -1) {
+                ram[channels[4].rxBuf] = (uint8_t)bus.saveType;
+                ram[channels[4].rxBuf + 1] = (uint8_t)(bus.saveType >> 8);
+                ram[channels[4].rxBuf + 2] = 0;
+            } else {
+                ram[channels[4].rxBuf] |= 0x80;
+            }
+            break;
+        }
+        case 4:
+            std::cout << "TODO: EEPROM_READ\n";
+            exit(1);
+            break;
+        case 5:
+            std::cout << "TODO: EEPROM_WRITE\n";
+            exit(1);
+            break;
+        case 6:
+            std::cout << "TODO: RTC_STATUS\n";
+            exit(1);
+            break;
+        case 7:
+            std::cout << "TODO: RTC_READ\n";
+            exit(1);
+            break;
+        case 8:
+            std::cout << "TODO: RTC_WRITE\n";
+            exit(1);
+            break;
+        default:
+            std::cout << "unknown command received for processCartridge: " << std::hex << command << "\n";
+            exit(1);
+            break;
+    }
 }
 
 void PIF::processController(int channel, Bus& bus) {

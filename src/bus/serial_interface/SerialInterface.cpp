@@ -22,7 +22,7 @@ void SerialInterface::handleDma(Bus& bus) {
     }
 }
 
-uint64_t SerialInterface::getPIFRamCycles(Bus& bus) {
+uint64_t SerialInterface::processRam(Bus& bus) {
     uint64_t activeChannels = 0;
 
     for (int i = 0; i < bus.pif.channels.size(); i++) {

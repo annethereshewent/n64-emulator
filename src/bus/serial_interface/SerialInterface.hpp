@@ -11,6 +11,6 @@ public:
     DmaDirection dir = DmaDirection::None;
 
     void handleDma(Bus& bus);
-    uint64_t getPIFRamCycles(Bus& bus);
+    uint64_t processRam(Bus& bus);
     uint64_t processChannel(int channel, Bus& bus);
 };

@@ -50,8 +50,13 @@ void RSP::jal(RSP* rsp, uint32_t instruction) {
     rsp->inDelaySlot = true;
 }
 void RSP::lb(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lb\n";
-    exit(1);
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t value = (int8_t)(int32_t)(uint32_t)rsp->memRead8(address & 0xfff);
+
+    rsp->r[CPU::getRt(instruction)] = value;
 }
 void RSP::lbu(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);

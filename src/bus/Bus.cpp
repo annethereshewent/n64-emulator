@@ -496,7 +496,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
             serialInterface.status.dmaBusy = 1;
 
-            uint64_t cycles = serialInterface.getPIFRamCycles(*this);
+            uint64_t cycles = serialInterface.processRam(*this);
 
             cpu.scheduler.addEvent(Event(SIDma, cpu.cop0.count + cycles));
             break;

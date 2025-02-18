@@ -449,6 +449,18 @@ void CPU::step() {
     }
 }
 
+void CPU::fastForwardAbsoluteLoop(uint64_t target) {
+    if (pc == target && bus.memRead32(pc, false, true) == 0) {
+        cop0.count = scheduler.getTimeToNext();
+    }
+}
+
+void CPU::fastForwardRelativeLoop(int16_t amount) {
+    if (amount == -4 && bus.memRead32(pc, false, true) == 0) {
+        cop0.count = scheduler.getTimeToNext();
+    }
+}
+
 uint32_t CPU::getImmediate(uint32_t instruction) {
     return instruction & 0xffff;
 }

@@ -52,6 +52,9 @@ public:
     void checkIrqs(bool usePreviousPc = true);
     void enterException(bool usePreviousPc = false);
 
+    void fastForwardRelativeLoop(int16_t amount);
+    void fastForwardAbsoluteLoop(uint64_t target);
+
     // instructions
     static void reserved(CPU* cpu, uint32_t instruction);
     static void j(CPU* cpu, uint32_t instruction);

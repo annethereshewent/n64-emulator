@@ -182,13 +182,13 @@ uint64_t Bus::memRead64(uint64_t address) {
     exit(1);
 
 }
-uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
+uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
     bool cached = (address & 0x20000000) == 0;
 
     if (cached && !ignoreCache) {
-        return readDataCache(actualAddress);
+        return readDataCache(actualAddress, ignoreCycles);
     }
 
     switch (actualAddress) {
@@ -259,7 +259,9 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
             if (actualAddress <= 0x03EFFFFF) {
                 uint32_t cycles = ignoreCache ? 9 : 32;
 
-                cpu.cop0.addCycles(cycles);
+                if (!ignoreCycles) {
+                    cpu.cop0.addCycles(cycles);
+                }
 
                 return std::byteswap(*(uint32_t*)&rdram[actualAddress]);
             }
@@ -271,14 +273,18 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;
 
-                cpu.cop0.addCycles(1);
+                if (!ignoreCycles) {
+                    cpu.cop0.addCycles(1);
+                }
 
                 return std::byteswap(*(uint32_t*)&rsp.dmem[offset]);
             }
             if (actualAddress >= 0x4001000 && actualAddress <= 0x4001FFF) {
                 uint64_t offset = actualAddress - 0x4001000;
 
-                cpu.cop0.addCycles(1);
+                if (!ignoreCycles) {
+                    cpu.cop0.addCycles(1);
+                }
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
@@ -293,13 +299,17 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache) {
                 exit(1);
             }
             if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
-                cpu.cop0.addCycles(3000);
+                if (!ignoreCycles) {
+                    cpu.cop0.addCycles(3000);
+                }
                 uint64_t pifAddress = actualAddress - 0x1FC00000;
 
                 return std::byteswap(*(uint32_t*)&pif.rom[pifAddress]);
             }
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
-                cpu.cop0.addCycles(3000);
+                if (!ignoreCycles) {
+                    cpu.cop0.addCycles(3000);
+                }
                 uint32_t offset = actualAddress - 0x1fc007c0;
 
                 return std::byteswap(*(uint32_t*)&pif.ram[offset]);
@@ -588,18 +598,20 @@ void Bus::fillInstructionCache(uint32_t lineIndex, uint64_t address) {
     }
 }
 
-uint32_t Bus::readDataCache(uint64_t address) {
+uint32_t Bus::readDataCache(uint64_t address, bool ignoreCycles) {
     uint64_t actualAddress = Bus::translateAddress(address);
 
     uint32_t lineIndex = (actualAddress >> 4) & 0x1ff;
 
     if (!(dcacheHit(lineIndex, actualAddress))) {
         if (dcache[lineIndex].valid && dcache[lineIndex].dirty) {
-            dcacheWriteback(lineIndex);
+            dcacheWriteback(lineIndex, ignoreCycles);
         }
-        fillDataCache(lineIndex, actualAddress);
+        fillDataCache(lineIndex, actualAddress, ignoreCycles);
     } else {
-        cpu.cop0.addCycles(1);
+        if (!ignoreCycles) {
+            cpu.cop0.addCycles(1);
+        }
     }
 
     return dcache[lineIndex].words[(actualAddress >> 2) & 3];
@@ -629,8 +641,10 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
     dcache[lineIndex].dirty = true;
 }
 
-void Bus::fillDataCache(uint32_t lineIndex, uint64_t address) {
-    cpu.cop0.addCycles(7);
+void Bus::fillDataCache(uint32_t lineIndex, uint64_t address, bool ignoreCycles) {
+    if (!ignoreCycles) {
+        cpu.cop0.addCycles(7);
+    }
 
     dcache[lineIndex].valid = true;
     dcache[lineIndex].dirty = false;
@@ -673,8 +687,10 @@ void Bus::writeHalf(uint8_t* ptr, uint16_t value) {
     }
 }
 
-void Bus::dcacheWriteback(uint64_t line) {
-    cpu.cop0.addCycles(36);
+void Bus::dcacheWriteback(uint64_t line, bool ignoreCycles) {
+    if (!ignoreCycles) {
+        cpu.cop0.addCycles(36);
+    }
     dcache[line].dirty = false;
 
     uint64_t cacheAddress = (dcache[line].tag | dcache[line].index) & 0x1ffffffc;

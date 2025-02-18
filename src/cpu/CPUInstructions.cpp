@@ -55,6 +55,8 @@ void CPU::beq(CPU* cpu, uint32_t instruction) {
     if (cpu->r[rs] == cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
         cpu->nextPc = cpu->pc + amount;
     }
 
@@ -68,6 +70,8 @@ void CPU::beql(CPU* cpu, uint32_t instruction) {
     if (cpu->r[rs] == cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
         cpu->nextPc = cpu->pc + amount;
 
         cpu->inDelaySlot = true;
@@ -80,6 +84,8 @@ void CPU::bgtz(CPU* cpu, uint32_t instruction) {
     if ((int64_t)cpu->r[getRs(instruction)] > 0) {
         uint32_t immediate = getImmediate(instruction);
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
 
         cpu->nextPc = cpu->pc + amount;
     }
@@ -97,6 +103,8 @@ void CPU::blez(CPU* cpu, uint32_t instruction) {
         uint32_t immediate = getImmediate(instruction);
 
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
 
         cpu->nextPc = cpu->pc + amount;
     }
@@ -116,6 +124,8 @@ void CPU::bne(CPU* cpu, uint32_t instruction) {
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
         cpu->nextPc = cpu->pc + amount;
     }
     cpu->inDelaySlot = true;
@@ -128,6 +138,8 @@ void CPU::bnel(CPU* cpu, uint32_t instruction) {
 
     if (cpu->r[rs] != cpu->r[rt]) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
 
         cpu->nextPc = cpu->pc + amount;
 
@@ -221,6 +233,8 @@ void CPU::j(CPU* cpu, uint32_t instruction) {
     uint32_t address = (cpu->pc & 0xfffffffff0000000) | offset;
 
     cpu->inDelaySlot = true;
+
+    cpu->fastForwardAbsoluteLoop(address);
 
     cpu->nextPc = address;
 }
@@ -523,7 +537,6 @@ void CPU::jr(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
 
     cpu->inDelaySlot = true;
-
     cpu->nextPc = cpu->r[rs];
 }
 void CPU::jalr(CPU* cpu, uint32_t instruction) {
@@ -794,6 +807,8 @@ void CPU::bltz(CPU* cpu, uint32_t instruction) {
 
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
 
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
         cpu->nextPc = cpu->pc + amount;
     }
     cpu->inDelaySlot = true;
@@ -803,6 +818,8 @@ void CPU::bgez(CPU* cpu, uint32_t instruction) {
         uint32_t immediate = getImmediate(instruction);
 
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
 
         cpu->nextPc = cpu->pc + amount;
     }
@@ -814,6 +831,8 @@ void CPU::bltzl(CPU* cpu, uint32_t instruction) {
     if ((int64_t)cpu->r[rs] < 0) {
         uint32_t immediate = getImmediate(instruction);
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
 
         cpu->nextPc = cpu->pc + amount;
 
@@ -873,6 +892,8 @@ void CPU::bgezal(CPU* cpu, uint32_t instruction) {
         uint32_t immediate = getImmediate(instruction);
 
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
 
         cpu->r[31] = cpu->nextPc;
         cpu->nextPc = cpu->pc + amount;

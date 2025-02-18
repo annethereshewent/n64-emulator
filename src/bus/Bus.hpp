@@ -81,19 +81,19 @@ public:
     MIPSInterface mips;
 
     uint64_t memRead64(uint64_t address);
-    uint32_t memRead32(uint64_t address, bool ignoreCache = false);
+    uint32_t memRead32(uint64_t address, bool ignoreCache = false, bool ignoreCycles = false);
     uint16_t memRead16(uint64_t address);
     uint8_t memRead8(uint64_t address);
 
-    uint32_t readDataCache(uint64_t address);
+    uint32_t readDataCache(uint64_t address, bool ignoreCycles = false);
     uint32_t readInstructionCache(uint64_t address);
 
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);
     bool icacheHit(uint32_t lineIndex, uint64_t address);
-    void fillDataCache(uint32_t lineIndex, uint64_t address);
+    void fillDataCache(uint32_t lineIndex, uint64_t address, bool ignoreCycles = false);
     void fillInstructionCache(uint32_t lineIndex, uint64_t address);
-    void dcacheWriteback(uint64_t line);
+    void dcacheWriteback(uint64_t line, bool ignoreCycles = false);
 
     void memWrite64(uint64_t address, uint64_t value);
     void memWrite32(uint64_t address, uint32_t value, bool ignoreCache = false, int64_t mask = -1);

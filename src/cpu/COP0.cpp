@@ -2,7 +2,7 @@
 
 #include "CPU.hpp"
 
-COP0::COP0() {
+COP0::COP0(CPU& cpu): cpu(cpu) {
     instructions = {
         COP0::mfc0,     // 0
         COP0::dmfc0,    // 1
@@ -135,9 +135,8 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
             uint8_t oldFr = status.fr;
             status.value = (uint32_t)value & 0xff57ffff;
 
-
-            if (oldFr != status.fr && status.fr) {
-                // TODO: check if fgr registers need to be set
+            if (oldFr != status.fr) {
+                cpu.cop1.setCop1Registers(status);
             }
             break;
         }

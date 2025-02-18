@@ -38,9 +38,11 @@ public:
 
     uint64_t latch = 0;
 
+    CPU& cpu;
+
     bool pendingInterrupt = false;
 
-    COP0();
+    COP0(CPU& cpu);
 
     static void mfc0(CPU* cpu, uint32_t instruction);
     static void dmfc0(CPU* cpu, uint32_t instruction);

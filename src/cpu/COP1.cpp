@@ -105,3 +105,17 @@ COP1::COP1() {
         COP1::cNgtS,
     };
 }
+
+void COP1::setCop1Registers(Cop0Status status) {
+    std::cout << "yea it's going in here\n";
+    if (!status.fr) {
+        for (int i = 0; i < fgr32.size(); i += 2) {
+            fgr32[i] = (uint32_t)fgr64[i];
+            fgr32[i+1] = (uint32_t)(fgr64[i] >> 32);
+        }
+    } else {
+        for (int i = 0; i < fgr64.size(); i += 2) {
+            fgr64[i] = ((uint64_t)fgr32[i]) | ((uint64_t)fgr32[i + 1] << 32);
+        }
+    }
+}

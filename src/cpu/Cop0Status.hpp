@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 
 typedef union Cop0Status {

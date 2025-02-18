@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include "CPUInstruction.hpp"
+#include "Cop0Status.hpp"
 
 class CPU;
 
@@ -78,6 +79,7 @@ public:
     static void cNgtS(CPU* cpu, uint32_t instruction);
 
     void writeRegister(uint32_t index, uint64_t value);
+    void setCop1Registers(Cop0Status cop0Status);
     uint32_t readRegister(uint32_t index);
 
     std::array<CPUInstruction, 32> instructions;

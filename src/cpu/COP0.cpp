@@ -220,7 +220,6 @@ uint64_t COP0::readRegister(uint32_t index) {
             return badVAddress;
             break;
         case 9:
-            std::cout << "count = " << std::hex << count << "\n";
             return count >> 1;
             break;
         case 10:

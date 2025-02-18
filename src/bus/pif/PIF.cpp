@@ -20,7 +20,7 @@ void PIF::executeCommand() {
     uint8_t mask = 0;
     if (commandByte & 0x1) {
         mask |= 0x1;
-        std::cout << "received command 0x1\n";
+        // std::cout << "received command 0x1\n";
 
         setupChannels();
     }

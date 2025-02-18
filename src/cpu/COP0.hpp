@@ -4,6 +4,7 @@
 #include <vector>
 #include "CPUInstruction.hpp"
 #include "Scheduler.hpp"
+#include "Cop0Status.hpp"
 
 class CPU;
 
@@ -20,7 +21,7 @@ public:
     uint64_t count = 0;
     uint64_t entryHi = 0;
     uint32_t compare = 0;
-    uint32_t status = 0;
+    Cop0Status status;
     uint32_t cause = 0 ;
     uint64_t epc = 0;
     uint32_t prid = 0;

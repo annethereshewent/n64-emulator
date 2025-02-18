@@ -67,14 +67,14 @@ void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::eret(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 2) & 0b1) == 1) {
+    if (cpu->cop0.status.erl) {
         cpu->pc = cpu->cop0.errorEpc;
         cpu->nextPc = cpu->pc + 4;
-        cpu->cop0.status &= ~(1 << 2);
+        cpu->cop0.status.erl = 0;
     } else {
         cpu->pc = cpu->cop0.epc;
         cpu->nextPc = cpu->pc + 4;
-        cpu->cop0.status &= ~(1 << 1);
+        cpu->cop0.status.exl = 0;
     }
 
     cpu->llbit = false;

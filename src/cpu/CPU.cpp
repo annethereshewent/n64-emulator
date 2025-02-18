@@ -196,8 +196,8 @@ void CPU::checkIrqs(bool usePreviousPc) {
         cop0.cause = 1 << 15;
     }
 
-    if ((cop0.status & cop0.cause & 0xff00) != 0 &&
-        (cop0.status & 0b111) == 0b1
+    if ((cop0.status.value & cop0.cause & 0xff00) != 0 &&
+        (cop0.status.interruptEnable && !cop0.status.erl && !cop0.status.exl)
     ) {
         enterException(false);
     }
@@ -205,7 +205,7 @@ void CPU::checkIrqs(bool usePreviousPc) {
 
 // TODO: fix this hack with usePreviousPc because it kind of sucks
 void CPU::enterException(bool usePreviousPc) {
-    if (((cop0.status >> 1) & 0b1) == 0) {
+    if (!cop0.status.exl) {
         if (inDelaySlot) {
             cop0.epc = pc - 4;
             cop0.cause |= 1 << 31;
@@ -215,11 +215,11 @@ void CPU::enterException(bool usePreviousPc) {
         }
     }
 
-    cop0.status |= 1 << 1;
+    cop0.status.exl = 1;
 
     discarded = false;
 
-    if (((cop0.status >> 22) & 0b1) == 0) {
+    if (!cop0.status.bev) {
         pc = 0x80000180;
         nextPc = 0x80000184;
     } else {

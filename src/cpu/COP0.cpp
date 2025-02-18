@@ -131,10 +131,16 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
 
             break;
         }
-        case 12:
-            status = (uint32_t)value & 0xff57ffff;
-            // TODO: check if fgr registers need to be set
+        case 12: {
+            uint8_t oldFr = status.fr;
+            status.value = (uint32_t)value & 0xff57ffff;
+
+
+            if (oldFr != status.fr && status.fr) {
+                // TODO: check if fgr registers need to be set
+            }
             break;
+        }
         case 13:
             cause = (cause & ~0x300) | ((uint32_t)value & 0x300);
             break;
@@ -229,7 +235,7 @@ uint64_t COP0::readRegister(uint32_t index) {
             return compare;
             break;
         case 12:
-            return status;
+            return status.value;
             break;
         case 13:
             return cause;

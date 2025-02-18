@@ -20,7 +20,7 @@ union convi32
 };
 
 void COP1::ldc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -36,7 +36,7 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
 
     uint32_t index = CPU::getRt(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[index] = (uint32_t)doubleWord;
         cpu->cop1.fgr32[index + 1] = (uint32_t)(doubleWord >> 32);
     } else {
@@ -44,7 +44,7 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::lwc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -60,7 +60,7 @@ void COP1::lwc1(CPU* cpu, uint32_t instruction) {
 
     uint32_t index = CPU::getRt(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[index] = word;
     } else {
         cpu->cop1.fgr64[index] = (cpu->cop1.fgr64[index] & 0xffffffff00000000) | (uint64_t)word;
@@ -72,7 +72,7 @@ void COP1::reserved(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::sdc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -85,12 +85,12 @@ void COP1::sdc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint64_t doubleWord = ((cpu->cop0.status >> 26) & 0b1) == 0 ? (uint64_t)cpu->cop1.fgr32[rt] | ((uint64_t)cpu->cop1.fgr32[rt + 1] << 32) : cpu->cop1.fgr64[rt];
+    uint64_t doubleWord = !cpu->cop0.status.fr ? (uint64_t)cpu->cop1.fgr32[rt] | ((uint64_t)cpu->cop1.fgr32[rt + 1] << 32) : cpu->cop1.fgr64[rt];
 
     cpu->bus.memWrite64(address, doubleWord);
 }
 void COP1::swc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -103,13 +103,13 @@ void COP1::swc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t word = ((cpu->cop0.status >> 26) & 0b1) == 0 ? cpu->cop1.fgr32[rt] : (uint32_t)cpu->cop1.fgr64[rt];
+    uint32_t word = !cpu->cop0.status.fr ? cpu->cop1.fgr32[rt] : (uint32_t)cpu->cop1.fgr64[rt];
 
     cpu->bus.memWrite32(address, word);
 }
 
 void COP1::cfc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -134,7 +134,7 @@ void COP1::cop1_l_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cop1_s_instrs(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -145,7 +145,7 @@ void COP1::cop1_s_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -167,7 +167,7 @@ void COP1::cop1_w_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::ctc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
 
         cpu->enterException(true);
@@ -201,7 +201,7 @@ void COP1::dmtc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::mfc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
         cpu->enterException(true);
         return;
@@ -211,7 +211,7 @@ void COP1::mfc1(CPU* cpu, uint32_t instruction) {
 
     uint32_t rd = CPU::getRd(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         returnVal = cpu->cop1.fgr32[rd];
     } else {
         returnVal = (uint32_t)cpu->cop1.fgr64[rd];
@@ -221,7 +221,7 @@ void COP1::mfc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::mtc1(CPU* cpu, uint32_t instruction) {
-    if (((cpu->cop0.status >> 29) & 0b1) == 0) {
+    if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
         cpu->enterException(true);
         return;
@@ -229,7 +229,7 @@ void COP1::mtc1(CPU* cpu, uint32_t instruction) {
     uint32_t value = (uint32_t)cpu->r[CPU::getRt(instruction)];
     uint32_t index = CPU::getRd(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[index] = value;
     } else {
         cpu->cop1.fgr64[index] = (cpu->cop1.fgr64[index] & 0xffffffff00000000) | (uint64_t)value;
@@ -286,7 +286,7 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
 
     int32_t value = (int32_t)cpu->cop1.fgr32[index];
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 1) {
+    if (cpu->cop0.status.fr) {
         value = (int32_t)cpu->cop1.fgr64[index];
     }
 
@@ -294,7 +294,7 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
 
     int32_t destValue = ((union convi32){.f32 = (float)value}).i32;
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[dest] = destValue;
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)destValue;
@@ -310,7 +310,7 @@ void COP1::addS(CPU* cpu, uint32_t instruction) {
     uint32_t op1;
     uint32_t op2;
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         op1 = cpu->cop1.fgr32[rd];
         op2 = cpu->cop1.fgr32[rt];
     } else {
@@ -327,7 +327,7 @@ void COP1::addS(CPU* cpu, uint32_t instruction) {
 
     uint32_t dest = CPU::getFd(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[dest] = returnVal;
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
@@ -346,7 +346,7 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
     uint32_t op1;
     uint32_t op2;
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         op1 = cpu->cop1.fgr32[rd];
         op2 = cpu->cop1.fgr32[rt];
     } else {
@@ -363,7 +363,7 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
 
     uint32_t dest = CPU::getFd(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[dest] = returnVal;
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
@@ -378,7 +378,7 @@ void COP1::divS(CPU* cpu, uint32_t instruction) {
     uint32_t numeratorBits;
     uint32_t denominatorBits;
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         numeratorBits = cpu->cop1.fgr32[rd];
         denominatorBits = cpu->cop1.fgr32[rt];
     } else {
@@ -394,7 +394,7 @@ void COP1::divS(CPU* cpu, uint32_t instruction) {
 
     uint32_t dest = CPU::getFd(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[dest] = returnVal;
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
@@ -404,7 +404,7 @@ void COP1::divS(CPU* cpu, uint32_t instruction) {
 void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
 
-    uint32_t bits = ((cpu->cop0.status >> 26) & 0b1) == 0 ? cpu->cop1.fgr32[rd] : (uint32_t)cpu->cop1.fgr64[rd];
+    uint32_t bits = !cpu->cop0.status.fr ? cpu->cop1.fgr32[rd] : (uint32_t)cpu->cop1.fgr64[rd];
 
     float value = ((union convu32){.u32 = bits }).f32;
 
@@ -416,7 +416,7 @@ void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
 
     std::cout << "setting destination to " << std::hex << returnVal << "\n";
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[dest] = returnVal;
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
@@ -459,7 +459,7 @@ void COP1::truncWS(CPU* cpu, uint32_t instruction) {
 
     uint32_t bits;
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         bits = cpu->cop1.fgr32[rd];
     } else {
         bits = (uint32_t)cpu->cop1.fgr64[rd];
@@ -473,7 +473,7 @@ void COP1::truncWS(CPU* cpu, uint32_t instruction) {
 
     uint32_t dest = CPU::getFd(instruction);
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[dest] = returnVal;
     } else {
         cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
@@ -572,7 +572,7 @@ void COP1::cLtS(CPU* cpu, uint32_t instruction) {
     uint32_t bits1;
     uint32_t bits2;
 
-    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+    if (!cpu->cop0.status.fr) {
         bits1 = cpu->cop1.fgr32[rd];
         bits2 = cpu->cop1.fgr32[rt];
     } else {

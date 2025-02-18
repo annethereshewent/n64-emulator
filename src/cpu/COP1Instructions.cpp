@@ -4,6 +4,7 @@
 #include <iostream>
 #include "../bus/Bus.cpp"
 #include "CPU.hpp"
+#include <cmath>
 
 // gotten from https://stackoverflow.com/questions/11611787/convert-a-32-bits-to-float-value
 union convu32
@@ -401,8 +402,25 @@ void COP1::divS(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(28);
 }
 void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sqrtS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+
+    uint32_t bits = ((cpu->cop0.status >> 26) & 0b1) == 0 ? cpu->cop1.fgr32[rd] : (uint32_t)cpu->cop1.fgr64[rd];
+
+    float value = ((union convu32){.u32 = bits }).f32;
+
+    float result = sqrt(value);
+
+    uint32_t returnVal = ((union convu32){.f32 = result }).u32;
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    std::cout << "setting destination to " << std::hex << returnVal << "\n";
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        cpu->cop1.fgr32[dest] = returnVal;
+    } else {
+        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
+    }
 }
 void COP1::absS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: absS\n";
@@ -548,8 +566,28 @@ void COP1::cNglS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cLtS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cLtS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    uint32_t bits1;
+    uint32_t bits2;
+
+    if (((cpu->cop0.status >> 26) & 0b1) == 0) {
+        bits1 = cpu->cop1.fgr32[rd];
+        bits2 = cpu->cop1.fgr32[rt];
+    } else {
+        bits1 = (uint32_t)cpu->cop1.fgr64[rd];
+        bits2 = (uint32_t)cpu->cop1.fgr64[rt];
+    }
+
+    float float1 = ((union convu32){.u32 = bits1}).f32;
+    float float2 = ((union convu32){.u32 = bits2}).f32;
+
+    if (float1 < float2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
 }
 void COP1::cNgeS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cNgeS\n";

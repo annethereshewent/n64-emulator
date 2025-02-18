@@ -19,8 +19,8 @@ typedef union FCSR {
         unsigned int causeInvalidOp: 1;
         unsigned int caseUnimplemented: 1;
         unsigned int unused: 5;
-        unsigned int condition: 23;
-        unsigned int flushDenormToZero: 24;
+        unsigned int condition: 1;
+        unsigned int flushDenormToZero: 1;
     };
 
     uint32_t value = 0;

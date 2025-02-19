@@ -104,10 +104,17 @@ COP1::COP1() {
         COP1::cLeS,
         COP1::cNgtS,
     };
+
+
+    bInstructions = {
+        COP1::bc1f,
+        COP1::bc1t,
+        COP1::bc1fl,
+        COP1::bc1tl
+    };
 }
 
 void COP1::setCop1Registers(Cop0Status status) {
-    std::cout << "yea it's going in here\n";
     if (!status.fr) {
         for (int i = 0; i < fgr32.size(); i += 2) {
             fgr32[i] = (uint32_t)fgr64[i];

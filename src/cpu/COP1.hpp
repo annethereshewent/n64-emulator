@@ -78,10 +78,16 @@ public:
     static void cLeS(CPU* cpu, uint32_t instruction);
     static void cNgtS(CPU* cpu, uint32_t instruction);
 
+    static void bc1f(CPU* cpu, uint32_t instruction);
+    static void bc1t(CPU* cpu, uint32_t instruction);
+    static void bc1fl(CPU* cpu, uint32_t instruction);
+    static void bc1tl(CPU* cpu, uint32_t instruction);
+
     void writeRegister(uint32_t index, uint64_t value);
     void setCop1Registers(Cop0Status cop0Status);
     uint32_t readRegister(uint32_t index);
 
     std::array<CPUInstruction, 32> instructions;
     std::array<CPUInstruction, 64> sInstructions;
+    std::array<CPUInstruction, 4> bInstructions;
 };

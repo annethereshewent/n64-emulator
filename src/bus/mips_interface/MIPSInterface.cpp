@@ -17,7 +17,6 @@ void MIPSInterface::write(uint32_t value) {
     if ((value >> 10 & 0x1) == 1) {
         ebus = true;
     }
-     // TODO: clear dp interrupt
 
      if ((value >> 12 & 0x1) == 1) {
         upperMode = false;

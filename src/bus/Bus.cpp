@@ -9,8 +9,9 @@
 #include "mips_interface/MIPSInterface.cpp"
 #include "peripheral_interface/PeripheralInterface.cpp"
 #include "serial_interface/SerialInterface.cpp"
-#include "rdp/RDP.cpp"
+#include "rdp/RDPInterface.cpp"
 #include "audio_interface/AudioInterface.cpp"
+#include "../interface.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
     uint64_t actualAddress = Bus::translateAddress(address);
@@ -325,6 +326,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
     bool cached = (address & 0x20000000) == 0;
 
+    if (actualAddress & ~7 == 0x227000) {
+        printf("writing to address %x value %x\n", address, value);
+    }
+
     if (cached && !ignoreCache) {
         writeDataCache(actualAddress, value, mask);
         return;
@@ -353,7 +358,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         case 0x4300000:
             mips.write(value);
-            // TODO: clear dp interrupt
+            if ((value >> 11 & 0b1) == 1) {
+                clearInterrupt(DP_INTERRUPT_FLAG);
+            }
             checkIrqs();
             cpu.checkIrqs();
             break;
@@ -365,25 +372,33 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
         case 0x4400000:
             Bus::writeWithMask32(&videoInterface.ctrl.value, value & 0x1ffff, mask);
             videoInterface.ctrl.unused = 0;
+
+            rdp_set_vi_register(0, videoInterface.ctrl.value);
             break;
         case 0x4400004:
             Bus::writeWithMask32(&videoInterface.origin, value & 0xffffff, mask);
+            rdp_set_vi_register(1, videoInterface.origin);
             break;
         case 0x4400008:
             Bus::writeWithMask32(&videoInterface.width, value & 0xfff, mask);
+            rdp_set_vi_register(2, videoInterface.width);
             break;
         case 0x440000c:
             Bus::writeWithMask32(&videoInterface.vInterrupt, value & 0x3ff, mask);
+            rdp_set_vi_register(3, videoInterface.vInterrupt);
             break;
         case 0x4400010:
+            rdp_set_vi_register(4, value);
             clearInterrupt(VI_INTERRUPT_FLAG);
             break;
         case 0x4400014:
             Bus::writeWithMask32(&videoInterface.viBurst, value & 0x3fffffff, mask);
+            rdp_set_vi_register(5, videoInterface.viBurst);
             break;
         case 0x4400018:
             if (videoInterface.vTotal != (value & 0x3ff)) {
                 Bus::writeWithMask32(&videoInterface.vTotal, value & 0x3ff, mask);
+                rdp_set_vi_register(6, videoInterface.vTotal);
 
                 recalculateDelay();
 
@@ -397,30 +412,37 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
         case 0x440001c:
             if (videoInterface.hTotal != (value & 0xfff)) {
                 Bus::writeWithMask32(&videoInterface.hTotal, value & 0xfff, mask);
+                rdp_set_vi_register(7, videoInterface.hTotal);
                 recalculateDelay();
             }
             break;
         case 0x4400020:
             Bus::writeWithMask32(&videoInterface.hTotalLeap.value, value & 0xfffffff, mask);
             videoInterface.hTotalLeap.unused = 0;
+            rdp_set_vi_register(0x20 / 4, videoInterface.hTotalLeap.value);
             break;
         case 0x4400024:
             Bus::writeWithMask32(&videoInterface.hVideo, value & 0x3ff, mask);
+            rdp_set_vi_register(0x24 / 4, videoInterface.hVideo);
             break;
         case 0x4400028:
             Bus::writeWithMask32(&videoInterface.vVideo.value, value & 0x3ffffff, mask);
             videoInterface.vVideo.unused = 0;
+            rdp_set_vi_register(0x28 / 4, videoInterface.vVideo.value);
             break;
         case 0x440002c:
             Bus::writeWithMask32(&videoInterface.vBurst, value & 0x3ffffff, mask);
+            rdp_set_vi_register(0x2c / 4, videoInterface.vBurst);
             break;
         case 0x4400030:
             Bus::writeWithMask32(&videoInterface.xScale.value, value & 0xfffffff, mask);
             videoInterface.xScale.unused = 0;
+            rdp_set_vi_register(0x30 / 4, videoInterface.xScale.value);
             break;
         case 0x4400034:
             Bus::writeWithMask32(&videoInterface.yScale.value, value & 0x3ffffff, mask);
             videoInterface.yScale.unused = 0;
+            rdp_set_vi_register(0x34 / 4, videoInterface.yScale.value);
             break;
         case 0x4500000:
             Bus::writeWithMask32(&audioInterface.dramAddress, value & 0xffffff, mask);

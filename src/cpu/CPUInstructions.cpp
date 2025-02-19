@@ -204,6 +204,16 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             }
             break;
         }
+        case 0x15: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            if (cpu->bus.dcacheHit(line, actualAddress)) {
+                cpu->bus.dcacheWriteback(line);
+
+                cpu->bus.dcache[line].valid = false;
+            }
+            break;
+        }
         case 0x19: {
             uint64_t line = (actualAddress >> 4) & 0x1ff;
 

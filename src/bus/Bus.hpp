@@ -7,7 +7,7 @@
 #include "video_interface/VideoInterface.hpp"
 #include "audio_interface/AudioInterface.hpp"
 #include "serial_interface/SerialInterface.hpp"
-#include "rdp/RDP.hpp"
+#include "rdp/RDPInterface.hpp"
 #include "pif/PIF.hpp"
 #include "rdram_interface/RDInterface.hpp"
 #include "mips_interface/MIPSInterface.hpp"
@@ -20,6 +20,7 @@ const uint32_t SI_INTERRUPT_FLAG = 1 << 1;
 const uint32_t AI_INTERRUPT_FLAG = 1 << 2;
 const uint32_t VI_INTERRUPT_FLAG = 1 << 3;
 const uint32_t PI_INTERRUPT_FLAG = 1 << 4;
+const uint32_t DP_INTERRUPT_FLAG = 1 << 5;
 
 const uint32_t EEPROM_4K = 0x8000;
 const uint32_t EEPROM_16K = 0xc000;
@@ -42,7 +43,7 @@ public:
     CPU& cpu;
     RSP rsp;
 
-    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this) {
+    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this) {
         rdram.resize(0x800000);
         rdram9.resize(0x800000);
         spdmem.resize(0x1000);
@@ -70,7 +71,7 @@ public:
     std::array<DCache, 512> dcache;
 
     PeripheralInterface peripheralInterface;
-    RDP rdp;
+    RDPInterface rdp;
     AudioInterface audioInterface;
     VideoInterface videoInterface;
 

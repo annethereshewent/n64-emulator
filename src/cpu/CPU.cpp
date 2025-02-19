@@ -392,6 +392,8 @@ void CPU::step() {
 
         switch (event.eventType) {
             case VideoInterrupt:
+                rdp_update_screen();
+                bus.rdp.frameFinished = true;
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
@@ -444,6 +446,14 @@ void CPU::step() {
                 }
 
                 bus.audioInterface.popDma();
+                break;
+            case RDPEvent:
+                bus.rdp.status.gclk = 0;
+                bus.rdp.status.cmdBusy = 0;
+                bus.rdp.status.pipeBusy = 0;
+
+                printf("setting dp interrupt\n");
+                bus.setInterrupt(DP_INTERRUPT_FLAG);
                 break;
         }
     }

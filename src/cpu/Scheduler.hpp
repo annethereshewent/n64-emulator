@@ -13,7 +13,8 @@ enum EventType {
     PIDma,
     CompareCount,
     SIDma,
-    AIDma
+    AIDma,
+    RDPEvent
 };
 
 class Event {

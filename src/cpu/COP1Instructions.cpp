@@ -448,8 +448,6 @@ void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
 
     uint32_t dest = CPU::getFd(instruction);
 
-    std::cout << "setting destination to " << std::hex << returnVal << "\n";
-
     if (!cpu->cop0.status.fr) {
         cpu->cop1.fgr32[dest] = returnVal;
     } else {
@@ -467,8 +465,27 @@ void COP1::movS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::negS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: negS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+
+    uint32_t bits;
+
+    if (!cpu->cop0.status.fr) {
+        bits = cpu->cop1.fgr32[rd];
+    } else {
+        bits = (uint32_t)cpu->cop1.fgr64[rd];
+    }
+
+    float value = -((union convu32){.u32 = bits }).f32;
+
+    uint32_t returnVal = ((union convu32){ .f32 = value}).u32;
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    if (!cpu->cop0.status.fr) {
+        cpu->cop1.fgr32[dest] = returnVal;
+    } else {
+        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
+    }
 }
 void COP1::roundLS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: roundLS\n";
@@ -561,8 +578,30 @@ void COP1::cUnS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cEqS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cEqS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    uint32_t bits1;
+    uint32_t bits2;
+
+    if (!cpu->cop0.status.fr) {
+        bits1 = cpu->cop1.fgr32[rd];
+        bits2 = cpu->cop1.fgr32[rt];
+    } else {
+        bits1 = (uint32_t)cpu->cop1.fgr64[rd];
+        bits2 = (uint32_t)cpu->cop1.fgr64[rt];
+    }
+
+    float float1 = ((union convu32){.u32 = bits1}).f32;
+    float float2 = ((union convu32){.u32 = bits2}).f32;
+
+    if (std::isnan(float1) || std::isnan(float2)) {
+        cpu->cop1.fcsr.condition = 0;
+    } else if (float1 == float2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
 }
 void COP1::cUeqS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cUeqS\n";
@@ -641,6 +680,7 @@ void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
 void COP1::bc1f(CPU* cpu, uint32_t instruction) {
     if (!cpu->cop1.fcsr.condition) {
         std::cout << "ayyyy elmo im branching out\n";
+        // exit(1);
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
 
         cpu->fastForwardRelativeLoop((int16_t)amount);

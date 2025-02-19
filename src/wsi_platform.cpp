@@ -1,16 +1,16 @@
 #include "../parallel-rdp-standalone/vulkan/wsi.hpp"
 #include "wsi_platform.hpp"
 #include <SDL3/SDL_vulkan.h>
+#include <print>
 
 VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance, VkPhysicalDevice gpu)
 {
 	VkSurfaceKHR surface = nullptr;
 	bool result = SDL_Vulkan_CreateSurface(window, instance, NULL, &surface);
 
-	printf("%s\n", SDL_GetError());
 	if (result != true)
 	{
-		printf("Error creating surface\n");
+		std::print("Error creating surface\n");
 	}
 	return surface;
 }
@@ -27,7 +27,7 @@ std::vector<const char *> SDL_WSIPlatform::get_instance_extensions()
 	char const *const *extensions = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
 	if (extensions == NULL)
 	{
-		printf("Error getting instance extensions\n");
+		std::print("Error getting instance extensions\n");
 	}
 
 	std::vector<const char *> extensionNames;

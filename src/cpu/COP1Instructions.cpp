@@ -380,8 +380,8 @@ void COP1::absS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::movS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: movS\n";
-    exit(1);
+    double result = cpu->cop1.getDouble(CPU::getRd(instruction));
+    cpu->cop1.setDouble(CPU::getFd(instruction), result);
 }
 void COP1::negS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
@@ -442,22 +442,9 @@ void COP1::floorWS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cvtDS(CPU* cpu, uint32_t instruction) {
-    uint32_t rd = CPU::getRd(instruction);
+    float result = cpu->cop1.getFloat(CPU::getRd(instruction));
 
-    uint32_t bits;
-
-    uint32_t dest = CPU::getFd(instruction);
-
-    if (!cpu->cop0.status.fr) {
-        bits = cpu->cop1.fgr32[rd];
-
-        cpu->cop1.fgr32[dest] = bits;
-        cpu->cop1.fgr32[dest + 1] = (uint32_t)((uint64_t)bits >> 32);
-    } else {
-        bits = (uint32_t)cpu->cop1.fgr64[rd];
-
-        cpu->cop1.fgr64[dest] = (uint64_t)bits;
-    }
+    cpu->cop1.setDouble(CPU::getFd(instruction), (double)result);
 
     cpu->cop0.addCycles(4);
 }
@@ -595,6 +582,7 @@ void COP1::bc1fl(CPU* cpu, uint32_t instruction) {
 
         cpu->inDelaySlot = true;
     } else {
+        cpu->pc = cpu->nextPc;
         cpu->discarded = true;
     }
 }
@@ -679,8 +667,13 @@ void COP1::roundWD(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::truncWD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: truncWD\n";
-    exit(1);
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+
+    float result = ((union convi32){.i32 = (int32_t)double1}).f32;
+
+    cpu->cop1.setFloat(CPU::getFd(instruction), result);
+
+    cpu->cop0.addCycles(4);
 }
 void COP1::ceilWD(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ceilWD\n";

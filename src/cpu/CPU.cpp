@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <print>
 #include <bit>
 #include "COP0.cpp"
 #include "COP1.cpp"
@@ -353,6 +354,9 @@ void CPU::step() {
     //     } else if (command == 16) {
     //         std::cout << "command is cop0\n";
     //         actualCommand = (opcode >> 21) & 0x1f;
+    //     } else if (command == 17) {
+    //         std::cout << "command is cop1\n";
+    //         actualCommand = (opcode >> 21) & 0x1f;
     //     }
     //      std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
     //     // std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << "\n";
@@ -452,7 +456,7 @@ void CPU::step() {
                 bus.rdp.status.cmdBusy = 0;
                 bus.rdp.status.pipeBusy = 0;
 
-                printf("setting dp interrupt\n");
+                std::print("setting dp interrupt\n");
                 bus.setInterrupt(DP_INTERRUPT_FLAG);
                 break;
         }

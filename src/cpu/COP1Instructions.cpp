@@ -542,8 +542,24 @@ void COP1::floorWS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cvtDS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtDS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+
+    uint32_t bits;
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    if (!cpu->cop0.status.fr) {
+        bits = cpu->cop1.fgr32[rd];
+
+        cpu->cop1.fgr32[dest] = bits;
+        cpu->cop1.fgr32[dest + 1] = (uint32_t)((uint64_t)bits >> 32);
+    } else {
+        bits = (uint32_t)cpu->cop1.fgr64[rd];
+
+        cpu->cop1.fgr64[dest] = (uint64_t)bits;
+    }
+
+    cpu->cop0.addCycles(4);
 }
 void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
     switch (cpu->cop1.fcsr.roundingMode) {
@@ -679,8 +695,6 @@ void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
 
 void COP1::bc1f(CPU* cpu, uint32_t instruction) {
     if (!cpu->cop1.fcsr.condition) {
-        std::cout << "ayyyy elmo im branching out\n";
-        // exit(1);
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
 
         cpu->fastForwardRelativeLoop((int16_t)amount);

@@ -130,8 +130,14 @@ void COP1::cop1_b_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cop1_d_instrs(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cop1_d_instrs\n";
-    exit(1);
+    if (!cpu->cop0.status.cu1) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException(true);
+        return;
+    }
+
+    cpu->cop1.dInstructions[instruction & 0x3f](cpu, instruction);
 }
 
 void COP1::cop1_l_instrs(CPU* cpu, uint32_t instruction) {
@@ -713,5 +719,146 @@ void COP1::bc1fl(CPU* cpu, uint32_t instruction) {
 }
 void COP1::bc1tl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bc1tl\n";
+    exit(1);
+}
+
+void COP1::addD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: addD\n";
+    exit(1);
+}
+void COP1::subD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: subD\n";
+    exit(1);
+}
+void COP1::mulD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: mulD\n";
+    exit(1);
+}
+void COP1::divD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: divD\n";
+    exit(1);
+}
+void COP1::sqrtD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sqrtD\n";
+    exit(1);
+}
+void COP1::absD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: absD\n";
+    exit(1);
+}
+void COP1::movD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: movD\n";
+    exit(1);
+}
+void COP1::negD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: negD\n";
+    exit(1);
+}
+void COP1::roundLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: roundLD\n";
+    exit(1);
+}
+void COP1::truncLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: truncLD\n";
+    exit(1);
+}
+void COP1::ceilLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ceilD\n";
+    exit(1);
+}
+void COP1::floorLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: floorLD\n";
+    exit(1);
+}
+void COP1::roundWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: roundWD\n";
+    exit(1);
+}
+void COP1::truncWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: truncWD\n";
+    exit(1);
+}
+void COP1::ceilWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ceilWD\n";
+    exit(1);
+}
+void COP1::floorWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: floorWD\n";
+    exit(1);
+}
+void COP1::cvtSD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtSD\n";
+    exit(1);
+}
+void COP1::cvtWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtWD\n";
+    exit(1);
+}
+void COP1::cvtLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtLD\n";
+    exit(1);
+}
+void COP1::cFD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cFD\n";
+    exit(1);
+}
+void COP1::cUnD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUnD\n";
+    exit(1);
+}
+void COP1::cEqD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cEqD\n";
+    exit(1);
+}
+void COP1::cUeqD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUeqD\n";
+    exit(1);
+}
+void COP1::cOltD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cOltD\n";
+    exit(1);
+}
+void COP1::cUltD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUltD\n";
+    exit(1);
+}
+void COP1::cOleD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cOleD\n";
+    exit(1);
+}
+void COP1::cUleD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUleD\n";
+    exit(1);
+}
+void COP1::cSfD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cSfD\n";
+    exit(1);
+}
+void COP1::cNgleD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgleD\n";
+    exit(1);
+}
+void COP1::cSeqD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cSeqD\n";
+    exit(1);
+}
+void COP1::cNglD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNglD\n";
+    exit(1);
+}
+void COP1::cLtD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cLtD\n";
+    exit(1);
+}
+void COP1::cNgeD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgeD\n";
+    exit(1);
+}
+void COP1::cLeD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cLeD\n";
+    exit(1);
+}
+void COP1::cNgtD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgtD\n";
     exit(1);
 }

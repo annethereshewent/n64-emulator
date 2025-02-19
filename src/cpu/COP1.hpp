@@ -83,6 +83,42 @@ public:
     static void bc1fl(CPU* cpu, uint32_t instruction);
     static void bc1tl(CPU* cpu, uint32_t instruction);
 
+    static void addD(CPU* cpu, uint32_t instruction);
+    static void subD(CPU* cpu, uint32_t instruction);
+    static void mulD(CPU* cpu, uint32_t instruction);
+    static void divD(CPU* cpu, uint32_t instruction);
+    static void sqrtD(CPU* cpu, uint32_t instruction);
+    static void absD(CPU* cpu, uint32_t instruction);
+    static void movD(CPU* cpu, uint32_t instruction);
+    static void negD(CPU* cpu, uint32_t instruction);
+    static void roundLD(CPU* cpu, uint32_t instruction);
+    static void truncLD(CPU* cpu, uint32_t instruction);
+    static void ceilLD(CPU* cpu, uint32_t instruction);
+    static void floorLD(CPU* cpu, uint32_t instruction);
+    static void roundWD(CPU* cpu, uint32_t instruction);
+    static void truncWD(CPU* cpu, uint32_t instruction);
+    static void ceilWD(CPU* cpu, uint32_t instruction);
+    static void floorWD(CPU* cpu, uint32_t instruction);
+    static void cvtSD(CPU* cpu, uint32_t instruction);
+    static void cvtWD(CPU* cpu, uint32_t instruction);
+    static void cvtLD(CPU* cpu, uint32_t instruction);
+    static void cFD(CPU* cpu, uint32_t instruction);
+    static void cUnD(CPU* cpu, uint32_t instruction);
+    static void cEqD(CPU* cpu, uint32_t instruction);
+    static void cUeqD(CPU* cpu, uint32_t instruction);
+    static void cOltD(CPU* cpu, uint32_t instruction);
+    static void cUltD(CPU* cpu, uint32_t instruction);
+    static void cOleD(CPU* cpu, uint32_t instruction);
+    static void cUleD(CPU* cpu, uint32_t instruction);
+    static void cSfD(CPU* cpu, uint32_t instruction);
+    static void cNgleD(CPU* cpu, uint32_t instruction);
+    static void cSeqD(CPU* cpu, uint32_t instruction);
+    static void cNglD(CPU* cpu, uint32_t instruction);
+    static void cLtD(CPU* cpu, uint32_t instruction);
+    static void cNgeD(CPU* cpu, uint32_t instruction);
+    static void cLeD(CPU* cpu, uint32_t instruction);
+    static void cNgtD(CPU* cpu, uint32_t instruction);
+
     void writeRegister(uint32_t index, uint64_t value);
     void setCop1Registers(Cop0Status cop0Status);
     uint32_t readRegister(uint32_t index);
@@ -90,4 +126,5 @@ public:
     std::array<CPUInstruction, 32> instructions;
     std::array<CPUInstruction, 64> sInstructions;
     std::array<CPUInstruction, 4> bInstructions;
+    std::array<CPUInstruction, 64> dInstructions;
 };

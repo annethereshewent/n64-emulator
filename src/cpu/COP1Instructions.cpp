@@ -361,8 +361,6 @@ void COP1::subS(CPU* cpu, uint32_t instruction) {
 
     float result = float1 - float2;
 
-    std::cout << "got result " << result << "\n";
-
     uint32_t returnVal = ((union convu32){.f32 = result }).u32;
 
     uint32_t dest = CPU::getFd(instruction);

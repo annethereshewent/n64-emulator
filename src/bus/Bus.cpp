@@ -126,7 +126,6 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
 
     if (cached) {
         if ((actualAddress & 0x3) == 0) {
-            uint32_t returnValue = (uint32_t)value << 16;
             writeDataCache(actualAddress & ~0x3, (uint32_t)value << 16, 0xffff0000);
         } else {
             writeDataCache(actualAddress & ~0x3, (uint32_t)value, 0x0000ffff);

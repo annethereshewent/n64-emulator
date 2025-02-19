@@ -45,6 +45,7 @@ void RDP::writeRegisters(uint32_t offset, uint32_t value) {
             }
             if (!status.freeze) {
                 // TODO: start rdp
+                frameFinished = true;
             } else {
                 isFrozen = true;
             }

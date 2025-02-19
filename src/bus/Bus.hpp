@@ -26,13 +26,13 @@ const uint32_t EEPROM_16K = 0xc000;
 
 class Bus {
 public:
-    std::vector<uint8_t> rdram;
-    std::vector<bool> rdram9;
+    std::vector<uint8_t> rdram = {};
+    std::vector<bool> rdram9 = {};
 
     std::vector<TlbLut> tlbReadLut;
     std::vector<TlbLut> tlbWriteLut;
 
-    std::array<TlbEntry, 32> tlbEntries;
+    std::array<TlbEntry, 32> tlbEntries = {};
 
     std::vector<uint8_t> backup;
 

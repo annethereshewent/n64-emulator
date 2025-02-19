@@ -1,2 +1,7 @@
 a.out
 .vscode/
+Makefile
+CMakeCache.txt
+cmake_install.cmake
+n64-plus
+CMakeFiles/

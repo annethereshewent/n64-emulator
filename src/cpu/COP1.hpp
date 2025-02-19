@@ -6,16 +6,45 @@
 #include "CPUInstruction.hpp"
 #include "Cop0Status.hpp"
 
+// gotten from https://stackoverflow.com/questions/11611787/convert-a-32-bits-to-float-value
+union convu32 {
+    uint32_t u32; // here_write_bits
+    float    f32; // here_read_float
+};
+
+union convi32 {
+    int32_t i32; // here_write_bits
+    float   f32; // here_read_float
+};
+
+union convu64 {
+    uint64_t u64;
+    double f64;
+};
+
 class CPU;
 
 class COP1 {
 public:
-
     FCSR fcsr;
-    COP1();
 
     std::array<uint32_t, 32> fgr32 = {};
     std::array<uint64_t, 32> fgr64 = {};
+
+    std::array<CPUInstruction, 32> instructions;
+    std::array<CPUInstruction, 64> sInstructions;
+    std::array<CPUInstruction, 4> bInstructions;
+    std::array<CPUInstruction, 64> dInstructions;
+
+    CPU& cpu;
+
+    COP1(CPU& cpu);
+
+    float getFloat(uint32_t index);
+    double getDouble(uint32_t index);
+
+    void setFloat(uint32_t index, float value);
+    void setDouble(uint32_t index, double value);
 
     static void reserved(CPU* cpu, uint32_t instruction);
     static void lwc1(CPU* cpu, uint32_t instruction);
@@ -122,9 +151,4 @@ public:
     void writeRegister(uint32_t index, uint64_t value);
     void setCop1Registers(Cop0Status cop0Status);
     uint32_t readRegister(uint32_t index);
-
-    std::array<CPUInstruction, 32> instructions;
-    std::array<CPUInstruction, 64> sInstructions;
-    std::array<CPUInstruction, 4> bInstructions;
-    std::array<CPUInstruction, 64> dInstructions;
 };

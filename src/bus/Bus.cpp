@@ -326,10 +326,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
     bool cached = (address & 0x20000000) == 0;
 
-    if (actualAddress & ~7 == 0x227000) {
-        printf("writing to address %x value %x\n", address, value);
-    }
-
     if (cached && !ignoreCache) {
         writeDataCache(actualAddress, value, mask);
         return;

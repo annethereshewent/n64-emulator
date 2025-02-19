@@ -6,19 +6,6 @@
 #include "CPU.hpp"
 #include <cmath>
 
-// gotten from https://stackoverflow.com/questions/11611787/convert-a-32-bits-to-float-value
-union convu32
-{
-    uint32_t u32; // here_write_bits
-    float    f32; // here_read_float
-};
-
-union convi32
-{
-    int32_t i32; // here_write_bits
-    float   f32; // here_read_float
-};
-
 void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);

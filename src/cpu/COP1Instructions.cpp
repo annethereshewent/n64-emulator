@@ -276,8 +276,16 @@ uint32_t COP1::readRegister(uint32_t index) {
 }
 
 void COP1::cvtDW(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtDW\n";
-    exit(1);
+    uint32_t index = CPU::getRd(instruction);
+
+    int32_t value = (int32_t)cpu->cop1.fgr32[index];
+
+    if (cpu->cop0.status.fr) {
+        value = (int32_t)cpu->cop1.fgr64[index];
+    }
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), (double)value);
+    cpu->cop0.addCycles(4);
 }
 
 void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
@@ -289,15 +297,7 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
         value = (int32_t)cpu->cop1.fgr64[index];
     }
 
-    uint32_t dest = CPU::getFd(instruction);
-
-    int32_t destValue = ((union convi32){.f32 = (float)value}).i32;
-
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = destValue;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)destValue;
-    }
+    cpu->cop1.setFloat(CPU::getFd(instruction), (float)value);
 
     cpu->cop0.addCycles(4);
 }
@@ -627,8 +627,12 @@ void COP1::mulD(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(7);
 }
 void COP1::divD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: divD\n";
-    exit(1);
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), double1 / double2);
+
+    cpu->cop0.addCycles(57);
 }
 void COP1::sqrtD(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: sqrtD\n";
@@ -689,8 +693,20 @@ void COP1::cvtSD(CPU* cpu, uint32_t instruction) {
     cpu->cop1.setFloat(CPU::getFd(instruction), (float)result);
 }
 void COP1::cvtWD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtWD\n";
-    exit(1);
+    switch (cpu->cop1.fcsr.roundingMode) {
+        case 0:
+            COP1::roundWD(cpu, instruction);
+            break;
+        case 1:
+            COP1::truncWD(cpu, instruction);
+            break;
+        case 2:
+            COP1::ceilWD(cpu, instruction);
+            break;
+        case 3:
+            COP1::floorWD(cpu, instruction);
+            break;
+    }
 }
 void COP1::cvtLD(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cvtLD\n";

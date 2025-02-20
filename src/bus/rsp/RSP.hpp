@@ -300,9 +300,9 @@ public:
     std::array<uint32_t, 32> r = {};
     std::array<std::array<uint8_t, 16>, 32> vpr = {};
 
-    uint16_t vuVCO = 0;
-    uint16_t vuVCC = 0;
-    uint8_t vuVCE = 0;
+    uint16_t vco = 0;
+    uint16_t vcc = 0;
+    uint8_t vce = 0;
 
     bool divDp = false;
 

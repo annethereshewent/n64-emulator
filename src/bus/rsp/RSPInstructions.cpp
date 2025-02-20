@@ -458,8 +458,26 @@ void RSP::mfc2(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::cfc2(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: cfc2\n";
-    exit(1);
+    uint32_t value;
+    switch (CPU::getRd(instruction)) {
+        case 0:
+            printf("it's vco\n");
+            value = rsp->vco;
+            break;
+        case 1:
+            printf("it's vcc\n");
+            value = rsp->vcc;
+            break;
+        case 2:
+        case 3:
+            printf("it's vce");
+            value = rsp->vce;
+            break;
+    }
+
+    printf("setting register %i to %x\n", CPU::getRt(instruction), value);
+
+    rsp->r[CPU::getRt(instruction)] = value;
 }
 
 void RSP::vmulf(RSP* rsp, uint32_t instruction) {

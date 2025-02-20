@@ -6,6 +6,8 @@
 #include "../Bus.hpp"
 #include <print>
 
+typedef unsigned __int128 u128;
+
 void RSP::addi(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] + (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
 }
@@ -249,7 +251,7 @@ void RSP::lbv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::lsv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 3;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 1);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -263,7 +265,7 @@ void RSP::lsv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::llv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 3;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 2);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -277,7 +279,7 @@ void RSP::llv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::ldv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 3;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -291,7 +293,7 @@ void RSP::ldv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::lqv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 4;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 4);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -307,7 +309,7 @@ void RSP::lqv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::lrv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 4;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 4);
 
     uint32_t end = rsp->r[CPU::getRs(instruction)] + offset;
     uint32_t address = end & 0xff0;
@@ -351,7 +353,7 @@ void RSP::ltv(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::sbv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 1;
+    uint32_t offset = (uint32_t)getVOffset(instruction);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -360,7 +362,7 @@ void RSP::sbv(RSP* rsp, uint32_t instruction) {
     rsp->memWrite8(address, rsp->getVec8(getVt(instruction), velement));
 }
 void RSP::ssv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 1;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 1);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -372,7 +374,7 @@ void RSP::ssv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::slv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 2;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 2);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -384,7 +386,7 @@ void RSP::slv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::sdv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 3;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -396,7 +398,7 @@ void RSP::sdv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::sqv(RSP* rsp, uint32_t instruction) {
-    uint32_t offset = getVOffset(instruction) << 4;
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 4);
 
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
@@ -462,23 +464,23 @@ void RSP::cfc2(RSP* rsp, uint32_t instruction) {
     uint32_t value;
     switch (CPU::getRd(instruction)) {
         case 0:
-            printf("it's vco\n");
-            value = rsp->vco;
+            std::println("it's vco");
+            value = (int16_t)(int32_t)(uint32_t)rsp->vco;
             break;
         case 1:
-            printf("it's vcc\n");
-            value = rsp->vcc;
+            std::println("it's vcc");
+            value = (int16_t)(int32_t)(uint32_t)rsp->vcc;
             break;
         case 2:
         case 3:
-            printf("it's vce");
-            value = rsp->vce;
+            std::println("it's vce");
+            value = (int8_t)(int32_t)(uint32_t)rsp->vce;
             break;
     }
 
-    printf("setting register %i to %x\n", CPU::getRt(instruction), (int16_t)(int32_t)(uint32_t)value);
+    std::println("setting register {} to {:x}", CPU::getRt(instruction), value);
 
-    rsp->r[CPU::getRt(instruction)] = (int16_t)(int32_t)(uint32_t)value;
+    rsp->r[CPU::getRt(instruction)] = value;
 }
 
 void RSP::vmulf(RSP* rsp, uint32_t instruction) {
@@ -523,7 +525,7 @@ void RSP::vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumul
 
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
         uint16_t s = rsp->getVec16(vs, el);
-        int16_t t = (int16_t)rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
 
         int32_t result = (int32_t)s * (int32_t)t;
 
@@ -540,7 +542,7 @@ void RSP::vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumula
         uint16_t s = rsp->getVec16(vs, el);
         uint16_t t = rsp->getVec16(vt, select & 0x7);
 
-        uint32_t result = ((uint32_t)s * (u_char)t * 2) >> 16;
+        int32_t result = ((int32_t)s * (int32_t)t) >> 16;
 
         rsp->updateAccumulatorLow32(el, result, accumulate);
     }
@@ -716,7 +718,7 @@ void RSP::vcl(RSP* rsp, uint32_t instruction) {
 
     rsp->vcc = (uint16_t)outHi << 8 | (uint16_t)outLo;
 
-    printf("vcc = %x\n", rsp->vcc);
+    // printf("vcc = %x\n", rsp->vcc);
 
     rsp->vco = 0;
     rsp->vce = 0;
@@ -768,7 +770,7 @@ void RSP::vch(RSP* rsp, uint32_t instruction) {
     rsp->vcc = (uint16_t)vccHi << 8 | (uint16_t)vccLo;
     rsp->vco = (uint16_t)vcoHi << 8 | (uint16_t)vcoLo;
 
-    printf("vcc = %x\n", rsp->vcc);
+    // printf("vcc = %x\n", rsp->vcc);
 
     rsp->vce = vce;
 }

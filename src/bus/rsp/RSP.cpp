@@ -330,6 +330,7 @@ uint64_t RSP::runRsp() {
                 }
                 break;
             case 18:
+
                 switch ((instruction >> 21) & 0x1f) {
                     case 0:
                         RSP::mfc2(this, instruction);
@@ -445,8 +446,8 @@ void RSP::restartRsp() {
     startRsp();
 }
 
-uint32_t RSP::getVOffset(uint32_t instruction) {
-    return (int8_t)(int32_t)(uint32_t)(((instruction & 0x7f) << 1) >> 1);
+int32_t RSP::getVOffset(uint32_t instruction) {
+    return (int32_t)((int8_t)((instruction & 0x7f) << 1) >> 1);
 }
 
 uint8_t RSP::getVElement(uint32_t instruction) {
@@ -508,14 +509,14 @@ void RSP::updateAccumulatorMid32(int element, int32_t result, bool accumulate) {
 void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate) {
     if (accumulate) {
         int32_t x1 = *(int32_t*)&vAcc[(element * 2 + 1) * 4];
-        int32_t x0 = *(int32_t*)&vAcc[(element * 2) * 4];
+        uint32_t x0 = *(uint32_t*)&vAcc[(element * 2) * 4];
 
         int32_t z0 = (int64_t)x0 + (int64_t)result;
 
         int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
-        int32_t z1 = x1 + v1 + c;
+        int64_t z1 = x1 + v1 + c;
 
-        writeAcc32((element * 2 + 1) * 4, (uint32_t)((z1 << 16) >> 16));
+        writeAcc32((element * 2 + 1) * 4, (int32_t)(uint32_t)((z1 << 16) >> 16));
         writeAcc32((element * 2) * 4, (uint32_t)z0);
     } else {
         writeAcc32((element * 2 + 1) * 4, v1);
@@ -548,7 +549,7 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
         if (himid >= 0) {
             result = (himid & 0xffff8000) ? 0x7fff : himid;
         } else {
-            result = (~himid & 0xffff8000) ? 0x8000 : himid;
+            result = ((~himid) & 0xffff8000) ? 0x8000 : himid;
         }
 
         setVec16(vd, i, (uint16_t)result);

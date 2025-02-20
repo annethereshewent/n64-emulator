@@ -509,7 +509,7 @@ public:
     static void vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumulate);
 
-    static uint32_t getVOffset(uint32_t instruction);
+    static int32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);
     static uint8_t getVt(uint32_t instruction);
     static uint8_t getVs(uint32_t instruction);

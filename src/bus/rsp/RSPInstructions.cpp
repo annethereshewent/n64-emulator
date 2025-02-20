@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include "../Bus.hpp"
+#include <print>
 
 void RSP::addi(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] + (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
@@ -475,9 +476,9 @@ void RSP::cfc2(RSP* rsp, uint32_t instruction) {
             break;
     }
 
-    printf("setting register %i to %x\n", CPU::getRt(instruction), value);
+    printf("setting register %i to %x\n", CPU::getRt(instruction), (int16_t)(int32_t)(uint32_t)value);
 
-    rsp->r[CPU::getRt(instruction)] = value;
+    rsp->r[CPU::getRt(instruction)] = (int16_t)(int32_t)(uint32_t)value;
 }
 
 void RSP::vmulf(RSP* rsp, uint32_t instruction) {
@@ -665,12 +666,111 @@ void RSP::vge(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vcl(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vcl\n";
-    exit(1);
+    uint8_t vccHi = (uint8_t)(rsp->vcc >> 8);
+    uint8_t vccLo = (uint8_t)rsp->vcc;
+
+    uint8_t vce = rsp->vce;
+
+    uint8_t vcoHi = (uint8_t)(rsp->vco >> 8);
+    uint8_t vcoLo = (uint8_t)rsp->vco;
+
+    uint8_t outLo = 0;
+    uint8_t outHi = 0;
+
+    for (int el = 0, select = rsp->vecSelect[getVte(instruction)]; el < 8; el++, select >>= 4) {
+        uint16_t s = rsp->getVec16(getVs(instruction), el);
+        uint16_t t = rsp->getVec16(getVt(instruction), select & 0x7);
+
+        uint8_t le = (vccLo >> el) & 1;
+        uint8_t ge = (vccHi >> el) & 1;
+        uint8_t ce = (vce >> el) & 1;
+
+        uint8_t sign = (vcoLo >> el) & 1;
+        uint8_t eq = (~(vcoHi >> el)) & 1;
+
+        uint16_t result;
+
+        if (sign) {
+            if (eq) {
+                uint16_t sum = s + t;
+                bool carry = sum < (uint32_t)s + (uint32_t)t ? true : false;
+
+                le = (!ce && (!sum && !carry)) || (ce && (!sum || !carry));
+            }
+            result = le ? -t : s;
+        } else {
+            if (eq) {
+                ge = ((int16_t)s - (int16_t)t) >= 0;
+            }
+            result = ge ? t : s;
+        }
+
+        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
+        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+
+        outHi |= ge << el;
+        outLo |= le << el;
+    }
+
+    rsp->setVecFromAccLow(getVd(instruction));
+
+    rsp->vcc = (uint16_t)outHi << 8 | (uint16_t)outLo;
+
+    printf("vcc = %x\n", rsp->vcc);
+
+    rsp->vco = 0;
+    rsp->vce = 0;
 }
 void RSP::vch(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vch\n";
-    exit(1);
+    uint8_t vs = getVs(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vte = getVte(instruction);
+
+    uint8_t vccHi, vccLo, vcoHi, vcoLo, vce = 0;
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t s = (int16_t)rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
+
+        bool sign = (s ^ t) < 0;
+
+        bool le, ge, ce, ne;
+        uint32_t result;
+        if (sign) {
+            int16_t sum = s + t;
+
+            ge = t < 0;
+            le = sum <= 0;
+            ce = sum == -1;
+            ne = sum != 0 && (s != ~t);
+            result = le ? -t : s;
+        } else {
+            int16_t diff = s - t;
+
+            le = t < 0;
+            ge = diff >= 0;
+            ce = false;
+            ne = diff != 0;
+            result = ge ? t : s;
+        }
+        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
+        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+
+        vccHi |= (uint8_t)ge << el;
+        vccLo |= (uint8_t)le << el;
+        vcoHi |= (uint8_t)ne << el;
+        vcoLo |= (uint8_t)sign << el;
+        vce |= ce << el;
+    }
+
+    rsp->setVecFromAccLow(getVd(instruction));
+
+    rsp->vcc = (uint16_t)vccHi << 8 | (uint16_t)vccLo;
+    rsp->vco = (uint16_t)vcoHi << 8 | (uint16_t)vcoLo;
+
+    printf("vcc = %x\n", rsp->vcc);
+
+    rsp->vce = vce;
 }
 void RSP::vcr(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vcr\n";

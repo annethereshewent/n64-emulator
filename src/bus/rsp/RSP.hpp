@@ -364,6 +364,7 @@ public:
     void updateAccumulatorLow32(int element, uint32_t result, bool accumulate);
     void updateAccumulatorHigh32(int element, uint32_t result, bool accumulate);
 
+    void setVecFromAccLow(uint8_t vd);
     void setVecFromAccSignedMid(uint8_t vd);
     void setVecFromAccSignedLow(uint8_t vd);
     void setVecFromAccMid(uint8_t vd);
@@ -506,6 +507,7 @@ public:
     static void vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMultiplyPartialHigh(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate);
+    static void vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumulate);
 
     static uint32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);

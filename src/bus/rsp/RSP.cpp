@@ -555,6 +555,13 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
     }
 }
 
+void RSP::setVecFromAccLow(uint8_t vd) {
+    for (int i = 0; i < 8; i++) {
+        int16_t lo = *(int16_t*)&vAcc[(i * 4) * 2];
+        setVec16(vd, i, lo);
+    }
+}
+
 void RSP::setVecFromAccSignedLow(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
         int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];

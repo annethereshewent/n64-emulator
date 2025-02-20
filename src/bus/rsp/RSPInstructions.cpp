@@ -9,8 +9,7 @@ void RSP::addi(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] + (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
 }
 void RSP::addiu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: addiu\n";
-    exit(1);
+    RSP::addi(rsp, instruction);
 }
 void RSP::andi(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] & CPU::getImmediate(instruction);
@@ -109,8 +108,11 @@ void RSP::reserved(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::sb(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sb\n";
-    exit(1);
+    uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    rsp->memWrite8(address & 0xfff, (uint8_t)rsp->r[CPU::getRt(instruction)]);
 }
 void RSP::sh(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);
@@ -180,8 +182,7 @@ void RSP::add(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] + rsp->r[CPU::getRt(instruction)];
 }
 void RSP::addu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: addu\n";
-    exit(1);
+    RSP::add(rsp, instruction);
 }
 void RSP::sub(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] - rsp->r[CPU::getRt(instruction)];
@@ -247,12 +248,32 @@ void RSP::lbv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::lsv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lsv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 3;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    uint32_t scale = std::min(16 - velement, 2);
+
+    for (int i = 0; i < scale; i++) {
+        rsp->setVec8(vt, (velement + i), rsp->memRead8(address + i));
+    }
 }
 void RSP::llv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: llv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 3;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+    uint8_t vt = getVt(instruction);
+
+    uint32_t scale = std::min(16 - velement, 4);
+
+    for (int i = 0; i < scale; i++) {
+        rsp->setVec8(vt, (velement + i), rsp->memRead8(address + i));
+    }
 }
 void RSP::ldv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = getVOffset(instruction) << 3;
@@ -262,7 +283,9 @@ void RSP::ldv(RSP* rsp, uint32_t instruction) {
     uint8_t velement = getVElement(instruction);
     uint8_t vt = getVt(instruction);
 
-    for (int i = 0; i < 8; i++) {
+    uint32_t scale = std::min(16 - velement, 8);
+
+    for (int i = 0; i < scale; i++) {
         rsp->setVec8(vt, (velement + i), rsp->memRead8(address + i));
     }
 }
@@ -474,6 +497,21 @@ void RSP::vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate) 
     }
 }
 
+void RSP::vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumulate) {
+    uint8_t vte = getVte(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vs = getVs(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        uint16_t s = rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vs, el);
+
+        int32_t result = (int32_t)s * (int32_t)t;
+
+        rsp->updateAccumulatorMid32(el, result, accumulate);
+    }
+}
+
 void RSP::vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumulate) {
     uint8_t vte = getVte(instruction);
     uint8_t vt = getVt(instruction);
@@ -517,16 +555,16 @@ void RSP::vmulq(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vmudl(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmudl\n";
-    exit(1);
+    vectorMultiplyPartialLow(rsp, instruction, false);
+    rsp->setVecFromAccLow(getVd(instruction));
 }
 void RSP::vmudm(RSP* rsp, uint32_t instruction) {
     vectorMulPartialMidM(rsp, instruction, false);
     rsp->setVecFromAccMid(getVd(instruction));
 }
 void RSP::vmudn(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmudn\n";
-    exit(1);
+    vectorMultiplyPartialMidN(rsp, instruction, false);
+    rsp->setVecFromAccLow(getVd(instruction));
 }
 void RSP::vmudh(RSP* rsp, uint32_t instruction) {
     vectorMultiplyPartialHigh(rsp, instruction, false);
@@ -557,8 +595,8 @@ void RSP::vmadm(RSP* rsp, uint32_t instruction) {
     rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vmadn(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmadn\n";
-    exit(1);
+    vectorMultiplyPartialMidN(rsp, instruction, true);
+    rsp->setVecFromAccSignedLow(getVd(instruction));
 }
 void RSP::vmadh(RSP* rsp, uint32_t instruction) {
     vectorMultiplyPartialHigh(rsp, instruction, true);

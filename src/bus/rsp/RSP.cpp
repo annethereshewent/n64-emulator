@@ -346,7 +346,7 @@ uint64_t RSP::runRsp() {
                     default:
                         if (((instruction >> 21) & 0x1f) > 15) {
                             instructionType = Vector;
-                            vecInstructions[instruction & 0xf](this, instruction);
+                            vecInstructions[instruction & 0x3f](this, instruction);
                         } else {
                             RSP::reserved(this, instruction);
                         }

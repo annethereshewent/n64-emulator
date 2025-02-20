@@ -327,8 +327,13 @@ void RSP::ltv(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::sbv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sbv\n";
-    exit(1);
+    uint32_t offset = getVOffset(instruction) << 1;
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+
+    rsp->memWrite8(address, rsp->getVec8(getVt(instruction), velement));
 }
 void RSP::ssv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = getVOffset(instruction) << 1;
@@ -548,8 +553,8 @@ void RSP::vmadl(RSP* rsp, uint32_t instruction) {
     rsp->setVecFromAccSignedLow(getVd(instruction));
 }
 void RSP::vmadm(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmadm\n";
-    exit(1);
+    vectorMulPartialMidM(rsp, instruction, true);
+    rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vmadn(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmadn\n";

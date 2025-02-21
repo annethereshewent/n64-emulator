@@ -695,9 +695,10 @@ void RSP::vcl(RSP* rsp, uint32_t instruction) {
         if (sign) {
             if (eq) {
                 uint16_t sum = s + t;
-                bool carry = sum < (uint32_t)s + (uint32_t)t ? true : false;
+                uint32_t sumCarry = (uint32_t)s + (uint32_t)t;
+                bool carry = sum < sumCarry;
 
-                le = (!ce && (!sum && !carry)) || (ce && (!sum || !carry));
+                le = (ce == 0 && (sum == 0 && !carry)) || (ce == 1 && (sum == 0 || !carry));
             }
             result = le ? -t : s;
         } else {
@@ -710,15 +711,13 @@ void RSP::vcl(RSP* rsp, uint32_t instruction) {
         rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
         rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
 
-        outHi |= ge << el;
-        outLo |= le << el;
+        outHi |= (uint8_t)ge << el;
+        outLo |= (uint8_t)le << el;
     }
 
     rsp->setVecFromAccLow(getVd(instruction));
 
     rsp->vcc = (uint16_t)outHi << 8 | (uint16_t)outLo;
-
-    // printf("vcc = %x\n", rsp->vcc);
 
     rsp->vco = 0;
     rsp->vce = 0;
@@ -728,7 +727,14 @@ void RSP::vch(RSP* rsp, uint32_t instruction) {
     uint8_t vt = getVt(instruction);
     uint8_t vte = getVte(instruction);
 
-    uint8_t vccHi, vccLo, vcoHi, vcoLo, vce = 0;
+    // wtf this wasn't working
+    // uint8_t vccHi, vccLo, vcoHi, vcoLo, vce = 0;
+
+    uint8_t vccHi = 0;
+    uint8_t vccLo = 0;
+    uint8_t vcoHi = 0;
+    uint8_t vcoLo = 0;
+    uint8_t vce = 0;
 
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
         int16_t s = (int16_t)rsp->getVec16(vs, el);
@@ -739,7 +745,7 @@ void RSP::vch(RSP* rsp, uint32_t instruction) {
         bool le, ge, ce, ne;
         uint32_t result;
         if (sign) {
-            int16_t sum = s + t;
+            int32_t sum = ((int32_t)(s + t) << 16) >> 16;
 
             ge = t < 0;
             le = sum <= 0;
@@ -747,7 +753,7 @@ void RSP::vch(RSP* rsp, uint32_t instruction) {
             ne = sum != 0 && (s != ~t);
             result = le ? -t : s;
         } else {
-            int16_t diff = s - t;
+            int32_t diff = ((int32_t)(s - t) << 16) >> 16;
 
             le = t < 0;
             ge = diff >= 0;
@@ -760,17 +766,16 @@ void RSP::vch(RSP* rsp, uint32_t instruction) {
 
         vccHi |= (uint8_t)ge << el;
         vccLo |= (uint8_t)le << el;
+
         vcoHi |= (uint8_t)ne << el;
         vcoLo |= (uint8_t)sign << el;
-        vce |= ce << el;
+        vce |= (uint8_t)ce << el;
     }
 
     rsp->setVecFromAccLow(getVd(instruction));
 
     rsp->vcc = (uint16_t)vccHi << 8 | (uint16_t)vccLo;
     rsp->vco = (uint16_t)vcoHi << 8 | (uint16_t)vcoLo;
-
-    // printf("vcc = %x\n", rsp->vcc);
 
     rsp->vce = vce;
 }

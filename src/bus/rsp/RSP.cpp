@@ -516,7 +516,7 @@ void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool ac
         int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
         int64_t z1 = x1 + v1 + c;
 
-        writeAcc32((element * 2 + 1) * 4, (int32_t)(uint32_t)((z1 << 16) >> 16));
+        writeAcc32((element * 2 + 1) * 4,(uint32_t)((int32_t)(z1 << 16) >> 16));
         writeAcc32((element * 2) * 4, (uint32_t)z0);
     } else {
         writeAcc32((element * 2 + 1) * 4, v1);

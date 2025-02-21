@@ -525,6 +525,7 @@ public:
     static void vectorMultiplyPartialHigh(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumulate);
+    static void vectorLogicalOp(RSP* rsp, uint32_t instruction, auto fn);
 
     static void vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction);
 
@@ -535,7 +536,4 @@ public:
     static uint8_t getVte(uint32_t instruction);
     static uint8_t getVd(uint32_t instruction);
     static uint8_t getDe(uint32_t instruction);
-
-    static int32_t rcp16(int32_t input);
-
 };

@@ -489,6 +489,29 @@ void RSP::vmulf(RSP* rsp, uint32_t instruction) {
     rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 
+void RSP::vectorLogicalOp(RSP* rsp, uint32_t instruction, auto fn) {
+
+    uint8_t vte = getVte(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vs = getVs(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t s = (int16_t)rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
+
+        int16_t result = fn(s, t);
+
+        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
+        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+    }
+
+    rsp->setVecFromAccLow(getVd(instruction));
+
+    u128 value = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("vd is now = {:x}", value);
+}
+
 void RSP::vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulate, int32_t round) {
     uint8_t vte = getVte(instruction);
     uint8_t vt = getVt(instruction);
@@ -843,8 +866,7 @@ void RSP::vnor(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vxor(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vxor\n";
-    exit(1);
+    RSP::vectorLogicalOp(rsp, instruction, [](int16_t s, int16_t t) -> int16_t { return s ^ t; });
 }
 void RSP::vnxor(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vnxor\n";

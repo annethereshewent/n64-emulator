@@ -690,8 +690,36 @@ void RSP::vadd(RSP* rsp, uint32_t instruction) {
     rsp->vco = 0;
 }
 void RSP::vsub(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vsub\n";
-    exit(1);
+    uint8_t vs = getVs(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vte = getVte(instruction);
+
+    uint16_t vco = rsp->vco;
+
+    u128 oldValue = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t s = rsp->getVec16(vs, el);
+        int16_t t = rsp->getVec16(vt, select & 0x7);
+        int16_t c = (vco >> el) & 0b1;
+        int16_t result = s - (t + c);
+
+        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
+        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+
+        int32_t clamped = std::clamp((int32_t)s - ((int32_t)t + (int32_t)c), -0x8000, 0x7fff);
+
+        rsp->temp[el * 2] = (uint8_t)(clamped >> 8);
+        rsp->temp[el * 2 + 1] = (uint8_t)clamped;
+    }
+
+    rsp->setVecFromTemp(getVd(instruction));
+
+    u128 value = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("set v{} = {:x} from {:x}", getVd(instruction), value, oldValue);
+
+    rsp->vco = 0;
 }
 void RSP::vzero(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vzero\n";
@@ -706,8 +734,26 @@ void RSP::vaddc(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vsubc(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vsubc\n";
-    exit(1);
+    uint8_t vs = getVs(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vte = getVte(instruction);
+
+    uint16_t vco = 0;
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t s = rsp->getVec16(vs, el);
+        int16_t t = rsp->getVec16(vt, select & 0x7);
+
+        int16_t result = s - t;
+
+        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
+        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+
+        vco |= (result != 0) ? (1 << (el + 8)) : 0;
+        vco |= (result < 0) ? (1 << el) : 0;
+    }
+    rsp->setVecFromAccLow(getVd(instruction));
+    rsp->vco = vco;
 }
 void RSP::vsar(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vsar\n";

@@ -509,7 +509,7 @@ void RSP::vectorLogicalOp(RSP* rsp, uint32_t instruction, auto fn) {
 
     u128 value = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
 
-    std::println("vd is now = {:x}", value);
+    std::println("v{} is now = {:x}", getVd(instruction), value);
 }
 
 void RSP::vectorMultiplyFractions(RSP* rsp, uint32_t instruction, bool accumulate, int32_t round) {

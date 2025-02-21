@@ -586,3 +586,9 @@ void RSP::setVecFromAccMid(uint8_t vd) {
         setVec16(vd, i, (uint16_t)mid);
     }
 }
+
+void RSP::setVecFromTemp(uint8_t vd) {
+    for (int i = 0; i < 16; i++) {
+        vpr[vd][i] = temp[i];
+    }
+}

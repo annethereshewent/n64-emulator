@@ -330,7 +330,6 @@ uint64_t RSP::runRsp() {
                 }
                 break;
             case 18:
-
                 switch ((instruction >> 21) & 0x1f) {
                     case 0:
                         RSP::mfc2(this, instruction);
@@ -514,12 +513,13 @@ void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool ac
         int32_t x1 = *(int32_t*)&vAcc[(element * 2 + 1) * 4];
         uint32_t x0 = *(uint32_t*)&vAcc[(element * 2) * 4];
 
-        int32_t z0 = (int64_t)x0 + (int64_t)result;
+        int64_t z0 = (int64_t)x0 + (int64_t)result;
 
         int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
         int64_t z1 = x1 + v1 + c;
 
-        writeAcc32((element * 2 + 1) * 4,(uint32_t)((int32_t)(z1 << 16) >> 16));
+        writeAcc32((element * 2 + 1) * 4, (uint32_t)((z1 << 16) >> 16));
+
         writeAcc32((element * 2) * 4, (uint32_t)z0);
     } else {
         writeAcc32((element * 2 + 1) * 4, v1);
@@ -531,7 +531,7 @@ void RSP::updateAccumulatorLow32(int element, uint32_t result, bool accumulate) 
     updateAccumulatorHiLo(element, 0, result, accumulate);
 }
 
-void RSP::updateAccumulatorHigh32(int element, uint32_t result, bool accumulate) {
+void RSP::updateAccumulatorHigh32(int element, int32_t result, bool accumulate) {
     updateAccumulatorHiLo(element, result >> 16, result << 16, accumulate);
 }
 

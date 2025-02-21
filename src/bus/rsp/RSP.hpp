@@ -378,7 +378,7 @@ public:
     void updateAccumulatorMid32(int element, int32_t result, bool accumulate);
     void updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate);
     void updateAccumulatorLow32(int element, uint32_t result, bool accumulate);
-    void updateAccumulatorHigh32(int element, uint32_t result, bool accumulate);
+    void updateAccumulatorHigh32(int element, int32_t result, bool accumulate);
 
     void setVecFromAccLow(uint8_t vd);
     void setVecFromAccSignedMid(uint8_t vd);

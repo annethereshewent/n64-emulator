@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "../Bus.hpp"
 #include <print>
+#include <bit>
 
 typedef unsigned __int128 u128;
 
@@ -854,8 +855,48 @@ void RSP::vrcp(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vrcpl\n";
-    exit(1);
+    int16_t val = (int16_t)rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
+
+    u128 value = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+
+    std::println("val = {:x}, vt = {}, vte = {}, vt reg = {:x}", val, getVt(instruction), getVte(instruction) & 0x7, value);
+
+    int32_t input = rsp->divDp ? (int32_t)rsp->divIn << 16 | (int32_t)val : (int32_t)val;
+
+    std::println("got back input {:x}", input);
+
+    int32_t mask = input >> 31;
+    int32_t data = input ^ mask;
+
+    std::println("data = {:x}", data);
+
+    if (input > -0x8000) {
+        data -= mask;
+    }
+
+    uint32_t result;
+
+    if (data == 0) {
+        result = 0x7fffffff;
+    } else if (data == -0x8000) {
+        result = 0xffff0000;
+    } else {
+        uint32_t shift = std::countl_zero((uint32_t)data);
+        uint32_t index = ((((uint64_t)data) << shift) & 0x7fc00000) >> 22;
+
+        result = (uint32_t)rsp->reciprocals[index];
+
+        result = (0x10000 | result) << 14;
+        result = (result >> (31 - shift)) ^ (uint32_t)mask;
+
+    }
+
+    rsp->divDp = false;
+    rsp->divOut = (int16_t)(result >> 16);
+
+    std::println("got back result {:x}", result);
+
+    rsp->setVec16(getVd(instruction), getDe(instruction), (uint16_t)result);
 }
 void RSP::vrcph(RSP* rsp, uint32_t instruction) {
     vectorSetAccumulatorFromRegister(rsp, instruction);
@@ -863,7 +904,9 @@ void RSP::vrcph(RSP* rsp, uint32_t instruction) {
     rsp->divDp = true;
     rsp->divIn = (int16_t)rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
 
-    rsp->setVec16(getVd(instruction), getVs(instruction) & 0x7, rsp->divOut);
+    std::println("setting divIn to {:x}", rsp->divIn);
+
+    rsp->setVec16(getVd(instruction), getDe(instruction), rsp->divOut);
 }
 void RSP::vmov(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmov\n";

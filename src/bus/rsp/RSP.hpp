@@ -45,6 +45,8 @@ public:
 
     Bus& bus;
 
+    std::array<uint16_t, 512> reciprocals = {};
+
     RSP(Bus& bus) : bus(bus) {
         // gotten from https://github.com/hulkholden/n64js/blob/master/src/rsp.js#L147
         vecSelect = {
@@ -295,6 +297,17 @@ public:
             RSP::vzero,
             RSP::vnop,
         };
+
+        reciprocals[0] = 0xffff;
+
+        for (uint64_t i = 1; i < reciprocals.size(); i++) {
+            uint64_t numerator = (uint64_t)1 << 34;
+            uint64_t denominator = i + 512;
+
+            uint64_t fraction = numerator / denominator;
+
+            reciprocals[i] = (uint16_t)((fraction + 1) >> 8);
+        }
     };
 
     std::array<uint32_t, 32> r = {};
@@ -521,5 +534,8 @@ public:
     static uint8_t getVs(uint32_t instruction);
     static uint8_t getVte(uint32_t instruction);
     static uint8_t getVd(uint32_t instruction);
+    static uint8_t getDe(uint32_t instruction);
+
+    static int32_t rcp16(int32_t input);
 
 };

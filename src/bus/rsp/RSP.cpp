@@ -467,6 +467,9 @@ uint8_t RSP::getVte(uint32_t instruction) {
 uint8_t RSP::getVd(uint32_t instruction) {
     return (uint8_t)((instruction >> 6) & 0x1f);
 }
+uint8_t RSP::getDe(uint32_t instruction) {
+    return (instruction >> 11) & 0x7;
+}
 
 uint8_t RSP::memRead8(uint32_t address) {
     return dmem[address & 0xfff];
@@ -591,4 +594,14 @@ void RSP::setVecFromTemp(uint8_t vd) {
     for (int i = 0; i < 16; i++) {
         vpr[vd][i] = temp[i];
     }
+}
+
+int32_t RSP::rcp16(int32_t input) {
+    if (input == -0x8000) {
+        return 0xffff0000;
+    } else if (input == 0) {
+        return 0x7fffffff;
+    }
+
+
 }

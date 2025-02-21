@@ -563,6 +563,18 @@ void RSP::vectorMultiplyPartialHigh(RSP* rsp, uint32_t instruction, bool accumul
     }
 }
 
+void RSP::vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction) {
+    uint8_t vt = getVt(instruction);
+    uint8_t vte = getVte(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        int16_t result = rsp->getVec16(vt, select & 0x7);
+
+        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
+        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+    }
+}
+
 void RSP::vmulu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmulu\n";
     exit(1);
@@ -846,8 +858,12 @@ void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vrcph(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vrcph\n";
-    exit(1);
+    vectorSetAccumulatorFromRegister(rsp, instruction);
+
+    rsp->divDp = true;
+    rsp->divIn = (int16_t)rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
+
+    rsp->setVec16(getVd(instruction), getVs(instruction) & 0x7, rsp->divOut);
 }
 void RSP::vmov(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vmov\n";

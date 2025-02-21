@@ -306,6 +306,8 @@ public:
     uint8_t vce = 0;
 
     bool divDp = false;
+    int16_t divIn = 0;
+    int16_t divOut = 0;
 
     std::array<uint8_t, 64> vAcc = {};
 
@@ -510,6 +512,8 @@ public:
     static void vectorMultiplyPartialHigh(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumulate);
+
+    static void vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction);
 
     static int32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);

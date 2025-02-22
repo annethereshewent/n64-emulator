@@ -1076,7 +1076,7 @@ void RSP::vmrg(RSP* rsp, uint32_t instruction) {
         uint16_t s = rsp->getVec16(getVs(instruction), el);
         uint16_t t = rsp->getVec16(getVt(instruction), select & 0x7);
 
-        uint16_t result = rsp->vcc & 0x1 ? s : t;
+        uint16_t result = (rsp->vcc >> el) & 0x1 ? s : t;
 
         rsp->accLo[el * 2 + 1] = (uint8_t)result;
         rsp->accLo[el * 2] = (uint8_t)(result >> 8);

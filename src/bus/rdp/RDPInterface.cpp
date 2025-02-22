@@ -8,15 +8,13 @@
 uint32_t RDPInterface::readRegisters(uint32_t offset) {
     switch (offset) {
         case 0:
-            // TODO
             return start;
             break;
         case 1:
-            // todo: implement this register
             return end;
             break;
         case 2:
-            // see above
+            // TODO
             return 0;
             break;
         case 3:

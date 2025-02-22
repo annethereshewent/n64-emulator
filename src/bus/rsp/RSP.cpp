@@ -581,9 +581,9 @@ void RSP::setVecFromAccSignedLow(uint8_t vd) {
         int16_t result;
 
         if (himid >= 0) {
-            result = (himid & 0xffff8000) ? 0x7fff : lo;
+            result = (himid & 0xffff8000) ? 0xffff : lo;
         } else {
-            result = (~himid & 0xffff8000) ? 0x8000 : lo;
+            result = (~himid & 0xffff8000) ? 0 : lo;
         }
 
         setVec16(vd, i, result);

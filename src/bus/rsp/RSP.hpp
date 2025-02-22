@@ -312,7 +312,6 @@ public:
 
     std::array<uint32_t, 32> r = {};
     std::array<std::array<uint8_t, 16>, 32> vpr = {};
-    std::array<uint8_t, 32> temp = {};
 
     uint16_t vco = 0;
     uint16_t vcc = 0;
@@ -388,7 +387,6 @@ public:
     void setVecFromAccSignedMid(uint8_t vd);
     void setVecFromAccSignedLow(uint8_t vd);
     void setVecFromAccMid(uint8_t vd);
-    void setVecFromTemp(uint8_t vd);
 
     void writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo);
 

@@ -515,8 +515,13 @@ void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool ac
 
         int64_t z0 = (int64_t)x0 + (int64_t)result;
 
-        int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
+        uint64_t c = uint64_t((x0 & result) | ((x0 | result) & ~z0)) >> 31;
         int64_t z1 = x1 + v1 + c;
+
+        // TODO: find out why it produces a wrong result at this specific PC address but nowhere else
+        if (previousPc == 0x34) {
+            std::println("v1 = {:x}, result = {:x}, x1 = {:x} x0 = {:x} z0 = {:x} z1 = {:x} c = {:x}", v1, result, x1, x0, z0, z1, c);
+        }
 
         writeAcc32(&accHi[element * 2], element * 2, (uint32_t)((z1 << 16) >> 16), false);
         writeAcc32(&accLo[element * 2], element * 2, (uint32_t)z0, true);
@@ -531,6 +536,9 @@ void RSP::updateAccumulatorLow32(int element, uint32_t result, bool accumulate) 
 }
 
 void RSP::updateAccumulatorHigh32(int element, int32_t result, bool accumulate) {
+    if (previousPc == 0x34) {
+        std::println("element = {}, result = {:x}, result >> 16 = {:x}, result << 16 = {:x}", element, result, result >> 16, result << 16);
+    }
     updateAccumulatorHiLo(element, result >> 16, result << 16, accumulate);
 }
 
@@ -558,6 +566,10 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
             result = (himid & 0xffff8000) ? 0x7fff : himid;
         } else {
             result = ((~himid) & 0xffff8000) ? 0x8000 : himid;
+        }
+
+        if (previousPc == 0x34) {
+            std::println("result = {:x} himid = {:x}", result, himid);
         }
 
         setVec16(vd, i, (uint16_t)result);
@@ -593,12 +605,6 @@ void RSP::setVecFromAccMid(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
         int16_t mid = getAccumulator16(&accMid[i * 2]);
         setVec16(vd, i, mid);
-    }
-}
-
-void RSP::setVecFromTemp(uint8_t vd) {
-    for (int i = 0; i < 16; i++) {
-        vpr[vd][i] = temp[i];
     }
 }
 

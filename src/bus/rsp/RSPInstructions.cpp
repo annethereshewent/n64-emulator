@@ -142,8 +142,7 @@ void RSP::sw(RSP* rsp, uint32_t instruction) {
     rsp->memWrite32(address & 0xfff, rsp->r[CPU::getRt(instruction)]);
 }
 void RSP::xori(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: xori\n";
-    exit(1);
+    rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] ^ CPU::getImmediate(instruction);
 }
 
 void RSP::sll(RSP* rsp, uint32_t instruction) {
@@ -210,8 +209,7 @@ void RSP::nor(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::slt(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: slt\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = (uint32_t)(rsp->r[CPU::getRs(instruction)] < rsp->r[CPU::getRd(instruction)]);
 }
 void RSP::sltu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: sltu\n";
@@ -725,8 +723,25 @@ void RSP::vabs(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vaddc(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vaddc\n";
-    exit(1);
+    uint8_t vs = getVs(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vte = getVte(instruction);
+
+    uint16_t vco = 0;
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        uint16_t s = rsp->getVec16(vs, el);
+        uint16_t t = rsp->getVec16(vt, select & 0x7);
+
+        uint32_t result = (uint32_t)s + (uint32_t)t;
+
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
+
+        vco |= (result & 0xffff0000) ? (1 << el) : 0;
+    }
+    rsp->setVecFromAccLow(getVd(instruction));
+    rsp->vco = vco;
 }
 void RSP::vsubc(RSP* rsp, uint32_t instruction) {
     uint8_t vs = getVs(instruction);

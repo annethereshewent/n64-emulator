@@ -724,8 +724,36 @@ void RSP::vzero(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vabs(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vabs\n";
-    exit(1);
+    uint8_t vs = getVs(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vte = getVte(instruction);
+    uint8_t vd = getVd(instruction);
+
+    uint32_t select = rsp->vecSelect[vte];
+
+    for (int i = 0; i < 8; i++, select >>= 4) {
+            int16_t s = (int16_t)rsp->getVec16(vs, i);
+            uint16_t t = rsp->getVec16(vt, select & 0x7);
+
+            bool overflow = s < 0 && t == 0x8000;
+
+            uint16_t result;
+
+            if (s < 0) {
+                result = -t;
+            } else if (s > 0) {
+                result = t;
+            } else {
+                result = 0;
+            }
+
+            if (overflow) {
+                result = 0x7fff;
+            }
+
+            Bus::writeHalf(&rsp->accLo[i * 2], result);
+            rsp->setVec16(vd, i, result);
+    }
 }
 void RSP::vaddc(RSP* rsp, uint32_t instruction) {
     uint8_t vs = getVs(instruction);

@@ -322,7 +322,9 @@ public:
     int16_t divIn = 0;
     int16_t divOut = 0;
 
-    std::array<uint8_t, 64> vAcc = {};
+    std::array<uint8_t, 16> accLo = {};
+    std::array<uint8_t, 16> accMid = {};
+    std::array<uint8_t, 16> accHi = {};
 
     std::array<uint32_t, 16> vecSelect;
 
@@ -350,6 +352,8 @@ public:
     std::array<RSPInstruction, 12> lwc2 = {};
     std::array<RSPInstruction, 12> swc2 = {};
     std::array<RSPInstruction, 64> vecInstructions = {};
+
+    static uint16_t getAccumulator16(uint8_t* ptr);
 
     uint8_t memRead8(uint32_t address);
     uint16_t memRead16(uint32_t address);
@@ -386,7 +390,7 @@ public:
     void setVecFromAccMid(uint8_t vd);
     void setVecFromTemp(uint8_t vd);
 
-    void writeAcc32(int offset, uint32_t value);
+    void writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo);
 
     uint32_t readRegisters(uint32_t offset);
     void writeRegisters(uint32_t offset, uint32_t value);

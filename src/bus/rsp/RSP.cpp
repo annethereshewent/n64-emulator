@@ -510,20 +510,19 @@ void RSP::updateAccumulatorMid32(int element, int32_t result, bool accumulate) {
 
 void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate) {
     if (accumulate) {
-        int32_t x1 = *(int32_t*)&vAcc[(element * 2 + 1) * 4];
-        uint32_t x0 = *(uint32_t*)&vAcc[(element * 2) * 4];
+        int32_t x1 = (int32_t)getAccumulator16(&accHi[element * 2]);
+        uint32_t x0 = (uint32_t)getAccumulator16(&accLo[element * 2]) | (uint32_t)getAccumulator16(&accMid[element * 2]) << 16;
 
         int64_t z0 = (int64_t)x0 + (int64_t)result;
 
         int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
         int64_t z1 = x1 + v1 + c;
 
-        writeAcc32((element * 2 + 1) * 4, (uint32_t)((z1 << 16) >> 16));
-
-        writeAcc32((element * 2) * 4, (uint32_t)z0);
+        writeAcc32(&accHi[element * 2], element * 2, (uint32_t)((z1 << 16) >> 16), false);
+        writeAcc32(&accLo[element * 2], element * 2, (uint32_t)z0, true);
     } else {
-        writeAcc32((element * 2 + 1) * 4, v1);
-        writeAcc32((element * 2) * 4, result);
+        writeAcc32(&accHi[element * 2], element * 2, v1, false);
+        writeAcc32(&accLo[element * 2], element * 2, result, true);
     }
 }
 
@@ -536,16 +535,22 @@ void RSP::updateAccumulatorHigh32(int element, int32_t result, bool accumulate) 
 }
 
 
-void RSP::writeAcc32(int offset, uint32_t value) {
-    for (int i = 0; i < 4; i++) {
-        int shift = 8 * i;
-        vAcc[offset + i] = (uint8_t)(value >> shift);
+void RSP::writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo) {
+    uint16_t lower = (uint16_t)value;
+    uint16_t upper = (uint16_t)(value >> 16);
+
+    ptr[0] = (uint8_t)lower;
+    ptr[1] = (uint8_t)(lower >> 8);
+
+    if (isLo) {
+        accMid[upperOffset] = (uint8_t)upper;
+        accMid[upperOffset + 1] = (uint8_t)(upper >> 8);
     }
 }
 
 void RSP::setVecFromAccSignedMid(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
-        int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];
+        int32_t himid = (int32_t)getAccumulator16(&accMid[i * 2]) | (int32_t)((uint32_t)getAccumulator16(&accHi[i * 2]) << 16);
 
         int16_t result;
 
@@ -561,15 +566,16 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
 
 void RSP::setVecFromAccLow(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
-        int16_t lo = *(int16_t*)&vAcc[(i * 4) * 2];
+        int16_t lo = getAccumulator16(&accLo[i * 2]);
         setVec16(vd, i, lo);
     }
 }
 
 void RSP::setVecFromAccSignedLow(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
-        int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];
-        int16_t lo = *(int16_t*)&vAcc[(i * 4) * 2];
+        int32_t himid = (int32_t)getAccumulator16(&accMid[i * 2]) | (int32_t)((uint32_t)getAccumulator16(&accHi[i * 2]) << 16);
+
+        int16_t lo = getAccumulator16(&accLo[i * 2]);
 
         int16_t result;
 
@@ -579,14 +585,14 @@ void RSP::setVecFromAccSignedLow(uint8_t vd) {
             result = (~himid & 0xffff8000) ? 0x8000 : lo;
         }
 
-        setVec16(vd, i, (uint16_t)result);
+        setVec16(vd, i, result);
     }
 }
 
 void RSP::setVecFromAccMid(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
-        int16_t mid = *(int16_t*)&vAcc[(i * 4 + 1) * 2];
-        setVec16(vd, i, (uint16_t)mid);
+        int16_t mid = getAccumulator16(&accMid[i * 2]);
+        setVec16(vd, i, mid);
     }
 }
 
@@ -594,4 +600,8 @@ void RSP::setVecFromTemp(uint8_t vd) {
     for (int i = 0; i < 16; i++) {
         vpr[vd][i] = temp[i];
     }
+}
+
+uint16_t RSP::getAccumulator16(uint8_t* ptr) {
+    return *(uint16_t*)&ptr[0];
 }

@@ -501,8 +501,8 @@ void RSP::vectorLogicalOp(RSP* rsp, uint32_t instruction, auto fn) {
 
         int16_t result = fn(s, t);
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
     }
 
     rsp->setVecFromAccLow(getVd(instruction));
@@ -594,8 +594,8 @@ void RSP::vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction) {
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
         int16_t result = rsp->getVec16(vt, select & 0x7);
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
     }
 }
 
@@ -672,8 +672,8 @@ void RSP::vadd(RSP* rsp, uint32_t instruction) {
         int16_t c = (vco >> el) & 0b1;
         int16_t result = s + t + c;
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
 
         int32_t clamped = std::clamp((int32_t)s + (int32_t)t + (int32_t)c, -0x8000, 0x7fff);
 
@@ -704,8 +704,8 @@ void RSP::vsub(RSP* rsp, uint32_t instruction) {
         int16_t c = (vco >> el) & 0b1;
         int16_t result = s - (t + c);
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
 
         int32_t clamped = std::clamp((int32_t)s - ((int32_t)t + (int32_t)c), -0x8000, 0x7fff);
 
@@ -746,8 +746,8 @@ void RSP::vsubc(RSP* rsp, uint32_t instruction) {
 
         int16_t result = s - t;
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
 
         vco |= (result != 0) ? (1 << (el + 8)) : 0;
         vco |= (result < 0) ? (1 << el) : 0;
@@ -782,8 +782,8 @@ void RSP::vlt(RSP* rsp, uint32_t instruction) {
 
         vcc |= condition ? currBit : 0;
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
     }
     rsp->setVecFromAccLow(getVd(instruction));
     rsp->vcc = vcc;
@@ -822,8 +822,8 @@ void RSP::vge(RSP* rsp, uint32_t instruction) {
 
         vcc |= condition ? currBit : 0;
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
     }
     rsp->setVecFromAccLow(getVd(instruction));
     rsp->vcc = vcc;
@@ -870,8 +870,8 @@ void RSP::vcl(RSP* rsp, uint32_t instruction) {
             result = ge ? t : s;
         }
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
 
         outHi |= (uint8_t)ge << el;
         outLo |= (uint8_t)le << el;
@@ -923,8 +923,8 @@ void RSP::vch(RSP* rsp, uint32_t instruction) {
             ne = diff != 0;
             result = ge ? t : s;
         }
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
 
         vccHi |= (uint8_t)ge << el;
         vccLo |= (uint8_t)le << el;
@@ -952,8 +952,8 @@ void RSP::vmrg(RSP* rsp, uint32_t instruction) {
 
         uint16_t result = rsp->vcc & 0x1 ? s : t;
 
-        rsp->vAcc[(el * 4) * 2] = (uint8_t)result;
-        rsp->vAcc[(el * 4) * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2] = (uint8_t)result;
+        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
     }
     rsp->vco = 0;
     rsp->setVecFromAccLow(getVd(instruction));

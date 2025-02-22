@@ -4,6 +4,8 @@
 #include <queue>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
+#include <queue>
 
 enum EventType {
     VideoInterrupt,
@@ -39,11 +41,20 @@ public:
     Event peek();
     Event pop();
 };
+class Comparator {
+public:
+    bool operator() (Event l, Event r) {
+        return l.cycles > r.cycles;
+    }
+};
+
 
 class Scheduler {
 private:
-    UniqueQueue queue;
+    std::priority_queue<Event, std::vector<Event>, Comparator> queue;
 public:
+    std::unordered_set<EventType> currentEvents;
+
     void addEvent(Event event);
     void removeEvent(EventType eventType);
 

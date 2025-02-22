@@ -446,7 +446,7 @@ void RSP::restartRsp() {
 }
 
 int32_t RSP::getVOffset(uint32_t instruction) {
-    return (int32_t)((int8_t)((instruction & 0x7f) << 1) >> 1);
+    return (int32_t)(((int8_t)(instruction & 0x7f) << 1) >> 1);
 }
 
 uint8_t RSP::getVElement(uint32_t instruction) {

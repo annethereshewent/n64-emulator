@@ -331,8 +331,24 @@ void RSP::lpv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::luv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: luv\n";
-    exit(1);
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t index = (address & 7) + getVElement(instruction);
+    address &= ~7;
+
+    u128 returnValue = 0;
+    for (int i = 0; i < 8; i++) {
+        uint32_t offset = (address + ((index + i) & 0xf)) & 0xfff;
+
+        uint16_t value = (uint16_t)rsp->dmem[offset];
+
+        returnValue |= (u128)(value << 7) << (16 * (7 - i));
+    }
+
+    returnValue = std::byteswap(returnValue);
+    memcpy(&rsp->vpr[CPU::getRt(instruction)], &returnValue, sizeof(returnValue));
 }
 void RSP::lhv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: lhv\n";

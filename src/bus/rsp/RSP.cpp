@@ -600,3 +600,10 @@ void RSP::setVecFromAccMid(uint8_t vd) {
 uint16_t RSP::getAccumulator16(uint8_t* ptr) {
     return std::byteswap(*(uint16_t*)&ptr[0]);
 }
+
+void RSP::setAccumulatorFromVector(uint8_t vd, uint8_t vt, uint8_t vte) {
+    for (int el = 0, select = vecSelect[vte]; el < 8; el++, select >>= 4) {
+        uint16_t value = getVec16(vt, select & 0x7);
+        Bus::writeHalf(&accLo[el * 2], value);
+    }
+}

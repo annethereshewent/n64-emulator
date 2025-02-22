@@ -383,6 +383,8 @@ public:
     void updateAccumulatorLow32(int element, uint32_t result, bool accumulate);
     void updateAccumulatorHigh32(int element, int32_t result, bool accumulate);
 
+    void setAccumulatorFromVector(uint8_t vd, uint8_t vt, uint8_t vte);
+
     void setVecFromAccLow(uint8_t vd);
     void setVecFromAccSignedMid(uint8_t vd);
     void setVecFromAccSignedLow(uint8_t vd);

@@ -501,8 +501,8 @@ void RSP::vectorLogicalOp(RSP* rsp, uint32_t instruction, auto fn) {
 
         int16_t result = fn(s, t);
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
     }
 
     rsp->setVecFromAccLow(getVd(instruction));
@@ -534,7 +534,7 @@ void RSP::vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate) 
 
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
         int16_t s = (int16_t)rsp->getVec16(vs, el);
-        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
+        uint16_t t = (uint16_t)rsp->getVec16(vt, select & 0x7);
 
         int32_t result = (int32_t)s * (int32_t)t;
 
@@ -583,9 +583,9 @@ void RSP::vectorMultiplyPartialHigh(RSP* rsp, uint32_t instruction, bool accumul
 
         int32_t result = (int32_t)s * (int32_t)t;
 
-        if (rsp->previousPc == 0x34) {
-            std::println("multiplied {:x} and {:x} together", s, t);
-        }
+        // if (rsp->previousPc == 0x34) {
+        //     std::println("multiplied {:x} and {:x} together", s, t);
+        // }
 
         rsp->updateAccumulatorHigh32(el, result, accumulate);
     }
@@ -598,8 +598,8 @@ void RSP::vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction) {
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
         int16_t result = rsp->getVec16(vt, select & 0x7);
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
     }
 }
 
@@ -648,20 +648,125 @@ void RSP::vmacq(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::vmadl(RSP* rsp, uint32_t instruction) {
+    u128 vecVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 vecVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 vecVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("before: (vmadl, pc = {:x})", rsp->previousPc);
+    std::println("v{} = {:x}", getVs(instruction), vecVs);
+    std::println("v{} = {:x}", getVt(instruction), vecVt);
+    std::println("v{} = {:x}", getVd(instruction), vecVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
+
     vectorMultiplyPartialLow(rsp, instruction, true);
     rsp->setVecFromAccSignedLow(getVd(instruction));
+
+    u128 newVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 newVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 newVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("after:");
+    std::println("v{} = {:x}", getVs(instruction), newVs);
+    std::println("v{} = {:x}", getVt(instruction), newVt);
+    std::println("v{} = {:x}", getVd(instruction), newVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
 }
 void RSP::vmadm(RSP* rsp, uint32_t instruction) {
+    u128 vecVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 vecVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 vecVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("before: (vmadm, pc = {:x})", rsp->previousPc);
+    std::println("v{} = {:x}", getVs(instruction), vecVs);
+    std::println("v{} = {:x}", getVt(instruction), vecVt);
+    std::println("v{} = {:x}", getVd(instruction), vecVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
+
     vectorMulPartialMidM(rsp, instruction, true);
     rsp->setVecFromAccSignedMid(getVd(instruction));
+
+    u128 newVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 newVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 newVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("after:");
+    std::println("v{} = {:x}", getVs(instruction), newVs);
+    std::println("v{} = {:x}", getVt(instruction), newVt);
+    std::println("v{} = {:x}", getVd(instruction), newVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
 }
 void RSP::vmadn(RSP* rsp, uint32_t instruction) {
+    u128 vecVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 vecVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 vecVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("before: (vmadn, pc = {:x})", rsp->previousPc);
+    std::println("v{} = {:x}", getVs(instruction), vecVs);
+    std::println("v{} = {:x}", getVt(instruction), vecVt);
+    std::println("v{} = {:x}", getVd(instruction), vecVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
+
     vectorMultiplyPartialMidN(rsp, instruction, true);
     rsp->setVecFromAccSignedLow(getVd(instruction));
+
+    u128 newVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 newVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 newVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("after:");
+    std::println("v{} = {:x}", getVs(instruction), newVs);
+    std::println("v{} = {:x}", getVt(instruction), newVt);
+    std::println("v{} = {:x}", getVd(instruction), newVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
 }
 void RSP::vmadh(RSP* rsp, uint32_t instruction) {
+    u128 vecVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 vecVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 vecVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("before: (vmadh, pc = {:x})", rsp->previousPc);
+    std::println("v{} = {:x}", getVs(instruction), vecVs);
+    std::println("v{} = {:x}", getVt(instruction), vecVt);
+    std::println("v{} = {:x}", getVd(instruction), vecVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
+
     vectorMultiplyPartialHigh(rsp, instruction, true);
     rsp->setVecFromAccSignedMid(getVd(instruction));
+
+    u128 newVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
+    u128 newVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
+    u128 newVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
+
+    std::println("after:");
+    std::println("v{} = {:x}", getVs(instruction), newVs);
+    std::println("v{} = {:x}", getVt(instruction), newVt);
+    std::println("v{} = {:x}", getVd(instruction), newVd);
+
+    std::println("accLo = {:x}", std::byteswap(*(u128*)&rsp->accLo));
+    std::println("accMid = {:x}", std::byteswap(*(u128*)&rsp->accMid));
+    std::println("accHi = {:x}", std::byteswap(*(u128*)&rsp->accHi));
+
 }
 void RSP::vadd(RSP* rsp, uint32_t instruction) {
     uint8_t vs = getVs(instruction);
@@ -677,8 +782,8 @@ void RSP::vadd(RSP* rsp, uint32_t instruction) {
         int16_t c = (vco >> el) & 0b1;
         int16_t result = s + t + c;
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
 
         int32_t clamped = std::clamp((int32_t)s + (int32_t)t + (int32_t)c, -0x8000, 0x7fff);
 
@@ -715,8 +820,8 @@ void RSP::vsub(RSP* rsp, uint32_t instruction) {
 
         int16_t result = s - (t + c);
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
 
         int32_t clamped = std::clamp((int32_t)s - ((int32_t)t + (int32_t)c), -0x8000, 0x7fff);
 
@@ -754,8 +859,8 @@ void RSP::vsubc(RSP* rsp, uint32_t instruction) {
 
         int16_t result = s - t;
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
 
         vco |= (result != 0) ? (1 << (el + 8)) : 0;
         vco |= (result < 0) ? (1 << el) : 0;
@@ -803,8 +908,8 @@ void RSP::vlt(RSP* rsp, uint32_t instruction) {
 
         vcc |= condition ? currBit : 0;
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
     }
     rsp->setVecFromAccLow(getVd(instruction));
     rsp->vcc = vcc;
@@ -843,8 +948,8 @@ void RSP::vge(RSP* rsp, uint32_t instruction) {
 
         vcc |= condition ? currBit : 0;
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
     }
     rsp->setVecFromAccLow(getVd(instruction));
     rsp->vcc = vcc;
@@ -891,8 +996,8 @@ void RSP::vcl(RSP* rsp, uint32_t instruction) {
             result = ge ? t : s;
         }
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
 
         outHi |= (uint8_t)ge << el;
         outLo |= (uint8_t)le << el;
@@ -944,8 +1049,8 @@ void RSP::vch(RSP* rsp, uint32_t instruction) {
             ne = diff != 0;
             result = ge ? t : s;
         }
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
 
         vccHi |= (uint8_t)ge << el;
         vccLo |= (uint8_t)le << el;
@@ -973,8 +1078,8 @@ void RSP::vmrg(RSP* rsp, uint32_t instruction) {
 
         uint16_t result = rsp->vcc & 0x1 ? s : t;
 
-        rsp->accLo[el * 2] = (uint8_t)result;
-        rsp->accLo[el * 2 + 1] = (uint8_t)(result >> 8);
+        rsp->accLo[el * 2 + 1] = (uint8_t)result;
+        rsp->accLo[el * 2] = (uint8_t)(result >> 8);
     }
     rsp->vco = 0;
     rsp->setVecFromAccLow(getVd(instruction));

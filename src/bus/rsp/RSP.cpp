@@ -510,7 +510,7 @@ void RSP::updateAccumulatorMid32(int element, int32_t result, bool accumulate) {
 
 void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate) {
     if (accumulate) {
-        int32_t x1 = (int32_t)getAccumulator16(&accHi[element * 2]);
+        int32_t x1 = (int16_t)(int32_t)getAccumulator16(&accHi[element * 2]);
         uint32_t x0 = (uint32_t)getAccumulator16(&accLo[element * 2]) | (uint32_t)getAccumulator16(&accMid[element * 2]) << 16;
 
         int64_t z0 = (int64_t)x0 + (int64_t)result;
@@ -519,9 +519,7 @@ void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool ac
         int64_t z1 = x1 + v1 + c;
 
         // TODO: find out why it produces a wrong result at this specific PC address but nowhere else
-        if (previousPc == 0x34) {
-            std::println("v1 = {:x}, result = {:x}, x1 = {:x} x0 = {:x} z0 = {:x} z1 = {:x} c = {:x}", v1, result, x1, x0, z0, z1, c);
-        }
+        // std::println("v1 = {:x}, result = {:x}, x1 = {:x} x0 = {:x} z0 = {:x} z1 = {:x} c = {:x}", v1, result, x1, x0, z0, z1, c);
 
         writeAcc32(&accHi[element * 2], element * 2, (uint32_t)((z1 << 16) >> 16), false);
         writeAcc32(&accLo[element * 2], element * 2, (uint32_t)z0, true);
@@ -536,9 +534,7 @@ void RSP::updateAccumulatorLow32(int element, uint32_t result, bool accumulate) 
 }
 
 void RSP::updateAccumulatorHigh32(int element, int32_t result, bool accumulate) {
-    if (previousPc == 0x34) {
-        std::println("element = {}, result = {:x}, result >> 16 = {:x}, result << 16 = {:x}", element, result, result >> 16, result << 16);
-    }
+    // std::println("element = {}, result = {:x}, result >> 16 = {:x}, result << 16 = {:x}", element, result, result >> 16, result << 16);
     updateAccumulatorHiLo(element, result >> 16, result << 16, accumulate);
 }
 
@@ -547,12 +543,12 @@ void RSP::writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo) {
     uint16_t lower = (uint16_t)value;
     uint16_t upper = (uint16_t)(value >> 16);
 
-    ptr[0] = (uint8_t)lower;
-    ptr[1] = (uint8_t)(lower >> 8);
+    ptr[1] = (uint8_t)lower;
+    ptr[0] = (uint8_t)(lower >> 8);
 
     if (isLo) {
-        accMid[upperOffset] = (uint8_t)upper;
-        accMid[upperOffset + 1] = (uint8_t)(upper >> 8);
+        accMid[upperOffset + 1] = (uint8_t)upper;
+        accMid[upperOffset] = (uint8_t)(upper >> 8);
     }
 }
 
@@ -568,9 +564,7 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
             result = ((~himid) & 0xffff8000) ? 0x8000 : himid;
         }
 
-        if (previousPc == 0x34) {
-            std::println("result = {:x} himid = {:x}", result, himid);
-        }
+        // std::println("result = {:x} himid = {:x}", (uint16_t)result, (uint16_t)himid);
 
         setVec16(vd, i, (uint16_t)result);
     }
@@ -609,5 +603,5 @@ void RSP::setVecFromAccMid(uint8_t vd) {
 }
 
 uint16_t RSP::getAccumulator16(uint8_t* ptr) {
-    return *(uint16_t*)&ptr[0];
+    return std::byteswap(*(uint16_t*)&ptr[0]);
 }

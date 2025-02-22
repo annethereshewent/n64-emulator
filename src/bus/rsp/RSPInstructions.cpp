@@ -164,8 +164,13 @@ void RSP::sllv(RSP* rsp, uint32_t instruction) {
     rsp->r[rd] = rsp->r[rs] << shift;
 }
 void RSP::srlv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: srlv\n";
-    exit(1);
+    uint32_t rs = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+    uint32_t rd = CPU::getRd(instruction);
+
+    uint32_t shift = rsp->r[rs] & 0x1f;
+
+    rsp->r[rd] = rsp->r[rs] >> shift;
 }
 void RSP::srav(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = (uint32_t)((int32_t)rsp->r[CPU::getRt(instruction)] >> (rsp->r[CPU::getRs(instruction)] & 31));

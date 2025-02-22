@@ -209,7 +209,7 @@ void RSP::nor(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::slt(RSP* rsp, uint32_t instruction) {
-    rsp->r[CPU::getRd(instruction)] = (uint32_t)(rsp->r[CPU::getRs(instruction)] < rsp->r[CPU::getRd(instruction)]);
+    rsp->r[CPU::getRd(instruction)] = (uint32_t)((int32_t)rsp->r[CPU::getRs(instruction)] < (int32_t)rsp->r[CPU::getRt(instruction)]);
 }
 void RSP::sltu(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: sltu\n";

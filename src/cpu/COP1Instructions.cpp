@@ -550,8 +550,17 @@ void COP1::cNgeS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cLeS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cLeS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    float float1 = cpu->cop1.getFloat(rd);
+    float float2 = cpu->cop1.getFloat(rt);
+
+    if (float1 <= float2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
 }
 void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cNgtS\n";

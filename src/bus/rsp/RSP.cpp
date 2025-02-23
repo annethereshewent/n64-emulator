@@ -82,9 +82,9 @@ void RSP::pushDma(DmaDirection direction) {
         fifo[0] = entry;
 
         status.dmaBusy = 1;
-    }
 
-    handleDma(fifo[0]);
+        handleDma(fifo[0]);
+    }
 }
 
 void RSP::updateStatus(uint32_t value) {

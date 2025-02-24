@@ -671,16 +671,10 @@ void RSP::vmadm(RSP* rsp, uint32_t instruction) {
 void RSP::vmadn(RSP* rsp, uint32_t instruction) {
     vectorMultiplyPartialMidN(rsp, instruction, true);
     rsp->setVecFromAccSignedLow(getVd(instruction));
-
-    u128 newVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
 }
 void RSP::vmadh(RSP* rsp, uint32_t instruction) {
     vectorMultiplyPartialHigh(rsp, instruction, true);
     rsp->setVecFromAccSignedMid(getVd(instruction));
-
-    u128 newVs = std::byteswap(*(u128*)&rsp->vpr[getVs(instruction)]);
-    u128 newVt = std::byteswap(*(u128*)&rsp->vpr[getVt(instruction)]);
-    u128 newVd = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
 }
 void RSP::vadd(RSP* rsp, uint32_t instruction) {
     uint8_t vs = getVs(instruction);

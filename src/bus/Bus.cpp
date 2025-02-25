@@ -394,7 +394,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
         case 0x4400018:
             if (videoInterface.vTotal != (value & 0x3ff)) {
                 Bus::writeWithMask32(&videoInterface.vTotal, value & 0x3ff, mask);
-                rdp_set_vi_register(6, videoInterface.vTotal);
+
 
                 recalculateDelay();
 
@@ -404,13 +404,15 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
                     cpu.scheduler.addEvent(Event(VideoInterrupt, cpu.cop0.count + videoInterface.delay));
                 }
             }
+            rdp_set_vi_register(6, value & 0x3ff);
             break;
         case 0x440001c:
             if (videoInterface.hTotal != (value & 0xfff)) {
                 Bus::writeWithMask32(&videoInterface.hTotal, value & 0xfff, mask);
-                rdp_set_vi_register(7, videoInterface.hTotal);
+
                 recalculateDelay();
             }
+            rdp_set_vi_register(7, value & 0xfff);
             break;
         case 0x4400020:
             Bus::writeWithMask32(&videoInterface.hTotalLeap.value, value & 0xfffffff, mask);

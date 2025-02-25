@@ -456,7 +456,6 @@ void CPU::step() {
                 bus.rdp.status.cmdBusy = 0;
                 bus.rdp.status.pipeBusy = 0;
 
-                std::print("setting dp interrupt\n");
                 bus.setInterrupt(DP_INTERRUPT_FLAG);
                 break;
             case NoEvent:

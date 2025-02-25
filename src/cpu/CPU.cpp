@@ -459,6 +459,10 @@ void CPU::step() {
                 std::print("setting dp interrupt\n");
                 bus.setInterrupt(DP_INTERRUPT_FLAG);
                 break;
+            case NoEvent:
+                std::println("should never happen");
+                exit(1);
+                break;
         }
     }
 }

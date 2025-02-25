@@ -442,8 +442,20 @@ void RSP::spv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::suv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: suv\n";
-    exit(1);
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+
+    for (int i = 0; i < 8; i++) {
+        int el = i + velement;
+
+        int shift = (el & 8) ? 8 : 7;
+
+        uint16_t value = (uint16_t)((int16_t)rsp->getVec16(getVt(instruction), el & 7)) >> shift;
+        rsp->memWrite8(address + i, (uint8_t)value);
+    }
 }
 void RSP::shv(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: shv\n";

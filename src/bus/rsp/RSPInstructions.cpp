@@ -8,6 +8,7 @@
 #include <bit>
 
 typedef unsigned __int128 u128;
+typedef __int128 i128;
 
 void RSP::addi(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] + (int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction);

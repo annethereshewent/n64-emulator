@@ -169,38 +169,38 @@ static const unsigned cmd_len_lut[64] = {
 	1,
 };
 
-bool sdl_event_filter(void *userdata, SDL_Event *event)
-{
-	if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-	{
-		emu_running = false;
-	}
-	else if (event->type == SDL_EVENT_WINDOW_RESIZED && emu_running)
-	{
-		wsi_platform->do_resize();
-	}
-	else if (event->type == SDL_EVENT_KEY_DOWN && fullscreen)
-	{
-		switch (event->key.scancode)
-		{
-		case SDL_SCANCODE_ESCAPE:
-			emu_running = false;
-			break;
-		default:
-			break;
-		}
-	}
-	return 0;
-}
+// bool sdl_event_filter(void *userdata, SDL_Event *event)
+// {
+// 	if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+// 	{
+// 		emu_running = false;
+// 	}
+// 	else if (event->type == SDL_EVENT_WINDOW_RESIZED && emu_running)
+// 	{
+// 		wsi_platform->do_resize();
+// 	}
+// 	else if (event->type == SDL_EVENT_KEY_DOWN && fullscreen)
+// 	{
+// 		switch (event->key.scancode)
+// 		{
+// 		case SDL_SCANCODE_ESCAPE:
+// 			emu_running = false;
+// 			break;
+// 		default:
+// 			break;
+// 		}
+// 	}
+// 	return 0;
+// }
 
 void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
 {
-	bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
-	if (!result)
-	{
-		printf("Could not add event watch.\n");
-		return;
-	}
+	// bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
+	// if (!result)
+	// {
+	// 	printf("Could not add event watch.\n");
+	// 	return;
+	// }
 
 	window = _window;
 

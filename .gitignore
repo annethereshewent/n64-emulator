@@ -5,3 +5,4 @@ CMakeCache.txt
 cmake_install.cmake
 n64-plus
 CMakeFiles/
+profile.json

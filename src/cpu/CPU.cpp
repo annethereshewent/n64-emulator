@@ -358,8 +358,8 @@ void CPU::step() {
     //         std::cout << "command is cop1\n";
     //         actualCommand = (opcode >> 21) & 0x1f;
     //     }
-    //      std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
-    //     // std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << "\n";
+    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
+    //     // std::cout << "pc = " << std::hex << previousPc << "\n";
     //     visited.insert(previousPc);
     // }
 

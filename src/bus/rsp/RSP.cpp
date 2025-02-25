@@ -21,7 +21,7 @@ void RSP::handleDma(SPDma dma) {
     if (dma.direction == Read) {
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
-                uint32_t value = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress]);
+                uint32_t value = *(uint32_t*)&bus.rdram[dramAddress];
 
                 uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
 
@@ -40,7 +40,7 @@ void RSP::handleDma(SPDma dma) {
 
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
 
-                Bus::writeWord(&bus.rdram[dramAddress], value);
+                Bus::writeValueLE(&bus.rdram[dramAddress], value, 4);
 
                 memAddress += 4;
                 dramAddress += 4;

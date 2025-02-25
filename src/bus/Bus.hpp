@@ -120,6 +120,7 @@ public:
 
     static uint64_t translateAddress(uint64_t address);
 
+    static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);
     static void writeHalf(uint8_t* ptr, uint16_t value);
     static void writeDoubleWord(uint8_t* ptr, uint64_t value);

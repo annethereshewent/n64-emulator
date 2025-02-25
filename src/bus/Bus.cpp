@@ -74,7 +74,7 @@ uint16_t Bus::memRead16(uint64_t address) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                return std::byteswap(*(uint16_t*)&rdram[actualAddress]);
+                return *(uint16_t*)&rdram[actualAddress];
             }
             std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
@@ -138,7 +138,7 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                writeHalf(&rdram[actualAddress], value);
+                writeValueLE(&rdram[actualAddress], value, 2);
 
                 return;
             }
@@ -161,7 +161,7 @@ void Bus::memWrite64(uint64_t address, uint64_t value) {
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        writeDoubleWord(&rdram[actualAddress], value);
+        writeValueLE(&rdram[actualAddress], value, 8);
         return;
     }
 }
@@ -175,7 +175,7 @@ uint64_t Bus::memRead64(uint64_t address) {
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        return std::byteswap(*(uint64_t*)&rdram[actualAddress]);
+        return *(uint64_t*)&rdram[actualAddress];
     }
 
     std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
@@ -263,7 +263,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
                     cpu.cop0.addCycles(cycles);
                 }
 
-                return std::byteswap(*(uint32_t*)&rdram[actualAddress]);
+                return *(uint32_t*)&rdram[actualAddress];
             }
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
@@ -535,11 +535,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                uint32_t returnVal = std::byteswap(*(uint32_t*)&rdram[actualAddress]);
+                uint32_t returnVal = *(uint32_t*)&rdram[actualAddress];
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&rdram[actualAddress], returnVal);
+                Bus::writeValueLE(&rdram[actualAddress], returnVal, 4);
 
                 return;
             }
@@ -891,9 +891,9 @@ void Bus::dmaWrite() {
     }
     for (int i = 0; i < length; i++) {
         if (currCartAddr + i >= cartridge.size()) {
-            rdram[currDramAddr + i] = 0;
+            rdram[(currDramAddr + i) ^ 3] = 0;
         } else {
-            rdram[currDramAddr + i] = cartridge[currCartAddr + i];
+            rdram[(currDramAddr + i) ^ 3] = cartridge[currCartAddr + i];
         }
     }
 
@@ -939,4 +939,12 @@ void Bus::writeWithMask32(uint32_t* oldVal, uint32_t newVal, uint32_t mask) {
     }
 
     *oldVal = returnVal;
+}
+
+void Bus::writeValueLE(uint8_t* ptr, uint32_t value, int size) {
+    for (int i = 0; i < size; i++) {
+        int shift = i * 8;
+
+        ptr[i] = (uint8_t)(value >> shift);
+    }
 }

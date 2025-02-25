@@ -202,13 +202,15 @@ void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _inte
 		return;
 	}
 
+	window = _window;
+
 	gfx_info = _gfx_info;
 	fullscreen = _fullscreen;
 	integer_scaling = _integer_scaling;
 	bool window_vsync = 0;
 	wsi = new WSI;
 	wsi_platform = new SDL_WSIPlatform;
-	wsi_platform->set_window(_window);
+	wsi_platform->set_window(window);
 	wsi->set_platform(wsi_platform);
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
@@ -410,8 +412,8 @@ uint64_t rdp_process_commands()
 			{
 				offset &= 0xFFFFF8;
 				// printf("reading from rdram offset %#04x\n", offset);
-				cmd_data[2 * cmd_ptr + 0] = std::byteswap(*reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset));
-				cmd_data[2 * cmd_ptr + 1] = std::byteswap(*reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4));
+				cmd_data[2 * cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
+				cmd_data[2 * cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
 				offset += sizeof(uint64_t);
 				cmd_ptr++;
 			} while (--length > 0);

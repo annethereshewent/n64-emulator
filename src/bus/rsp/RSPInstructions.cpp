@@ -161,7 +161,7 @@ void RSP::sllv(RSP* rsp, uint32_t instruction) {
 
     uint32_t shift = rsp->r[rs] & 0x1f;
 
-    rsp->r[rd] = rsp->r[rs] << shift;
+    rsp->r[rd] = rsp->r[rt] << shift;
 }
 void RSP::srlv(RSP* rsp, uint32_t instruction) {
     uint32_t rs = CPU::getRs(instruction);
@@ -170,7 +170,7 @@ void RSP::srlv(RSP* rsp, uint32_t instruction) {
 
     uint32_t shift = rsp->r[rs] & 0x1f;
 
-    rsp->r[rd] = rsp->r[rs] >> shift;
+    rsp->r[rd] = rsp->r[rt] >> shift;
 }
 void RSP::srav(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = (uint32_t)((int32_t)rsp->r[CPU::getRt(instruction)] >> (rsp->r[CPU::getRs(instruction)] & 31));

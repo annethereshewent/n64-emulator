@@ -333,8 +333,25 @@ void RSP::lrv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::lpv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lpv\n";
-    exit(1);
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t index = (address & 7) + getVElement(instruction);
+    address &= ~0x7;
+
+    u128 returnValue = 0;
+
+    for (int i = 0; i < 8; i++) {
+        uint32_t offset = (address + ((index + i) & 0xf)) & 0xfff;
+
+        uint16_t value = (uint16_t)rsp->dmem[offset];
+
+        returnValue |= (u128)(value << 8) << (16 * (7 - i));
+    }
+    returnValue = std::byteswap(returnValue);
+    memcpy(&rsp->vpr[CPU::getRt(instruction)], &returnValue, sizeof(returnValue));
+
 }
 void RSP::luv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
@@ -342,7 +359,7 @@ void RSP::luv(RSP* rsp, uint32_t instruction) {
     uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
 
     uint32_t index = (address & 7) + getVElement(instruction);
-    address &= ~7;
+    address &= ~0x7;
 
     u128 returnValue = 0;
     for (int i = 0; i < 8; i++) {
@@ -369,8 +386,34 @@ void RSP::lwv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::ltv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: ltv\n";
-    exit(1);
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint32_t base = address & ~7;
+    address = base + ((getVElement(instruction) + (address & 8)) & 0xf);
+
+    uint32_t vtBase = CPU::getRt(instruction) & ~7;
+    uint32_t vtOff = getVElement(instruction) / 2;
+
+    for (int i = 0; i < 8; i++) {
+        rsp->setVec8(vtBase + vtOff, i * 2, rsp->memRead8(address));
+
+        address++;
+
+        if (address > base + 15) {
+            address = base;
+        }
+
+        rsp->setVec8(vtBase + vtOff, i * 2 + 1, rsp->memRead8(address));
+        address++;
+        if (address > base + 15) {
+            address = base;
+        }
+
+        vtOff = (vtOff + 1) & 0x7;
+    }
+
 }
 
 void RSP::sbv(RSP* rsp, uint32_t instruction) {
@@ -471,8 +514,25 @@ void RSP::swv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::stv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: stv\n";
-    exit(1);
+    uint32_t voffset = (uint32_t)(getVOffset(instruction) << 3);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + voffset;
+
+    uint8_t base = CPU::getRt(instruction) & ~0x7;
+
+    uint8_t velement = 16 - (getVElement(instruction) & ~0x1);
+
+    address &= ~0x7;
+
+    uint32_t offset = (address & 7) - (getVElement(instruction) & ~0x1);
+
+    for (int i = 0; i < 8; i++) {
+        rsp->memWrite8(address + (offset & 0xf), rsp->getVec8(i + base, velement));
+        rsp->memWrite8(address + ((offset + 1) & 0xf), rsp->getVec8(i + base, velement + 1));
+
+        velement++;
+        offset++;
+    }
 }
 
 void RSP::mtc2(RSP* rsp, uint32_t instruction) {

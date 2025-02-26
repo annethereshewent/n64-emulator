@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include "Scheduler.hpp"
 
+const uint64_t FPS_INTERVAL = 1000 / 60;
+
 class CPU {
 public:
     std::array<uint64_t, 32> r = {};
@@ -28,6 +30,8 @@ public:
 
     COP0 cop0;
     COP1 cop1;
+
+    uint64_t timestamp = 0;
 
     bool discarded = false;
 
@@ -54,6 +58,8 @@ public:
 
     void fastForwardRelativeLoop(int16_t amount);
     void fastForwardAbsoluteLoop(uint64_t target);
+
+    void limitFps();
 
     // instructions
     static void reserved(CPU* cpu, uint32_t instruction);

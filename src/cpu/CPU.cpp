@@ -1,19 +1,21 @@
 
 #pragma once
-
-#include "CPU.hpp"
-#include "../bus/Bus.cpp"
-#include "CPUInstructions.cpp"
-#include "COP1Instructions.cpp"
-#include "COP0Instructions.cpp"
 #include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <print>
 #include <bit>
+#include <chrono>
+#include <thread>
+#include "CPU.hpp"
+#include "../bus/Bus.cpp"
+#include "CPUInstructions.cpp"
+#include "COP1Instructions.cpp"
+#include "COP0Instructions.cpp"
 #include "COP0.cpp"
 #include "COP1.cpp"
 #include "Scheduler.cpp"
+
 
 CPU::CPU(): bus(*this), cop0(*this), cop1(*this) {
     r[0] = 0;
@@ -475,6 +477,26 @@ void CPU::fastForwardRelativeLoop(int16_t amount) {
     if (amount == -4 && bus.memRead32(pc, false, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
+}
+
+void CPU::limitFps() {
+    auto p1 = std::chrono::system_clock::now();
+
+    uint64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        p1.time_since_epoch()).count();
+
+    if (timestamp != 0) {
+        uint64_t diff = time - timestamp;
+
+        if (diff < FPS_INTERVAL) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(FPS_INTERVAL - diff));
+        }
+    }
+
+    p1 = std::chrono::system_clock::now();
+
+    timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        p1.time_since_epoch()).count();;
 }
 
 uint32_t CPU::getImmediate(uint32_t instruction) {

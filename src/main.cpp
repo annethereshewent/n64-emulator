@@ -43,6 +43,8 @@ int main(int argc, char **argv) {
             cpu.step();
         }
 
+        cpu.limitFps();
+
         cpu.bus.rdp.frameFinished = false;
 
         while(SDL_PollEvent(&event) > 0) {

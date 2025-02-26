@@ -727,11 +727,14 @@ uint64_t Bus::translateAddress(uint64_t address, bool isWrite) {
 uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
     uint64_t actualAddress = address & 0xffffffff;
 
+    std::println("got address {:x}", actualAddress);
+
     if (isWrite) {
         if (tlbWriteLut[actualAddress >> 12].address != 0) {
             return tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
         }
     } else if (tlbReadLut[actualAddress >> 12].address != 0) {
+        std::println("returning back {:x}", tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff));
         return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
     }
 
@@ -766,7 +769,7 @@ void Bus::tlbWrite(uint32_t index) {
 
     tlbEntries[index].mask |= tlbEntries[index].mask >> 1;
 
-    tlbEntries[index].vpn2 &= tlbEntries[index].mask;
+    tlbEntries[index].vpn2 &= ~tlbEntries[index].mask;
 
     tlbEntries[index].startEven = (tlbEntries[index].vpn2 << 13) & 0xffffffff;
     tlbEntries[index].endEven = tlbEntries[index].startEven + (tlbEntries[index].mask << 12) + 0xfff;
@@ -841,6 +844,13 @@ void Bus::tlbMap(uint32_t index) {
             tlbReadLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
             tlbReadLut[i >> 12].cached = entry.cEven != 2;
         }
+
+        if (entry.dEven != 0) {
+            for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+                tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
+                tlbWriteLut[i >> 12].cached = entry.cEven != 2;
+            }
+        }
     }
 
     if (entry.vOdd != 0 &&
@@ -851,6 +861,13 @@ void Bus::tlbMap(uint32_t index) {
         for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
             tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
             tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
+        }
+
+        if (entry.dOdd != 0) {
+            for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+                tlbReadLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
+                tlbReadLut[i >> 12].cached = entry.cOdd != 2;
+            }
         }
     }
 

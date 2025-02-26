@@ -168,10 +168,13 @@ void PIF::processController(int channel, Bus& bus) {
 
             ram[channels[channel].rxBuf + 2] = 1;  // controller pak present
             break;
-        case 0x1:
+        case 0x1: {
             // TODO: actually implement controller
-            Bus::writeWord(&ram[channels[channel].rxBuf], 0);
+            // Bus::writeWord(&ram[channels[channel].rxBuf], 0);
+            uint32_t returnVal = 0;
+            memcpy(&ram[channels[channel].rxBuf], &returnVal, sizeof(uint32_t));
             break;
+        }
         case 0x2:
             std::cout << "controller command not implemented: 0x2\n";
             exit(1);

@@ -46,6 +46,7 @@ public:
     Bus& bus;
 
     std::array<uint16_t, 512> reciprocals = {};
+    std::array<uint16_t, 512> inverseSquareRoots = {};
 
     RSP(Bus& bus) : bus(bus) {
         // gotten from https://github.com/hulkholden/n64js/blob/master/src/rsp.js#L147
@@ -308,6 +309,23 @@ public:
 
             reciprocals[i] = (uint16_t)((fraction + 1) >> 8);
         }
+
+        for (uint64_t i = 0; i < inverseSquareRoots.size(); i++) {
+            uint64_t shift = 0;
+            if ((i & 1) == 1) {
+                shift = 1;
+            }
+
+            uint64_t a = (i + 512) >> shift;
+            uint64_t b = 1 << 17;
+            uint64_t c = (uint64_t)1 << 44;
+
+            while (a * (b + 1) * (b + 1) < c) {
+                b++;
+            }
+
+            inverseSquareRoots[i] = (uint16_t)(b >> 1);
+        }
     };
 
     std::array<uint32_t, 32> r = {};
@@ -375,7 +393,7 @@ public:
     void setVec8(uint8_t vt, uint8_t velement, uint8_t value);
     void setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value);
     uint8_t getVec8(uint8_t vt, uint8_t velement);
-    int16_t getVec16(uint8_t vt, uint8_t element);
+    uint16_t getVec16(uint8_t vt, uint8_t element);
     void setVec16(uint8_t vt, uint8_t element, uint16_t value);
 
     void updateAccumulatorMid32(int element, int32_t result, bool accumulate);
@@ -530,6 +548,7 @@ public:
     static void vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorLogicalOp(RSP* rsp, uint32_t instruction, auto fn);
+    static void vectorCalculateReciprocal(RSP* rsp, uint32_t instruction, bool useDp, bool inverseSquareRoot);
 
     static void vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction);
 

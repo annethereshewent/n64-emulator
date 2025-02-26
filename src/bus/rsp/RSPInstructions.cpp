@@ -482,8 +482,19 @@ void RSP::srv(RSP* rsp, uint32_t instruction) {
     exit(1);
 }
 void RSP::spv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: spv\n";
-    exit(1);
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    uint8_t velement = getVElement(instruction);
+
+    for (int i = 0; i < 8; i++) {
+        if (((velement + i) & 0xf) < 8) {
+            rsp->memWrite8(address + i, rsp->getVec8(getVt(instruction), (velement & 7) * 2));
+        } else {
+            rsp->memWrite8(address + i, (uint8_t)(rsp->getVec16(getVt(instruction), velement) >> 7));
+        }
+    }
 }
 void RSP::suv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (uint32_t)(getVOffset(instruction) << 3);
@@ -624,7 +635,7 @@ void RSP::vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate) 
 
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
         int16_t s = (int16_t)rsp->getVec16(vs, el);
-        uint16_t t = (uint16_t)rsp->getVec16(vt, select & 0x7);
+        uint16_t t = rsp->getVec16(vt, select & 0x7);
 
         int32_t result = (int32_t)s * (int32_t)t;
 
@@ -771,8 +782,6 @@ void RSP::vadd(RSP* rsp, uint32_t instruction) {
         rsp->setVec16(vd, el, (int16_t)clamped);
     }
 
-    u128 value = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
-
     rsp->vco = 0;
 }
 void RSP::vsub(RSP* rsp, uint32_t instruction) {
@@ -782,11 +791,6 @@ void RSP::vsub(RSP* rsp, uint32_t instruction) {
     uint8_t vd = getVd(instruction);
 
     uint16_t vco = rsp->vco;
-
-    u128 vecVs = std::byteswap(*(u128*)&rsp->vpr[vs]);
-    u128 vecVt = std::byteswap(*(u128*)&rsp->vpr[vt]);
-
-    u128 oldValue = std::byteswap(*(u128*)&rsp->vpr[getVd(instruction)]);
 
     for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
         int16_t s = (int16_t)rsp->getVec16(vs, el);
@@ -802,8 +806,6 @@ void RSP::vsub(RSP* rsp, uint32_t instruction) {
 
         rsp->setVec16(vd, el, (int16_t)clamped);
     }
-
-    u128 value = std::byteswap(*(u128*)&rsp->vpr[vd]);
 
     rsp->vco = 0;
 }
@@ -839,7 +841,8 @@ void RSP::vabs(RSP* rsp, uint32_t instruction) {
                 result = 0x7fff;
             }
 
-            Bus::writeHalf(&rsp->accLo[i * 2], result);
+            result = std::byteswap(result);
+            memcpy(&rsp->accLo[i*2], &result, sizeof(uint16_t));
             rsp->setVec16(vd, i, result);
     }
 }
@@ -951,7 +954,9 @@ void RSP::veq(RSP* rsp, uint32_t instruction) {
 
         vcc |= cond ? currBit : 0;
 
-        Bus::writeHalf(&rsp->accLo[el * 2], t);
+        // Bus::writeHalf(&rsp->accLo[el * 2], t);
+        t = std::byteswap(t);
+        memcpy(&rsp->accLo[el * 2], &t, sizeof(uint16_t));
     }
 
     rsp->setVecFromAccLow(getVd(instruction));
@@ -976,7 +981,9 @@ void RSP::vne(RSP* rsp, uint32_t instruction) {
 
         vcc |= cond ? currBit : 0;
 
-        Bus::writeHalf(&rsp->accLo[el * 2], s);
+        // Bus::writeHalf(&rsp->accLo[el * 2], s);
+        s = std::byteswap(s);
+        memcpy(&rsp->accLo[el * 2], &s, sizeof(uint16_t));
     }
 
     rsp->setVecFromAccLow(getVd(instruction));
@@ -1027,9 +1034,13 @@ void RSP::vcl(RSP* rsp, uint32_t instruction) {
     uint8_t outLo = 0;
     uint8_t outHi = 0;
 
-    for (int el = 0, select = rsp->vecSelect[getVte(instruction)]; el < 8; el++, select >>= 4) {
-        uint16_t s = rsp->getVec16(getVs(instruction), el);
-        uint16_t t = rsp->getVec16(getVt(instruction), select & 0x7);
+    uint8_t vs = getVs(instruction);
+    uint8_t vt = getVt(instruction);
+    uint8_t vte = getVte(instruction);
+
+    for (int el = 0, select = rsp->vecSelect[vte]; el < 8; el++, select >>= 4) {
+        uint16_t s = rsp->getVec16(vs, el);
+        uint16_t t = rsp->getVec16(vt, select & 0x7);
 
         uint8_t le = (vccLo >> el) & 1;
         uint8_t ge = (vccHi >> el) & 1;
@@ -1131,8 +1142,8 @@ void RSP::vcr(RSP* rsp, uint32_t instruction) {
     uint16_t vcc = 0;
 
     for (int el = 0, select = rsp->vecSelect[getVte(instruction)]; el < 8; el++, select >>= 4) {
-        int16_t s = (int16_t)rsp->getVec16(getVs(instruction), el);
-        int16_t t = (int16_t)rsp->getVec16(getVt(instruction), select & 0x7);
+        int16_t s = (int16_t)rsp->getVec16(vs, el);
+        int16_t t = (int16_t)rsp->getVec16(vt, select & 0x7);
 
         bool le, ge;
 
@@ -1149,7 +1160,10 @@ void RSP::vcr(RSP* rsp, uint32_t instruction) {
         vcc |= (uint16_t)le << el;
         vcc |= (uint16_t)ge << (el + 8);
 
-        Bus::writeHalf(&rsp->accLo[el * 2], result);
+        result = std::byteswap(result);
+
+        memcpy(&rsp->accLo[el * 2], &result, sizeof(uint16_t));
+        //Bus::writeHalf(&rsp->accLo[el * 2], result);
     }
 
     rsp->setVecFromAccLow(getVd(instruction));
@@ -1161,9 +1175,11 @@ void RSP::vcr(RSP* rsp, uint32_t instruction) {
 
 }
 void RSP::vmrg(RSP* rsp, uint32_t instruction) {
+    uint8_t vs = getVs(instruction);
+    uint8_t vt = getVt(instruction);
     for (int el = 0, select = rsp->vecSelect[getVte(instruction)]; el < 8; el++, select >>= 4) {
-        uint16_t s = rsp->getVec16(getVs(instruction), el);
-        uint16_t t = rsp->getVec16(getVt(instruction), select & 0x7);
+        uint16_t s = rsp->getVec16(vs, el);
+        uint16_t t = rsp->getVec16(vt, select & 0x7);
 
         uint16_t result = (rsp->vcc >> el) & 0x1 ? s : t;
 
@@ -1192,42 +1208,16 @@ void RSP::vnxor(RSP* rsp, uint32_t instruction) {
     RSP::vectorLogicalOp(rsp, instruction, [](uint16_t s, uint16_t t) -> uint16_t { return ~(s ^ t); });
 }
 void RSP::vrcp(RSP* rsp, uint32_t instruction) {
-    int32_t input = (int16_t)(int32_t)rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
-
-    int32_t mask = input >> 31;
-    int32_t data = input ^ mask;
-
-    if (input > -0x8000) {
-        data -= mask;
-    }
-
-    uint32_t result;
-
-    if (data == 0) {
-        result = 0x7fffffff;
-    } else if (data == -0x8000) {
-        result = 0xffff0000;
-    } else {
-        uint32_t shift = std::countl_zero((uint32_t)data);
-        uint32_t index = ((((uint64_t)data) << shift) & 0x7fc00000) >> 22;
-
-        result = (uint32_t)rsp->reciprocals[index];
-
-        result = (0x10000 | result) << 14;
-        result = (result >> (31 - shift)) ^ (uint32_t)mask;
-    }
-
-    rsp->setAccumulatorFromVector(getVd(instruction), getVt(instruction), getVte(instruction));
-
-    rsp->divDp = false;
-    rsp->divOut = (int16_t)(result >> 16);
-
-    rsp->setVec16(getVd(instruction), getDe(instruction), (uint16_t)result);
+    vectorCalculateReciprocal(rsp, instruction, false, false);
 }
 void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
+    vectorCalculateReciprocal(rsp, instruction, true, false);
+}
+
+void RSP::vectorCalculateReciprocal(RSP* rsp, uint32_t instruction, bool useDp, bool inverseSquareRoot) {
     int16_t val = (int16_t)rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
 
-    int32_t input = rsp->divDp ? (int32_t)rsp->divIn << 16 | (int32_t)val : (int32_t)val;
+    int32_t input = rsp->divDp && useDp ? (int32_t)rsp->divIn << 16 | (int32_t)val : (int32_t)val;
 
     int32_t mask = input >> 31;
     int32_t data = input ^ mask;
@@ -1246,11 +1236,10 @@ void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
         uint32_t shift = std::countl_zero((uint32_t)data);
         uint32_t index = ((((uint64_t)data) << shift) & 0x7fc00000) >> 22;
 
-        result = (uint32_t)rsp->reciprocals[index];
+        result = inverseSquareRoot ? (uint32_t)rsp->inverseSquareRoots[(index & 0x1fe) | (shift & 1)] : (uint32_t)rsp->reciprocals[index];
 
         result = (0x10000 | result) << 14;
-        result = (result >> (31 - shift)) ^ (uint32_t)mask;
-
+        result = inverseSquareRoot ? (result >> ((31 - shift) >> 1)) ^ (uint32_t)mask : (result >> (31 - shift)) ^ (uint32_t)mask;
     }
 
     rsp->setAccumulatorFromVector(getVd(instruction), getVt(instruction), getVte(instruction));
@@ -1260,6 +1249,7 @@ void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
 
     rsp->setVec16(getVd(instruction), getDe(instruction), (uint16_t)result);
 }
+
 void RSP::vrcph(RSP* rsp, uint32_t instruction) {
     vectorSetAccumulatorFromRegister(rsp, instruction);
 
@@ -1286,16 +1276,28 @@ void RSP::vmov(RSP* rsp, uint32_t instruction) {
     rsp->setVec16(getVd(instruction), getDe(instruction), rsp->getVec16(vt, vtElement));
 }
 void RSP::vrsq(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vrsq\n";
-    exit(1);
+    vectorCalculateReciprocal(rsp, instruction, false, true);
 }
 void RSP::vrsql(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vrsql\n";
-    exit(1);
+    vectorCalculateReciprocal(rsp, instruction, true, true);
 }
 void RSP::vrsqh(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vrsqh\n";
-    exit(1);
+    uint8_t vte = getVte(instruction);
+    uint8_t vt = getVt(instruction);
+
+    uint32_t select = rsp->vecSelect[vte];
+
+    for (int el = 0; el < 8; el++, select >>= 4) {
+        int16_t result = (int16_t)rsp->getVec16(vt, select & 0x7);
+
+        result = std::byteswap(result);
+        memcpy(&rsp->accLo[el * 2], &result, sizeof(uint16_t));
+        // Bus::writeHalf(&rsp->accLo[el * 2], result);
+    }
+    rsp->divDp = true;
+
+    rsp->divIn = (int16_t)rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
+    rsp->setVec16(getVd(instruction), getDe(instruction), rsp->divOut);
 }
 void RSP::vnop(RSP* rsp, uint32_t instruction) {
     std::cout << "TODO: vnop\n";

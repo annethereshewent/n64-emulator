@@ -539,7 +539,8 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeValueLE(&rdram[actualAddress], returnVal, 4);
+                // Bus::writeValueLE(&rdram[actualAddress], returnVal, 4);
+                memcpy(&rdram[actualAddress], &returnVal, sizeof(uint32_t));
 
                 return;
             }
@@ -550,7 +551,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&pif.ram[offset], returnVal);
+                returnVal = std::byteswap(returnVal);
+
+                // Bus::writeWord(&pif.ram[offset], returnVal);
+                memcpy(&pif.ram[offset], &returnVal, sizeof(uint32_t));
 
                 cpu.scheduler.addEvent(Event(PIFExecuteCommand, cpu.cop0.count + 3200));
 
@@ -565,7 +569,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&rsp.dmem[offset], returnVal);
+                returnVal = std::byteswap(returnVal);
+
+                memcpy(&rsp.dmem[offset], &returnVal, sizeof(uint32_t));
+
+                // Bus::writeWord(&rsp.dmem[offset], returnVal);
 
                 return;
             }
@@ -577,7 +585,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&rsp.imem[offset], returnVal);
+                // Bus::writeWord(&rsp.imem[offset], returnVal);
+                returnVal = std::byteswap(returnVal);
+
+                memcpy(&rsp.imem[offset], &returnVal, sizeof(uint32_t));
 
                 return;
             }

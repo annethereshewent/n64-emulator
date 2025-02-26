@@ -9,15 +9,17 @@ class Bus;
 void SerialInterface::handleDma(Bus& bus) {
     if (dir == DmaDirection::Write) {
         for (int i = 0; i < bus.pif.ram.size(); i+= 4) {
-            uint32_t data = *(uint32_t*)&bus.rdram[dramAddress + i];
+            uint32_t data = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress + i]);
 
-            Bus::writeWord(&bus.pif.ram[i], data);
+            // Bus::writeWord(&bus.pif.ram[i], data);
+            memcpy(&bus.pif.ram[i], &data, sizeof(uint32_t));
         }
     } else {
         for (int i = 0; i < bus.pif.ram.size(); i+= 4) {
             uint32_t value = std::byteswap(*(uint32_t*)&bus.pif.ram[i]);
 
-            Bus::writeValueLE(&bus.rdram[dramAddress + i], value, 4);
+            // Bus::writeValueLE(&bus.rdram[dramAddress + i], value, 4);
+            memcpy(&bus.rdram[dramAddress + i], &value, sizeof(uint32_t));
         }
     }
 }

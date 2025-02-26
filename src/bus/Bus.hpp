@@ -118,7 +118,8 @@ public:
     void recalculateDelay();
     void finishPiDma();
 
-    static uint64_t translateAddress(uint64_t address);
+    uint64_t translateAddress(uint64_t address, bool isWrite = false);
+    uint64_t getTlbAddress(uint64_t address, bool isWrite = false);
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);

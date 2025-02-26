@@ -328,11 +328,10 @@ void CPU::loadRom(std::string filename) {
 }
 
 void CPU::step() {
-
     uint32_t opcode = (pc & 0x20000000) != 0 ? bus.memRead32(pc) : bus.readInstructionCache(pc);
     uint32_t command = opcode >> 26;
 
-    previousPc = Bus::translateAddress(pc);
+    previousPc = pc;
 
     if (!discarded) {
         pc = nextPc;

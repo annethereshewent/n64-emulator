@@ -158,7 +158,7 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[base] + offset;
 
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = cpu->bus.translateAddress(address);
 
     switch (cacheOp) {
         case 0x0: {

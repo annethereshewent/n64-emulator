@@ -14,7 +14,7 @@
 #include "../interface.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
@@ -58,7 +58,7 @@ uint8_t Bus::memRead8(uint64_t address) {
 }
 
 uint16_t Bus::memRead16(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
@@ -83,7 +83,7 @@ uint16_t Bus::memRead16(uint64_t address) {
 }
 
 void Bus::memWrite8(uint64_t address, uint8_t value) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -121,7 +121,7 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
 }
 
 void Bus::memWrite16(uint64_t address, uint16_t value) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -150,7 +150,7 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
 }
 
 void Bus::memWrite64(uint64_t address, uint64_t value) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -167,11 +167,11 @@ void Bus::memWrite64(uint64_t address, uint64_t value) {
 }
 
 uint64_t Bus::memRead64(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
-        return ((uint64_t)readDataCache(address) << 32) | (uint64_t)readDataCache(address + 4);
+        return ((uint64_t)readDataCache(actualAddress) << 32) | (uint64_t)readDataCache(actualAddress + 4);
     }
 
     if (actualAddress <= 0x03EFFFFF) {
@@ -183,7 +183,7 @@ uint64_t Bus::memRead64(uint64_t address) {
 
 }
 uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = ignoreCache ? address : translateAddress(address);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -322,7 +322,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
 }
 
 void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t mask) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = ignoreCache ? address : translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -589,7 +589,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 }
 
 uint32_t Bus::readInstructionCache(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
 
     uint32_t lineIndex = ((actualAddress >> 5) & 0x1FF);
 
@@ -617,9 +617,7 @@ void Bus::fillInstructionCache(uint32_t lineIndex, uint64_t address) {
     }
 }
 
-uint32_t Bus::readDataCache(uint64_t address, bool ignoreCycles) {
-    uint64_t actualAddress = Bus::translateAddress(address);
-
+uint32_t Bus::readDataCache(uint64_t actualAddress, bool ignoreCycles) {
     uint32_t lineIndex = (actualAddress >> 4) & 0x1ff;
 
     if (!(dcacheHit(lineIndex, actualAddress))) {
@@ -636,8 +634,7 @@ uint32_t Bus::readDataCache(uint64_t address, bool ignoreCycles) {
     return dcache[lineIndex].words[(actualAddress >> 2) & 3];
 }
 
-void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+void Bus::writeDataCache(uint64_t actualAddress, uint32_t value, int64_t mask) {
     uint32_t lineIndex = (actualAddress >> 4) & 0x1ff;
 
     if (!dcacheHit(lineIndex, actualAddress)) {
@@ -650,7 +647,7 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
     }
 
     uint32_t returnValue = value;
-    uint32_t oldValue = dcache[lineIndex].words[(address >> 2) & 3];
+    uint32_t oldValue = dcache[lineIndex].words[(actualAddress >> 2) & 3];
 
     if (mask != -1) {
         returnValue = (oldValue & ~mask) | (value & mask);
@@ -720,8 +717,26 @@ void Bus::dcacheWriteback(uint64_t line, bool ignoreCycles) {
     }
 }
 
-uint64_t Bus::translateAddress(uint64_t address) {
+uint64_t Bus::translateAddress(uint64_t address, bool isWrite) {
+    if ((address & 0xc0000000) != 0x80000000) {
+        return getTlbAddress(address, isWrite);
+    }
     return address & 0x1FFFFFFF;
+}
+
+uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
+    uint64_t actualAddress = address & 0xffffffff;
+
+    if (isWrite) {
+        if (tlbWriteLut[actualAddress >> 12].address != 0) {
+            return tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+        }
+    } else if (tlbReadLut[actualAddress >> 12].address != 0) {
+        return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+    }
+
+    std::println("invalid TLB address given");
+    exit(1);
 }
 
 void Bus::tlbWrite(uint32_t index) {

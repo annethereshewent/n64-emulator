@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.30)
 project(n64-plus)
 
 set (CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_FLAGS "-O3")
 
 find_package(PkgConfig REQUIRED)
 find_package(Vulkan REQUIRED)

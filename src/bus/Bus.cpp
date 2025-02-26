@@ -727,14 +727,11 @@ uint64_t Bus::translateAddress(uint64_t address, bool isWrite) {
 uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
     uint64_t actualAddress = address & 0xffffffff;
 
-    std::println("got address {:x}", actualAddress);
-
     if (isWrite) {
         if (tlbWriteLut[actualAddress >> 12].address != 0) {
             return tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
         }
     } else if (tlbReadLut[actualAddress >> 12].address != 0) {
-        std::println("returning back {:x}", tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff));
         return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
     }
 

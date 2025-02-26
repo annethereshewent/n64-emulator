@@ -658,8 +658,9 @@ void COP1::absD(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::movD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: movD\n";
-    exit(1);
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), double1);
 }
 void COP1::negD(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: negD\n";
@@ -736,8 +737,19 @@ void COP1::cUnD(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cEqD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cEqD\n";
-    exit(1);
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    if (std::isnan(double1) || std::isnan(double2)) {
+        cpu->cop1.fcsr.condition = 0;
+        return;
+    }
+
+    if (double1 == double2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
 }
 void COP1::cUeqD(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cUeqD\n";
@@ -776,8 +788,14 @@ void COP1::cNglD(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cLtD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cLtD\n";
-    exit(1);
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    if (double1 < double2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
 }
 void COP1::cNgeD(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cNgeD\n";

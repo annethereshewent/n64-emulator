@@ -841,8 +841,8 @@ void RSP::vabs(RSP* rsp, uint32_t instruction) {
                 result = 0x7fff;
             }
 
-            result = std::byteswap(result);
-            memcpy(&rsp->accLo[i*2], &result, sizeof(uint16_t));
+            uint32_t byteswapped = std::byteswap(result);
+            memcpy(&rsp->accLo[i*2], &byteswapped, sizeof(uint16_t));
             rsp->setVec16(vd, i, result);
     }
 }

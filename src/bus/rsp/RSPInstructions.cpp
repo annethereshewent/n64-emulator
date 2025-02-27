@@ -1263,7 +1263,7 @@ void RSP::vmov(RSP* rsp, uint32_t instruction) {
     uint8_t vt = getVt(instruction);
 
     uint32_t select = rsp->vecSelect[vte];
-
+    uint32_t selectOriginal = select;
     for (int el = 0; el < 8; el++, select >>= 4) {
         int16_t result = (int16_t)rsp->getVec16(vt, select & 0x7);
 
@@ -1271,7 +1271,7 @@ void RSP::vmov(RSP* rsp, uint32_t instruction) {
         rsp->accLo[el * 2] = (uint8_t)(result >> 8);
     }
 
-    uint8_t vtElement = (select >> (4 * getDe(instruction))) & 0x7;
+    uint8_t vtElement = (selectOriginal >> (4 * getDe(instruction))) & 0x7;
 
     rsp->setVec16(getVd(instruction), getDe(instruction), rsp->getVec16(vt, vtElement));
 }

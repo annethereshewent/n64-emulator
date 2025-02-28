@@ -14,7 +14,6 @@ public:
 
     MIPSInterrupt mipsInterrupt;
     MIPSInterrupt mipsMask;
-    // TODO: add dp interrupt support
 
     void write(uint32_t value);
     void setMask(uint32_t value);

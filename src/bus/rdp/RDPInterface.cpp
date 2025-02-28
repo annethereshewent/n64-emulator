@@ -14,8 +14,7 @@ uint32_t RDPInterface::readRegisters(uint32_t offset) {
             return end;
             break;
         case 2:
-            // TODO
-            return 0;
+            return current;
             break;
         case 3:
             return status.value;

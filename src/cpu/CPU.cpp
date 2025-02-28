@@ -342,6 +342,9 @@ void CPU::step() {
     //     } else if (command == 17) {
     //         std::cout << "command is cop1\n";
     //         actualCommand = (opcode >> 21) & 0x1f;
+    //     } else if (command == 1) {
+    //         std::cout << "command is regImm\n";
+    //         actualCommand = (opcode >> 16) & 0x1f;
     //     }
     //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
     //     // std::cout << "pc = " << std::hex << previousPc << "\n";

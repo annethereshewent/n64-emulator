@@ -401,6 +401,8 @@ void CPU::step() {
                 bus.rdp.frameFinished = true;
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
+                bus.videoInterface.field ^= bus.videoInterface.ctrl.serrate;
+
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
                 break;
             case PIFExecuteCommand:

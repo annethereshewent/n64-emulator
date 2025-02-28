@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include "VCurrent.hpp"
 #include "VCtrl.hpp"
@@ -6,10 +8,14 @@
 #include "XScale.hpp"
 #include "YScale.hpp"
 
+class Scheduler;
+
 class VideoInterface {
 public:
+    uint32_t countPerScanline = 0;
     uint32_t vInterrupt = 0;
     uint32_t hVideo = 0;
+    uint32_t field = 0;
     VCurrent vcurrent;
     VCtrl ctrl;
     uint32_t origin = 0;
@@ -27,4 +33,6 @@ public:
 
     bool interruptStarted;
     uint32_t delay;
+
+    void updateVCurrent(Scheduler& scheduler, uint64_t currentCount);
 };

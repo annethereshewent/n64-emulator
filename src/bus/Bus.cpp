@@ -11,6 +11,7 @@
 #include "serial_interface/SerialInterface.cpp"
 #include "rdp/RDPInterface.cpp"
 #include "audio_interface/AudioInterface.cpp"
+#include "video_interface/VideoInterface.cpp"
 #include "../interface.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
@@ -218,7 +219,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             break;
         case 0x4400010:
             cpu.cop0.addCycles(20);
-            // TODO: implement V_CURRENT
+            videoInterface.updateVCurrent(cpu.scheduler, cpu.cop0.count);
             return videoInterface.vcurrent.value;
             break;
         case 0x4500004:
@@ -818,8 +819,8 @@ void Bus::tlbRead(uint32_t index) {
 
 void Bus::recalculateDelay() {
     double expectedRefreshRate = (double)videoInterface.clock / (double)(videoInterface.vTotal +1) / (double)((videoInterface.hTotal) + 1) * 2.0;
-
     videoInterface.delay = (uint32_t)((double)cpu.clock / expectedRefreshRate);
+    videoInterface.countPerScanline = videoInterface.delay  / (videoInterface.vTotal + 1);
 }
 
 void Bus::tlbProbe() {

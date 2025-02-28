@@ -51,4 +51,5 @@ public:
 
     void rebaseEvents(uint64_t oldCount, uint64_t newCount);
     uint64_t getTimeToNext();
+    Event getEvent(EventType eventType);
 };

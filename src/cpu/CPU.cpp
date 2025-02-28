@@ -259,30 +259,14 @@ void CPU::loadRom(std::string filename) {
             break;
         case 0x37804012:
             for (int i = 0; i < rom.size(); i += 2) {
-                // TODO: refactor this to something more efficient (possibly use memcpy?)
-                uint16_t data = *(uint16_t*)&rom[i];
-
-                for (int j = 0; j < 2; j++) {
-                    int shift = 1 - j;
-
-                    uint8_t byte = (data >> (shift * 8)) & 0xff;
-
-                    formattedRom[i + j] = byte;
-                }
+                uint16_t data = std::byteswap(*(uint16_t*)&rom[i]);
+                memcpy(&formattedRom[i], &data, sizeof(uint16_t));
             }
             break;
         case 0x40123780:
             for (int i = 0; i < rom.size(); i += 4) {
-                // TODO: refactor this to something more efficient
-                uint32_t data = *(uint32_t*)&rom[i];
-
-                for (int j = 3; j >= 0; j--) {
-                    int shift = 1 - j;
-
-                    uint8_t byte = (data >> shift) & 0xff;
-
-                    formattedRom[i + j] = byte;
-                }
+                uint32_t data = std::byteswap(*(uint32_t*)&rom[i]);
+                memcpy(&formattedRom[i], &data, sizeof(uint32_t));
             }
             break;
     }

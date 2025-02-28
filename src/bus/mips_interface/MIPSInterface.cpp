@@ -9,7 +9,6 @@ void MIPSInterface::write(uint32_t value) {
     }
     if ((value >> 8 & 0x1) == 1) {
         repeatMode = true;
-        // TODO: clear repeatMode after rambus write
     }
     if ((value >> 9 & 0x1) == 1) {
         ebus = false;

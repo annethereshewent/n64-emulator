@@ -31,6 +31,10 @@ void Scheduler::updateNextEvent() {
     }
 }
 
+Event Scheduler::getEvent(EventType eventType) {
+    return events[eventType];
+}
+
 bool Scheduler::hasNextEvent(uint64_t cycles) {
     return cycles >= timeToNextEvent && nextEvent != EventType::NoEvent;
 }

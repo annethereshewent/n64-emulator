@@ -39,6 +39,8 @@ int main(int argc, char **argv) {
 
     rdp_init(window, gfxInfo, false, false, false);
 
+    cpu.bus.initAudio();
+
     while (true) {
         while (!cpu.bus.rdp.frameFinished) {
             cpu.step();

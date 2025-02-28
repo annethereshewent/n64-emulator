@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <SDL3/SDL.h>
 #include "peripheral_interface/PeripheralInterface.hpp"
 #include "rsp/RSP.hpp"
 #include "video_interface/VideoInterface.hpp"
@@ -81,6 +82,8 @@ public:
 
     MIPSInterface mips;
 
+    SDL_AudioStream* stream;
+
     uint64_t memRead64(uint64_t address);
     uint32_t memRead32(uint64_t address, bool ignoreCache = false, bool ignoreCycles = false);
     uint16_t memRead16(uint64_t address);
@@ -101,6 +104,8 @@ public:
     void memWrite16(uint64_t address, uint16_t value);
     void memWrite8(uint64_t address, uint8_t value);
 
+    void pushSamples(uint64_t length, uint32_t dramAddress);
+
     void setInterrupt(uint32_t flag);
     void clearInterrupt(uint32_t flag);
 
@@ -117,6 +122,9 @@ public:
 
     void recalculateDelay();
     void finishPiDma();
+
+    void initAudio();
+    void restartAudio();
 
     uint64_t translateAddress(uint64_t address, bool isWrite = false);
     uint64_t getTlbAddress(uint64_t address, bool isWrite = false);

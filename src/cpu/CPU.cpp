@@ -259,30 +259,14 @@ void CPU::loadRom(std::string filename) {
             break;
         case 0x37804012:
             for (int i = 0; i < rom.size(); i += 2) {
-                // TODO: refactor this to something more efficient (possibly use memcpy?)
-                uint16_t data = *(uint16_t*)&rom[i];
-
-                for (int j = 0; j < 2; j++) {
-                    int shift = 1 - j;
-
-                    uint8_t byte = (data >> (shift * 8)) & 0xff;
-
-                    formattedRom[i + j] = byte;
-                }
+                uint16_t data = std::byteswap(*(uint16_t*)&rom[i]);
+                memcpy(&formattedRom[i], &data, sizeof(uint16_t));
             }
             break;
         case 0x40123780:
             for (int i = 0; i < rom.size(); i += 4) {
-                // TODO: refactor this to something more efficient
-                uint32_t data = *(uint32_t*)&rom[i];
-
-                for (int j = 3; j >= 0; j--) {
-                    int shift = 1 - j;
-
-                    uint8_t byte = (data >> shift) & 0xff;
-
-                    formattedRom[i + j] = byte;
-                }
+                uint32_t data = std::byteswap(*(uint32_t*)&rom[i]);
+                memcpy(&formattedRom[i], &data, sizeof(uint32_t));
             }
             break;
     }
@@ -358,6 +342,9 @@ void CPU::step() {
     //     } else if (command == 17) {
     //         std::cout << "command is cop1\n";
     //         actualCommand = (opcode >> 21) & 0x1f;
+    //     } else if (command == 1) {
+    //         std::cout << "command is regImm\n";
+    //         actualCommand = (opcode >> 16) & 0x1f;
     //     }
     //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
     //     // std::cout << "pc = " << std::hex << previousPc << "\n";
@@ -400,6 +387,8 @@ void CPU::step() {
                 rdp_update_screen();
                 bus.rdp.frameFinished = true;
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
+
+                bus.videoInterface.field ^= bus.videoInterface.ctrl.serrate;
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
                 break;
@@ -444,10 +433,9 @@ void CPU::step() {
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
             case AIDma:
-                if (bus.audioInterface.lastRead != 0) {
-                    bus.audioInterface.lastRead = 0;
-
-                    // TODO: actually play audio!
+                if (bus.audioInterface.dmaReady) {
+                    bus.pushSamples(bus.audioInterface.fifo[0].length, bus.audioInterface.fifo[0].address);
+                    bus.audioInterface.dmaReady = false;
                 }
 
                 bus.audioInterface.popDma();

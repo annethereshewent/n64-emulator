@@ -42,6 +42,9 @@ int main(int argc, char **argv) {
 
     cpu.bus.initAudio();
 
+    int8_t xAxis = 0;
+    int8_t yAxis = 0;
+
     while (true) {
         while (!cpu.bus.rdp.frameFinished) {
             cpu.step();
@@ -62,16 +65,16 @@ int main(int argc, char **argv) {
                             cpu.debugOn = !cpu.debugOn;
                             break;
                         case SDLK_W:
-                            cpu.bus.updateAxis(YAxis, MAX_AXIS_VAL);
+                            yAxis = MAX_AXIS_VAL;
                             break;
                         case SDLK_A:
-                            cpu.bus.updateAxis(XAxis, -MAX_AXIS_VAL);
+                            xAxis = -MAX_AXIS_VAL;
                             break;
                         case SDLK_S:
-                            cpu.bus.updateAxis(YAxis, -MAX_AXIS_VAL);
+                            yAxis = -MAX_AXIS_VAL;
                             break;
                         case SDLK_D:
-                            cpu.bus.updateAxis(XAxis, MAX_AXIS_VAL);
+                            xAxis = MAX_AXIS_VAL;
                             break;
                         case SDLK_E:
                             cpu.bus.updateButton(BButton, true);
@@ -92,16 +95,25 @@ int main(int argc, char **argv) {
                             cpu.debugOn = !cpu.debugOn;
                             break;
                         case SDLK_W:
-                            cpu.bus.updateAxis(YAxis, 0);
+                            if (yAxis > 0) {
+                                yAxis = 0;
+                            }
                             break;
                         case SDLK_A:
-                            cpu.bus.updateAxis(XAxis, 0);
+                            if (xAxis < 0) {
+                                xAxis = 0;
+                            }
                             break;
                         case SDLK_S:
-                            cpu.bus.updateAxis(YAxis, 0);
+                            if (yAxis < 0) {
+                                yAxis = 0;
+                            }
                             break;
                         case SDLK_D:
-                            cpu.bus.updateAxis(XAxis, 0);
+                            if (xAxis > 0) {
+                                xAxis = 0;
+                            }
+                            break;
                         case SDLK_E:
                             cpu.bus.updateButton(BButton, false);
                             break;
@@ -121,6 +133,7 @@ int main(int argc, char **argv) {
 
             }
         }
+        cpu.bus.updateAxis(xAxis, yAxis);
     }
 
     SDL_Quit();

@@ -1044,16 +1044,8 @@ void Bus::updateButton(JoypadButton button, bool state) {
     }
 }
 
-void Bus::updateAxis(JoypadAxis axis, double value) {
-    int8_t val = (int8_t)std::round(value);
-    switch (axis) {
-        case XAxis:
-            input &= 0xff00ffff;
-            input |= val << 16;
-            break;
-        case YAxis:
-            input &= 0x00ffffff;
-            input |= val << 24;
-            break;
-    }
+void Bus::updateAxis(int8_t xAxis, int8_t yAxis) {
+    input &= 0xffff;
+    input |= xAxis << 16;
+    input |= yAxis << 24;
 }

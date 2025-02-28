@@ -3,6 +3,22 @@
 #include <iterator>
 #include <SDL3/SDL.h>
 #include "interface.cpp"
+#include "controller/Controller.hpp"
+
+SDL_Gamepad* findController() {
+    int count;
+    SDL_JoystickID* ids = SDL_GetGamepads(&count);
+
+    for (int i = 0; i < count; i++) {
+        SDL_Gamepad* gamepad = SDL_OpenGamepad(ids[i]);
+
+        if (gamepad != nullptr) {
+            return gamepad;
+        }
+    }
+
+    return nullptr;
+}
 
 int main(int argc, char **argv) {
     CPU cpu;
@@ -41,6 +57,39 @@ int main(int argc, char **argv) {
 
     cpu.bus.initAudio();
 
+    SDL_Gamepad* gamepad = findController();
+
+    uint8_t xAxis = 0;
+    uint8_t yAxis = 0;
+
+    std::unordered_map<uint32_t, JoypadButton> keyboardMap = {
+        {SDLK_E, BButton},
+        {SDLK_RETURN, Start},
+        {SDLK_LCTRL, ZButton},
+        {SDLK_SPACE, AButton},
+        {SDLK_UP, DpadUp},
+        {SDLK_DOWN, DpadDown},
+        {SDLK_LEFT, DpadLeft},
+        {SDLK_RIGHT, DpadRight},
+        {SDLK_1, LButton},
+        {SDLK_2, RButton},
+        {SDLK_I, UpCButton},
+        {SDLK_J, LeftCButton},
+        {SDLK_K, DownCButton},
+        {SDLK_L, RightCButton}
+    };
+    std::unordered_map<uint32_t, JoypadButton> buttonMap = {
+        {SDL_GAMEPAD_BUTTON_DPAD_DOWN, DpadDown},
+        {SDL_GAMEPAD_BUTTON_DPAD_UP, DpadUp},
+        {SDL_GAMEPAD_BUTTON_DPAD_LEFT, DpadLeft},
+        {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, DpadRight},
+        {SDL_GAMEPAD_BUTTON_EAST, AButton},
+        {SDL_GAMEPAD_BUTTON_SOUTH, BButton},
+        {SDL_GAMEPAD_BUTTON_START, Start},
+        {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, LButton},
+        {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, RButton}
+    };
+
     while (true) {
         while (!cpu.bus.rdp.frameFinished) {
             cpu.step();
@@ -56,14 +105,103 @@ int main(int argc, char **argv) {
                     exit(1);
                     break;
                 case SDL_EVENT_KEY_DOWN:
-                    switch (event.key.key) {
-                        case SDLK_G:
-                            cpu.debugOn = !cpu.debugOn;
-                            break;
+                    if (keyboardMap.contains(event.key.key)) {
+                        cpu.bus.updateButton(keyboardMap[event.key.key], true);
+                    } else {
+                        switch (event.key.key) {
+                            case SDLK_G:
+                                cpu.debugOn = !cpu.debugOn;
+                                break;
+                            case SDLK_W:
+                                yAxis = (uint8_t)MAX_AXIS_VAL;
+                                break;
+                            case SDLK_A:
+                                xAxis = (uint8_t)-MAX_AXIS_VAL;
+                                break;
+                            case SDLK_S:
+                                yAxis = (uint8_t)-MAX_AXIS_VAL;
+                                break;
+                            case SDLK_D:
+                                xAxis = (uint8_t)MAX_AXIS_VAL;
+                                break;
+                        }
                     }
+                    break;
+                case SDL_EVENT_KEY_UP:
+                    if (keyboardMap.contains(event.key.key)) {
+                        cpu.bus.updateButton(keyboardMap[event.key.key], false);
+                    } else {
+                        switch (event.key.key) {
+                            case SDLK_W:
+                                yAxis = 0;
+                                break;
+                            case SDLK_A:
+                                xAxis = 0;
+                                break;
+                            case SDLK_S:
+                                yAxis = 0;
+                                break;
+                            case SDLK_D:
+                                xAxis = 0;
+                                break;
+                        }
+                    }
+                    break;
+                case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+                    if (buttonMap.contains(event.gbutton.button)) {
+                        cpu.bus.updateButton(buttonMap[event.gbutton.button], true);
+                    }
+                    break;
+                case SDL_EVENT_GAMEPAD_BUTTON_UP:
+                    if (buttonMap.contains(event.gbutton.button)) {
+                        cpu.bus.updateButton(buttonMap[event.gbutton.button], false);
+                    }
+                    break;
+                case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+                    if (gamepad != nullptr) {
+                        double xAxisL = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
+                        double yAxisL = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+
+                        double xAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
+                        double yAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
+
+                        double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+
+                        xAxis = std::abs(xAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisL) : 0;
+                        yAxis = std::abs(yAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisL) : 0;
+
+                        if (rightTrigger > 0x1000) {
+                            cpu.bus.updateButton(ZButton, true);
+                        } else {
+                            cpu.bus.updateButton(ZButton, false);
+                        }
+
+                        if (xAxisR > 0x7000) {
+                            cpu.bus.updateButton(RightCButton, true);
+                        } else if (xAxisR < -0x7000) {
+                            cpu.bus.updateButton(LeftCButton, true);
+                        } else {
+                            cpu.bus.updateButton(LeftCButton, false);
+                            cpu.bus.updateButton(RightCButton, false);
+                        }
+
+                        if (yAxisR < -0x7000) {
+                            cpu.bus.updateButton(UpCButton, true);
+                        } else if (yAxisR > 0x7000) {
+                            cpu.bus.updateButton(DownCButton, true);
+                        } else {
+                            cpu.bus.updateButton(UpCButton, false);
+                            cpu.bus.updateButton(DownCButton, false);
+                        }
+                    }
+                    break;
+                case SDL_EVENT_GAMEPAD_ADDED:
+                    gamepad = findController();
                     break;
             }
         }
+
+        cpu.bus.updateAxis(xAxis, yAxis);
     }
 
     SDL_Quit();

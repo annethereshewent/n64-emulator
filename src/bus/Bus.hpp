@@ -15,6 +15,7 @@
 #include "cache/ICache.hpp"
 #include "cache/DCache.hpp"
 #include "tlb/TlbEntry.hpp"
+#include "../controller/Controller.hpp"
 
 const uint32_t SP_INTERRUPT_FLAG = 1;
 const uint32_t SI_INTERRUPT_FLAG = 1 << 1;
@@ -40,6 +41,8 @@ public:
 
     char gameId[4];
     int32_t saveType = -1;
+
+    uint32_t input = 0;
 
     CPU& cpu;
     RSP rsp;
@@ -125,6 +128,9 @@ public:
 
     void initAudio();
     void restartAudio();
+
+    void updateButton(JoypadButton button, bool state);
+    void updateAxis(uint8_t xAxis, uint8_t yAxis);
 
     uint64_t translateAddress(uint64_t address, bool isWrite = false);
     uint64_t getTlbAddress(uint64_t address, bool isWrite = false);

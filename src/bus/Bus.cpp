@@ -1021,7 +1021,7 @@ void Bus::restartAudio() {
 }
 
 void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {
-    int16_t samples[8192];
+    int16_t samples[length / 2];
 
     for (int i = 0; i < length / 2; i++) {
         if ((i & 1) == 0) {
@@ -1034,4 +1034,18 @@ void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {
     if (!SDL_PutAudioStreamData(stream, samples, (length / 2) * sizeof(int16_t))) {
         std::println("couldn't put samples into stream: {}", SDL_GetError());
     }
+}
+
+void Bus::updateButton(JoypadButton button, bool state) {
+    if (state) {
+        input |= 1 << (uint16_t)button;
+    } else {
+        input &= ~(1 << (uint16_t)button);
+    }
+}
+
+void Bus::updateAxis(uint8_t xAxis, uint8_t yAxis) {
+    input &= 0xffff;
+    input |= xAxis << 16;
+    input |= yAxis << 24;
 }

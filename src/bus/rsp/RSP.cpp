@@ -41,7 +41,6 @@ void RSP::handleDma(SPDma dma) {
 
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
 
-                // Bus::writeValueLE(&bus.rdram[dramAddress], value, 4);
                 memcpy(&bus.rdram[dramAddress], &value, sizeof(uint32_t));
 
                 memAddress += 4;

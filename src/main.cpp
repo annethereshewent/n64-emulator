@@ -59,8 +59,8 @@ int main(int argc, char **argv) {
 
     SDL_Gamepad* gamepad = findController();
 
-    int8_t xAxis = 0;
-    int8_t yAxis = 0;
+    uint8_t xAxis = 0;
+    uint8_t yAxis = 0;
 
     while (true) {
         while (!cpu.bus.rdp.frameFinished) {
@@ -82,16 +82,16 @@ int main(int argc, char **argv) {
                             cpu.debugOn = !cpu.debugOn;
                             break;
                         case SDLK_W:
-                            yAxis = MAX_AXIS_VAL;
+                            yAxis = (uint8_t)MAX_AXIS_VAL;
                             break;
                         case SDLK_A:
-                            xAxis = -MAX_AXIS_VAL;
+                            xAxis = (uint8_t)-MAX_AXIS_VAL;
                             break;
                         case SDLK_S:
-                            yAxis = -MAX_AXIS_VAL;
+                            yAxis = (uint8_t)-MAX_AXIS_VAL;
                             break;
                         case SDLK_D:
-                            xAxis = MAX_AXIS_VAL;
+                            xAxis = (uint8_t)MAX_AXIS_VAL;
                             break;
                         case SDLK_E:
                             cpu.bus.updateButton(BButton, true);
@@ -112,24 +112,17 @@ int main(int argc, char **argv) {
                             cpu.debugOn = !cpu.debugOn;
                             break;
                         case SDLK_W:
-                            if (yAxis > 0) {
-                                yAxis = 0;
-                            }
+                            yAxis = 0;
+
                             break;
                         case SDLK_A:
-                            if (xAxis < 0) {
-                                xAxis = 0;
-                            }
+                            xAxis = 0;
                             break;
                         case SDLK_S:
-                            if (yAxis < 0) {
-                                yAxis = 0;
-                            }
+                            yAxis = 0;
                             break;
                         case SDLK_D:
-                            if (xAxis > 0) {
-                                xAxis = 0;
-                            }
+                            xAxis = 0;
                             break;
                         case SDLK_E:
                             cpu.bus.updateButton(BButton, false);
@@ -206,6 +199,9 @@ int main(int argc, char **argv) {
                             break;
                     }
                     break;
+                case SDL_EVENT_GAMEPAD_ADDED:
+                    gamepad = findController();
+                    break;
             }
         }
 
@@ -214,8 +210,8 @@ int main(int argc, char **argv) {
             double yAxisD = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
             double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
-            xAxis = (int8_t)(uint8_t)std::round(xAxisD);
-            yAxis = (int8_t)(uint8_t)std::round(yAxisD);
+            xAxis = std::abs(xAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisD) : 0;
+            yAxis = std::abs(yAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisD) : 0;
 
             if (rightTrigger > 0x1000) {
                 cpu.bus.updateButton(ZButton, true);

@@ -19,6 +19,8 @@ void AudioInterface::pushDma() {
         dma.duration = getDuration();
         dma.length = audioLength;
 
+        fifo[0] = dma;
+
         handleDma();
 
         status.dmaBusy = 1;
@@ -49,7 +51,7 @@ uint64_t AudioInterface::getDuration() {
 void AudioInterface::handleDma() {
     AudioDma dma = fifo[0];
 
-    lastRead = dma.length;
+    dmaReady = true;
 
     if (delayedCarry) {
         dma.address += 0x2000;

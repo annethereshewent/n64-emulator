@@ -430,10 +430,9 @@ void CPU::step() {
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
             case AIDma:
-                if (bus.audioInterface.lastRead != 0) {
-                    bus.audioInterface.lastRead = 0;
-
-                    // TODO: actually play audio!
+                if (bus.audioInterface.dmaReady) {
+                    bus.pushSamples(bus.audioInterface.fifo[0].length, bus.audioInterface.fifo[0].address);
+                    bus.audioInterface.dmaReady = false;
                 }
 
                 bus.audioInterface.popDma();

@@ -223,7 +223,6 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             return videoInterface.vcurrent.value;
             break;
         case 0x4500004:
-            // TODO: actually return the current audio length
             cpu.cop0.addCycles(20);
             return audioInterface.audioLength;
             break;
@@ -405,7 +404,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
                     cpu.scheduler.addEvent(Event(VideoInterrupt, cpu.cop0.count + videoInterface.delay));
                 }
             }
-            rdp_set_vi_register(6, value);
+            rdp_set_vi_register(6, videoInterface.vTotal);
             break;
         case 0x440001c:
             if (videoInterface.hTotal != value) {
@@ -413,7 +412,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 recalculateDelay();
             }
-            rdp_set_vi_register(7, value);
+            rdp_set_vi_register(7, videoInterface.hTotal);
             break;
         case 0x4400020:
             Bus::writeWithMask32(&videoInterface.hTotalLeap.value, value, mask);
@@ -459,6 +458,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             clearInterrupt(AI_INTERRUPT_FLAG);
             break;
         case 0x4500010:
+            if (audioInterface.dacRate != (value & mask)){
+                audioInterface.frequency = videoInterface.clock / (1 + (value & mask));
+            }
             Bus::writeWithMask32(&audioInterface.dacRate, value & 0x3fff, mask);
             break;
         case 0x4500014:
@@ -987,5 +989,41 @@ void Bus::writeValueLE(uint8_t* ptr, uint32_t value, int size) {
         int shift = i * 8;
 
         ptr[i] = (uint8_t)(value >> shift);
+    }
+}
+
+void Bus::initAudio() {
+    const SDL_AudioSpec srcspec = { SDL_AUDIO_S16, 2, (int)audioInterface.frequency };
+    SDL_AudioSpec devicespec = { SDL_AUDIO_S16, 2, 48000 };
+
+    SDL_AudioDeviceID device = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &devicespec);
+
+    SDL_AudioSpec dstspec;
+    if (!SDL_GetAudioDeviceFormat(device, &dstspec, nullptr)) {
+        std::println("couldn't get audio device format: {}", SDL_GetError());
+    }
+
+    SDL_AudioStream *stream = SDL_CreateAudioStream(&srcspec, &dstspec);
+
+    if (!SDL_BindAudioStream(device, stream)) {
+        std::println("couldn't bind audio stream to device: {}", SDL_GetError());
+    }
+
+    this->stream = stream;
+}
+
+void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {
+    int16_t samples[8192];
+
+    for (int i = 0; i < length / 2; i++) {
+        if ((i & 1) == 0) {
+            samples[i] = *(int16_t*)&rdram[dramAddress + (i * 2) + 2];
+        } else {
+            samples[i] = *(int16_t*)&rdram[dramAddress + (i * 2)];
+        }
+    }
+
+    if (!SDL_PutAudioStreamData(stream, samples, (length / 2) * sizeof(int16_t))) {
+        std::println("couldn't put samples into stream: {}", SDL_GetError());
     }
 }

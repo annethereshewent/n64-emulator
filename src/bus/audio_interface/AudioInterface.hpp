@@ -17,7 +17,7 @@ public:
 
     Bus& bus;
 
-    uint64_t lastRead = 0;
+    bool dmaReady = false;
     bool delayedCarry = false;
     AudioInterface(Bus& bus) : bus(bus) {};
 
@@ -25,6 +25,9 @@ public:
     uint32_t audioLength = 0;
     uint32_t dacRate = 0;
     uint32_t bitRate = 0;
+
+    uint32_t frequency = 33600;
+
     bool dmaEnable = false;
 
     AIStatus status;

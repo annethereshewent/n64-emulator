@@ -214,8 +214,8 @@ int main(int argc, char **argv) {
             double yAxisD = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
             double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
-            xAxis = (int8_t)std::round(xAxisD);
-            yAxis = (int8_t)std::round(yAxisD);
+            xAxis = (int8_t)(uint8_t)std::round(xAxisD);
+            yAxis = (int8_t)(uint8_t)std::round(yAxisD);
 
             if (rightTrigger > 0x1000) {
                 cpu.bus.updateButton(ZButton, true);

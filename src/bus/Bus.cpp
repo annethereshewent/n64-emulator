@@ -1044,7 +1044,7 @@ void Bus::updateButton(JoypadButton button, bool state) {
     }
 }
 
-void Bus::updateAxis(int8_t xAxis, int8_t yAxis) {
+void Bus::updateAxis(uint8_t xAxis, uint8_t yAxis) {
     input &= 0xffff;
     input |= xAxis << 16;
     input |= yAxis << 24;

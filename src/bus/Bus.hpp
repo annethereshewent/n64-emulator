@@ -130,7 +130,7 @@ public:
     void restartAudio();
 
     void updateButton(JoypadButton button, bool state);
-    void updateAxis(int8_t xAxis, int8_t yAxis);
+    void updateAxis(uint8_t xAxis, uint8_t yAxis);
 
     uint64_t translateAddress(uint64_t address, bool isWrite = false);
     uint64_t getTlbAddress(uint64_t address, bool isWrite = false);

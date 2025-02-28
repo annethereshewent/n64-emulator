@@ -460,6 +460,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
         case 0x4500010:
             if (audioInterface.dacRate != (value & mask)){
                 audioInterface.frequency = videoInterface.clock / (1 + (value & mask));
+
+                // reopen stream with new frequency
+                restartAudio();
             }
             Bus::writeWithMask32(&audioInterface.dacRate, value & 0x3fff, mask);
             break;
@@ -1010,6 +1013,11 @@ void Bus::initAudio() {
     }
 
     this->stream = stream;
+}
+
+void Bus::restartAudio() {
+    SDL_DestroyAudioStream(stream);
+    initAudio();
 }
 
 void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {

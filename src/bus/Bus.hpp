@@ -124,6 +124,7 @@ public:
     void finishPiDma();
 
     void initAudio();
+    void restartAudio();
 
     uint64_t translateAddress(uint64_t address, bool isWrite = false);
     uint64_t getTlbAddress(uint64_t address, bool isWrite = false);

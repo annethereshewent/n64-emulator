@@ -3,6 +3,7 @@
 #include "RSP.hpp"
 #include <iostream>
 #include "RSPInstructions.cpp"
+#include "../../util/VectorUtils.cpp"
 
 void RSP::handleDma(SPDma dma) {
     uint32_t length = dma.length.length + 1;

@@ -16,6 +16,7 @@ extern "C"
 		uint32_t *DPC_START_REG;
 		uint32_t *DPC_END_REG;
 		uint32_t *DPC_STATUS_REG;
+		bool* debugOn;
 	} GFX_INFO;
 
 	void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen);

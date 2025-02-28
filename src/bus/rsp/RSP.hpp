@@ -4,6 +4,7 @@
 #include "SPStatus.hpp"
 #include "SPLength.hpp"
 #include "../DmaDirection.hpp"
+#include <unordered_map>
 
 const uint32_t NUM_RSP_REGISTERS = 8;
 
@@ -47,6 +48,8 @@ public:
 
     std::array<uint16_t, 512> reciprocals = {};
     std::array<uint16_t, 512> inverseSquareRoots = {};
+
+    std::unordered_map<uint32_t, std::vector<uint32_t>> found;
 
     RSP(Bus& bus) : bus(bus) {
         // gotten from https://github.com/hulkholden/n64js/blob/master/src/rsp.js#L147

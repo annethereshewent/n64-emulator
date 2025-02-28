@@ -35,6 +35,7 @@ int main(int argc, char **argv) {
     gfxInfo.DPC_START_REG = &cpu.bus.rdp.start;
     gfxInfo.DPC_END_REG = &cpu.bus.rdp.end;
     gfxInfo.DPC_STATUS_REG = &cpu.bus.rdp.status.value;
+    gfxInfo.debugOn = &cpu.debugOn;
 
     rdp_init(window, gfxInfo, false, false, false);
 
@@ -49,9 +50,16 @@ int main(int argc, char **argv) {
 
         while(SDL_PollEvent(&event) > 0) {
             switch(event.type) {
-              case SDL_EVENT_QUIT:
-                exit(1);
-                break;
+                case SDL_EVENT_QUIT:
+                    exit(1);
+                    break;
+                case SDL_EVENT_KEY_DOWN:
+                    switch (event.key.key) {
+                        case SDLK_G:
+                            cpu.debugOn = !cpu.debugOn;
+                            break;
+                    }
+                    break;
             }
         }
     }

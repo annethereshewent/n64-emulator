@@ -564,8 +564,8 @@ void RSP::mfc2(RSP* rsp, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t velement = getVElement(instruction);
 
-    uint8_t hi = rsp->vpr[rd][velement];
-    uint8_t lo = rsp->vpr[rd][velement + 1];
+    uint8_t hi = rsp->vpr[rd][velement & 0xf];
+    uint8_t lo = rsp->vpr[rd][(velement + 1) & 0xf];
 
     int16_t result = (int16_t)hi << 8 | (int16_t)lo;
 
@@ -1216,7 +1216,7 @@ void RSP::vrcpl(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::vectorCalculateReciprocal(RSP* rsp, uint32_t instruction, bool useDp, bool inverseSquareRoot) {
-    int16_t val = (int16_t)rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
+    uint16_t val = rsp->getVec16(getVt(instruction), getVte(instruction) & 0x7);
 
     int32_t input = rsp->divDp && useDp ? (int32_t)rsp->divIn << 16 | (int32_t)val : (int32_t)val;
 

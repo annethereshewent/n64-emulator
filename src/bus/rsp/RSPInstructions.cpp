@@ -316,20 +316,21 @@ void RSP::lqv(RSP* rsp, uint32_t instruction) {
 void RSP::lrv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (uint32_t)(getVOffset(instruction) << 4);
 
-    uint32_t end = rsp->r[CPU::getRs(instruction)] + offset;
-    uint32_t address = end & 0xff0;
-
-    uint8_t velement = getVElement(instruction);
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
     uint8_t vt = getVt(instruction);
 
-    uint8_t elOffset = end & 0xf;
+    uint8_t velement = 16 - ((address & 0xf)) - getVElement(instruction);
 
-    uint8_t startElement = (16 - elOffset) + velement;
+    address &= ~0xf;
 
-    uint8_t length = std::min(elOffset, (uint8_t)(16 - startElement));
+    if (velement == 0) {
+        memcpy(&rsp->vpr[vt], (u128*)&rsp->dmem[address], sizeof(u128));
+    } else {
+        int length = 16 - velement;
 
-    for (int i = 0; i < length; i++) {
-        rsp->setVec8(vt, velement + i, rsp->memRead8(address + i));
+        for (int i = 0; i < length; i++) {
+            rsp->setVec8(vt, velement + i, rsp->memRead8(address + i));
+        }
     }
 }
 void RSP::lpv(RSP* rsp, uint32_t instruction) {

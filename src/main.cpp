@@ -62,6 +62,34 @@ int main(int argc, char **argv) {
     uint8_t xAxis = 0;
     uint8_t yAxis = 0;
 
+    std::unordered_map<uint32_t, JoypadButton> keyboardMap = {
+        {SDLK_E, BButton},
+        {SDLK_RETURN, Start},
+        {SDLK_LCTRL, ZButton},
+        {SDLK_SPACE, AButton},
+        {SDLK_UP, DpadUp},
+        {SDLK_DOWN, DpadDown},
+        {SDLK_LEFT, DpadLeft},
+        {SDLK_RIGHT, DpadRight},
+        {SDLK_1, LButton},
+        {SDLK_2, RButton},
+        {SDLK_I, UpCButton},
+        {SDLK_J, LeftCButton},
+        {SDLK_K, DownCButton},
+        {SDLK_L, RightCButton}
+    };
+    std::unordered_map<uint32_t, JoypadButton> buttonMap = {
+        {SDL_GAMEPAD_BUTTON_DPAD_DOWN, DpadDown},
+        {SDL_GAMEPAD_BUTTON_DPAD_UP, DpadUp},
+        {SDL_GAMEPAD_BUTTON_DPAD_LEFT, DpadLeft},
+        {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, DpadRight},
+        {SDL_GAMEPAD_BUTTON_EAST, AButton},
+        {SDL_GAMEPAD_BUTTON_SOUTH, BButton},
+        {SDL_GAMEPAD_BUTTON_START, Start},
+        {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, LButton},
+        {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, RButton}
+    };
+
     while (true) {
         while (!cpu.bus.rdp.frameFinished) {
             cpu.step();
@@ -77,126 +105,56 @@ int main(int argc, char **argv) {
                     exit(1);
                     break;
                 case SDL_EVENT_KEY_DOWN:
-                    switch (event.key.key) {
-                        case SDLK_G:
-                            cpu.debugOn = !cpu.debugOn;
-                            break;
-                        case SDLK_W:
-                            yAxis = (uint8_t)MAX_AXIS_VAL;
-                            break;
-                        case SDLK_A:
-                            xAxis = (uint8_t)-MAX_AXIS_VAL;
-                            break;
-                        case SDLK_S:
-                            yAxis = (uint8_t)-MAX_AXIS_VAL;
-                            break;
-                        case SDLK_D:
-                            xAxis = (uint8_t)MAX_AXIS_VAL;
-                            break;
-                        case SDLK_E:
-                            cpu.bus.updateButton(BButton, true);
-                            break;
-                        case SDLK_RETURN:
-                            cpu.bus.updateButton(Start, true);
-                            break;
-                        case SDLK_TAB:
-                            break;
-                        case SDLK_SPACE:
-                            cpu.bus.updateButton(AButton, true);
-                            break;
+                    if (keyboardMap.contains(event.key.key)) {
+                        cpu.bus.updateButton(keyboardMap[event.key.key], true);
+                    } else {
+                        switch (event.key.key) {
+                            case SDLK_G:
+                                cpu.debugOn = !cpu.debugOn;
+                                break;
+                            case SDLK_W:
+                                yAxis = (uint8_t)MAX_AXIS_VAL;
+                                break;
+                            case SDLK_A:
+                                xAxis = (uint8_t)-MAX_AXIS_VAL;
+                                break;
+                            case SDLK_S:
+                                yAxis = (uint8_t)-MAX_AXIS_VAL;
+                                break;
+                            case SDLK_D:
+                                xAxis = (uint8_t)MAX_AXIS_VAL;
+                                break;
+                        }
                     }
                     break;
                 case SDL_EVENT_KEY_UP:
-                    switch (event.key.key) {
-                        case SDLK_G:
-                            cpu.debugOn = !cpu.debugOn;
-                            break;
-                        case SDLK_W:
-                            yAxis = 0;
-
-                            break;
-                        case SDLK_A:
-                            xAxis = 0;
-                            break;
-                        case SDLK_S:
-                            yAxis = 0;
-                            break;
-                        case SDLK_D:
-                            xAxis = 0;
-                            break;
-                        case SDLK_E:
-                            cpu.bus.updateButton(BButton, false);
-                            break;
-                        case SDLK_RETURN:
-                            cpu.bus.updateButton(Start, false);
-                            break;
-                        case SDLK_TAB:
-                            break;
-                        case SDLK_SPACE:
-                            cpu.bus.updateButton(AButton, false);
-                            break;
+                    if (keyboardMap.contains(event.key.key)) {
+                        cpu.bus.updateButton(keyboardMap[event.key.key], false);
+                    } else {
+                        switch (event.key.key) {
+                            case SDLK_W:
+                                yAxis = 0;
+                                break;
+                            case SDLK_A:
+                                xAxis = 0;
+                                break;
+                            case SDLK_S:
+                                yAxis = 0;
+                                break;
+                            case SDLK_D:
+                                xAxis = 0;
+                                break;
+                        }
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-                    switch (event.gbutton.button) {
-                        case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-                            cpu.bus.updateButton(DpadDown, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-                            cpu.bus.updateButton(DpadLeft, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_DPAD_UP:
-                            cpu.bus.updateButton(DpadUp, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-                            cpu.bus.updateButton(DpadRight, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_EAST:
-                            cpu.bus.updateButton(AButton, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_SOUTH:
-                            cpu.bus.updateButton(BButton, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_START:
-                            cpu.bus.updateButton(Start, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
-                            cpu.bus.updateButton(LButton, true);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
-                            cpu.bus.updateButton(RButton, true);
-                            break;
+                    if (buttonMap.contains(event.gbutton.button)) {
+                        cpu.bus.updateButton(buttonMap[event.gbutton.button], true);
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_BUTTON_UP:
-                    switch (event.gbutton.button) {
-                        case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-                            cpu.bus.updateButton(DpadDown, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-                            cpu.bus.updateButton(DpadLeft, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_DPAD_UP:
-                            cpu.bus.updateButton(DpadUp, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-                            cpu.bus.updateButton(DpadRight, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_EAST:
-                            cpu.bus.updateButton(AButton, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_SOUTH:
-                            cpu.bus.updateButton(BButton, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_START:
-                            cpu.bus.updateButton(Start, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
-                            cpu.bus.updateButton(LButton, false);
-                            break;
-                        case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
-                            cpu.bus.updateButton(RButton, false);
-                            break;
+                    if (buttonMap.contains(event.gbutton.button)) {
+                        cpu.bus.updateButton(buttonMap[event.gbutton.button], true);
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_ADDED:
@@ -208,6 +166,7 @@ int main(int argc, char **argv) {
         if (gamepad != nullptr) {
             double xAxisD = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
             double yAxisD = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+
             double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
             xAxis = std::abs(xAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisD) : 0;

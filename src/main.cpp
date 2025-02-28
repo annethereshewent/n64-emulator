@@ -3,6 +3,7 @@
 #include <iterator>
 #include <SDL3/SDL.h>
 #include "interface.cpp"
+#include "controller/Controller.hpp"
 
 int main(int argc, char **argv) {
     CPU cpu;
@@ -60,8 +61,64 @@ int main(int argc, char **argv) {
                         case SDLK_G:
                             cpu.debugOn = !cpu.debugOn;
                             break;
+                        case SDLK_W:
+                            cpu.bus.updateAxis(YAxis, MAX_AXIS_VAL);
+                            break;
+                        case SDLK_A:
+                            cpu.bus.updateAxis(XAxis, -MAX_AXIS_VAL);
+                            break;
+                        case SDLK_S:
+                            cpu.bus.updateAxis(YAxis, -MAX_AXIS_VAL);
+                            break;
+                        case SDLK_D:
+                            cpu.bus.updateAxis(XAxis, MAX_AXIS_VAL);
+                            break;
+                        case SDLK_E:
+                            cpu.bus.updateButton(BButton, true);
+                            break;
+                        case SDLK_RETURN:
+                            cpu.bus.updateButton(Start, true);
+                            break;
+                        case SDLK_TAB:
+                            break;
+                        case SDLK_SPACE:
+                            cpu.bus.updateButton(AButton, true);
+                            break;
                     }
                     break;
+                case SDL_EVENT_KEY_UP:
+                    switch (event.key.key) {
+                        case SDLK_G:
+                            cpu.debugOn = !cpu.debugOn;
+                            break;
+                        case SDLK_W:
+                            cpu.bus.updateAxis(YAxis, 0);
+                            break;
+                        case SDLK_A:
+                            cpu.bus.updateAxis(XAxis, 0);
+                            break;
+                        case SDLK_S:
+                            cpu.bus.updateAxis(YAxis, 0);
+                            break;
+                        case SDLK_D:
+                            cpu.bus.updateAxis(XAxis, 0);
+                        case SDLK_E:
+                            cpu.bus.updateButton(BButton, false);
+                            break;
+                        case SDLK_RETURN:
+                            cpu.bus.updateButton(Start, false);
+                            break;
+                        case SDLK_TAB:
+                            break;
+                        case SDLK_SPACE:
+                            cpu.bus.updateButton(AButton, false);
+                            break;
+                    }
+                    break;
+                case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+
+                    break;
+
             }
         }
     }

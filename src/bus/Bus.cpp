@@ -1035,3 +1035,25 @@ void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {
         std::println("couldn't put samples into stream: {}", SDL_GetError());
     }
 }
+
+void Bus::updateButton(JoypadButton button, bool state) {
+    if (state) {
+        input |= 1 << (uint16_t)button;
+    } else {
+        input &= ~(1 << (uint16_t)button);
+    }
+}
+
+void Bus::updateAxis(JoypadAxis axis, double value) {
+    int8_t val = (int8_t)std::round(value);
+    switch (axis) {
+        case XAxis:
+            input &= 0xff00ffff;
+            input |= val << 16;
+            break;
+        case YAxis:
+            input &= 0x00ffffff;
+            input |= val << 24;
+            break;
+    }
+}

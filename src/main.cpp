@@ -159,18 +159,39 @@ int main(int argc, char **argv) {
                     break;
                 case SDL_EVENT_GAMEPAD_AXIS_MOTION:
                     if (gamepad != nullptr) {
-                        double xAxisD = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
-                        double yAxisD = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+                        double xAxisL = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
+                        double yAxisL = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+
+                        double xAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
+                        double yAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
 
                         double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
-                        xAxis = std::abs(xAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisD) : 0;
-                        yAxis = std::abs(yAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisD) : 0;
+                        xAxis = std::abs(xAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisL) : 0;
+                        yAxis = std::abs(yAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisL) : 0;
 
                         if (rightTrigger > 0x1000) {
                             cpu.bus.updateButton(ZButton, true);
                         } else {
                             cpu.bus.updateButton(ZButton, false);
+                        }
+
+                        if (xAxisR > 0x7000) {
+                            cpu.bus.updateButton(RightCButton, true);
+                        } else if (xAxisR < -0x7000) {
+                            cpu.bus.updateButton(LeftCButton, true);
+                        } else {
+                            cpu.bus.updateButton(LeftCButton, false);
+                            cpu.bus.updateButton(RightCButton, false);
+                        }
+
+                        if (yAxisR < -0x7000) {
+                            cpu.bus.updateButton(UpCButton, true);
+                        } else if (yAxisR > 0x7000) {
+                            cpu.bus.updateButton(DownCButton, true);
+                        } else {
+                            cpu.bus.updateButton(UpCButton, false);
+                            cpu.bus.updateButton(DownCButton, false);
                         }
                     }
                     break;

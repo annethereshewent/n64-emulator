@@ -154,28 +154,29 @@ int main(int argc, char **argv) {
                     break;
                 case SDL_EVENT_GAMEPAD_BUTTON_UP:
                     if (buttonMap.contains(event.gbutton.button)) {
-                        cpu.bus.updateButton(buttonMap[event.gbutton.button], true);
+                        cpu.bus.updateButton(buttonMap[event.gbutton.button], false);
+                    }
+                    break;
+                case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+                    if (gamepad != nullptr) {
+                        double xAxisD = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
+                        double yAxisD = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+
+                        double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+
+                        xAxis = std::abs(xAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisD) : 0;
+                        yAxis = std::abs(yAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisD) : 0;
+
+                        if (rightTrigger > 0x1000) {
+                            cpu.bus.updateButton(ZButton, true);
+                        } else {
+                            cpu.bus.updateButton(ZButton, false);
+                        }
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_ADDED:
                     gamepad = findController();
                     break;
-            }
-        }
-
-        if (gamepad != nullptr) {
-            double xAxisD = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
-            double yAxisD = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
-
-            double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
-
-            xAxis = std::abs(xAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisD) : 0;
-            yAxis = std::abs(yAxisD) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisD) : 0;
-
-            if (rightTrigger > 0x1000) {
-                cpu.bus.updateButton(ZButton, true);
-            } else {
-                cpu.bus.updateButton(ZButton, false);
             }
         }
 

@@ -7,7 +7,7 @@
 #include "video_interface/VideoInterface.hpp"
 #include "audio_interface/AudioInterface.hpp"
 #include "serial_interface/SerialInterface.hpp"
-#include "rdp/RDP.hpp"
+#include "rdp/RDPInterface.hpp"
 #include "pif/PIF.hpp"
 #include "rdram_interface/RDInterface.hpp"
 #include "mips_interface/MIPSInterface.hpp"
@@ -20,19 +20,20 @@ const uint32_t SI_INTERRUPT_FLAG = 1 << 1;
 const uint32_t AI_INTERRUPT_FLAG = 1 << 2;
 const uint32_t VI_INTERRUPT_FLAG = 1 << 3;
 const uint32_t PI_INTERRUPT_FLAG = 1 << 4;
+const uint32_t DP_INTERRUPT_FLAG = 1 << 5;
 
 const uint32_t EEPROM_4K = 0x8000;
 const uint32_t EEPROM_16K = 0xc000;
 
 class Bus {
 public:
-    std::vector<uint8_t> rdram;
-    std::vector<bool> rdram9;
+    std::vector<uint8_t> rdram = {};
+    std::vector<bool> rdram9 = {};
 
     std::vector<TlbLut> tlbReadLut;
     std::vector<TlbLut> tlbWriteLut;
 
-    std::array<TlbEntry, 32> tlbEntries;
+    std::array<TlbEntry, 32> tlbEntries = {};
 
     std::vector<uint8_t> backup;
 
@@ -42,7 +43,7 @@ public:
     CPU& cpu;
     RSP rsp;
 
-    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this) {
+    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this) {
         rdram.resize(0x800000);
         rdram9.resize(0x800000);
         spdmem.resize(0x1000);
@@ -70,7 +71,7 @@ public:
     std::array<DCache, 512> dcache;
 
     PeripheralInterface peripheralInterface;
-    RDP rdp;
+    RDPInterface rdp;
     AudioInterface audioInterface;
     VideoInterface videoInterface;
 
@@ -117,8 +118,10 @@ public:
     void recalculateDelay();
     void finishPiDma();
 
-    static uint64_t translateAddress(uint64_t address);
+    uint64_t translateAddress(uint64_t address, bool isWrite = false);
+    uint64_t getTlbAddress(uint64_t address, bool isWrite = false);
 
+    static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);
     static void writeHalf(uint8_t* ptr, uint16_t value);
     static void writeDoubleWord(uint8_t* ptr, uint64_t value);

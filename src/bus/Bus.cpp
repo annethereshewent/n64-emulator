@@ -9,11 +9,12 @@
 #include "mips_interface/MIPSInterface.cpp"
 #include "peripheral_interface/PeripheralInterface.cpp"
 #include "serial_interface/SerialInterface.cpp"
-#include "rdp/RDP.cpp"
+#include "rdp/RDPInterface.cpp"
 #include "audio_interface/AudioInterface.cpp"
+#include "../interface.cpp"
 
 uint8_t Bus::memRead8(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
@@ -57,7 +58,7 @@ uint8_t Bus::memRead8(uint64_t address) {
 }
 
 uint16_t Bus::memRead16(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
@@ -73,7 +74,7 @@ uint16_t Bus::memRead16(uint64_t address) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                return std::byteswap(*(uint16_t*)&rdram[actualAddress]);
+                return *(uint16_t*)&rdram[actualAddress];
             }
             std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
@@ -82,7 +83,7 @@ uint16_t Bus::memRead16(uint64_t address) {
 }
 
 void Bus::memWrite8(uint64_t address, uint8_t value) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -120,7 +121,7 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
 }
 
 void Bus::memWrite16(uint64_t address, uint16_t value) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -137,7 +138,7 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                writeHalf(&rdram[actualAddress], value);
+                writeValueLE(&rdram[actualAddress], value, 2);
 
                 return;
             }
@@ -149,7 +150,7 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
 }
 
 void Bus::memWrite64(uint64_t address, uint64_t value) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -160,21 +161,21 @@ void Bus::memWrite64(uint64_t address, uint64_t value) {
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        writeDoubleWord(&rdram[actualAddress], value);
+        writeValueLE(&rdram[actualAddress], value, 8);
         return;
     }
 }
 
 uint64_t Bus::memRead64(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
-        return ((uint64_t)readDataCache(address) << 32) | (uint64_t)readDataCache(address + 4);
+        return ((uint64_t)readDataCache(actualAddress) << 32) | (uint64_t)readDataCache(actualAddress + 4);
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        return std::byteswap(*(uint64_t*)&rdram[actualAddress]);
+        return *(uint64_t*)&rdram[actualAddress];
     }
 
     std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
@@ -182,7 +183,7 @@ uint64_t Bus::memRead64(uint64_t address) {
 
 }
 uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = ignoreCache ? address : translateAddress(address);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -262,7 +263,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
                     cpu.cop0.addCycles(cycles);
                 }
 
-                return std::byteswap(*(uint32_t*)&rdram[actualAddress]);
+                return *(uint32_t*)&rdram[actualAddress];
             }
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
@@ -321,7 +322,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
 }
 
 void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t mask) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = ignoreCache ? address : translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
@@ -353,7 +354,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         case 0x4300000:
             mips.write(value);
-            // TODO: clear dp interrupt
+            if ((value >> 11 & 0b1) == 1) {
+                clearInterrupt(DP_INTERRUPT_FLAG);
+            }
             checkIrqs();
             cpu.checkIrqs();
             break;
@@ -363,27 +366,35 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             cpu.checkIrqs();
             break;
         case 0x4400000:
-            Bus::writeWithMask32(&videoInterface.ctrl.value, value & 0x1ffff, mask);
+            Bus::writeWithMask32(&videoInterface.ctrl.value, value, mask);
             videoInterface.ctrl.unused = 0;
+
+            rdp_set_vi_register(0, videoInterface.ctrl.value);
             break;
         case 0x4400004:
-            Bus::writeWithMask32(&videoInterface.origin, value & 0xffffff, mask);
+            Bus::writeWithMask32(&videoInterface.origin, value, mask);
+            rdp_set_vi_register(1, videoInterface.origin);
             break;
         case 0x4400008:
-            Bus::writeWithMask32(&videoInterface.width, value & 0xfff, mask);
+            Bus::writeWithMask32(&videoInterface.width, value, mask);
+            rdp_set_vi_register(2, videoInterface.width);
             break;
         case 0x440000c:
-            Bus::writeWithMask32(&videoInterface.vInterrupt, value & 0x3ff, mask);
+            Bus::writeWithMask32(&videoInterface.vInterrupt, value, mask);
+            rdp_set_vi_register(3, videoInterface.vInterrupt);
             break;
         case 0x4400010:
+            rdp_set_vi_register(4, value);
             clearInterrupt(VI_INTERRUPT_FLAG);
             break;
         case 0x4400014:
-            Bus::writeWithMask32(&videoInterface.viBurst, value & 0x3fffffff, mask);
+            Bus::writeWithMask32(&videoInterface.viBurst, value, mask);
+            rdp_set_vi_register(5, videoInterface.viBurst);
             break;
         case 0x4400018:
-            if (videoInterface.vTotal != (value & 0x3ff)) {
-                Bus::writeWithMask32(&videoInterface.vTotal, value & 0x3ff, mask);
+            if (videoInterface.vTotal != value) {
+                Bus::writeWithMask32(&videoInterface.vTotal, value, mask);
+
 
                 recalculateDelay();
 
@@ -393,34 +404,43 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
                     cpu.scheduler.addEvent(Event(VideoInterrupt, cpu.cop0.count + videoInterface.delay));
                 }
             }
+            rdp_set_vi_register(6, value);
             break;
         case 0x440001c:
-            if (videoInterface.hTotal != (value & 0xfff)) {
-                Bus::writeWithMask32(&videoInterface.hTotal, value & 0xfff, mask);
+            if (videoInterface.hTotal != value) {
+                Bus::writeWithMask32(&videoInterface.hTotal, value, mask);
+
                 recalculateDelay();
             }
+            rdp_set_vi_register(7, value);
             break;
         case 0x4400020:
-            Bus::writeWithMask32(&videoInterface.hTotalLeap.value, value & 0xfffffff, mask);
+            Bus::writeWithMask32(&videoInterface.hTotalLeap.value, value, mask);
             videoInterface.hTotalLeap.unused = 0;
+            rdp_set_vi_register(0x20 / 4, videoInterface.hTotalLeap.value);
             break;
         case 0x4400024:
-            Bus::writeWithMask32(&videoInterface.hVideo, value & 0x3ff, mask);
+            Bus::writeWithMask32(&videoInterface.hVideo, value, mask);
+            rdp_set_vi_register(0x24 / 4, videoInterface.hVideo);
             break;
         case 0x4400028:
-            Bus::writeWithMask32(&videoInterface.vVideo.value, value & 0x3ffffff, mask);
+            Bus::writeWithMask32(&videoInterface.vVideo.value, value, mask);
             videoInterface.vVideo.unused = 0;
+            rdp_set_vi_register(0x28 / 4, videoInterface.vVideo.value);
             break;
         case 0x440002c:
-            Bus::writeWithMask32(&videoInterface.vBurst, value & 0x3ffffff, mask);
+            Bus::writeWithMask32(&videoInterface.vBurst, value, mask);
+            rdp_set_vi_register(0x2c / 4, videoInterface.vBurst);
             break;
         case 0x4400030:
-            Bus::writeWithMask32(&videoInterface.xScale.value, value & 0xfffffff, mask);
+            Bus::writeWithMask32(&videoInterface.xScale.value, value, mask);
             videoInterface.xScale.unused = 0;
+            rdp_set_vi_register(0x30 / 4, videoInterface.xScale.value);
             break;
         case 0x4400034:
-            Bus::writeWithMask32(&videoInterface.yScale.value, value & 0x3ffffff, mask);
+            Bus::writeWithMask32(&videoInterface.yScale.value, value, mask);
             videoInterface.yScale.unused = 0;
+            rdp_set_vi_register(0x34 / 4, videoInterface.yScale.value);
             break;
         case 0x4500000:
             Bus::writeWithMask32(&audioInterface.dramAddress, value & 0xffffff, mask);
@@ -515,11 +535,12 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                uint32_t returnVal = std::byteswap(*(uint32_t*)&rdram[actualAddress]);
+                uint32_t returnVal = *(uint32_t*)&rdram[actualAddress];
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&rdram[actualAddress], returnVal);
+                // Bus::writeValueLE(&rdram[actualAddress], returnVal, 4);
+                memcpy(&rdram[actualAddress], &returnVal, sizeof(uint32_t));
 
                 return;
             }
@@ -530,7 +551,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&pif.ram[offset], returnVal);
+                returnVal = std::byteswap(returnVal);
+
+                // Bus::writeWord(&pif.ram[offset], returnVal);
+                memcpy(&pif.ram[offset], &returnVal, sizeof(uint32_t));
 
                 cpu.scheduler.addEvent(Event(PIFExecuteCommand, cpu.cop0.count + 3200));
 
@@ -545,7 +569,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&rsp.dmem[offset], returnVal);
+                returnVal = std::byteswap(returnVal);
+
+                memcpy(&rsp.dmem[offset], &returnVal, sizeof(uint32_t));
+
+                // Bus::writeWord(&rsp.dmem[offset], returnVal);
 
                 return;
             }
@@ -557,7 +585,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                Bus::writeWord(&rsp.imem[offset], returnVal);
+                // Bus::writeWord(&rsp.imem[offset], returnVal);
+                returnVal = std::byteswap(returnVal);
+
+                memcpy(&rsp.imem[offset], &returnVal, sizeof(uint32_t));
 
                 return;
             }
@@ -569,7 +600,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 }
 
 uint32_t Bus::readInstructionCache(uint64_t address) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = translateAddress(address);
 
     uint32_t lineIndex = ((actualAddress >> 5) & 0x1FF);
 
@@ -597,9 +628,7 @@ void Bus::fillInstructionCache(uint32_t lineIndex, uint64_t address) {
     }
 }
 
-uint32_t Bus::readDataCache(uint64_t address, bool ignoreCycles) {
-    uint64_t actualAddress = Bus::translateAddress(address);
-
+uint32_t Bus::readDataCache(uint64_t actualAddress, bool ignoreCycles) {
     uint32_t lineIndex = (actualAddress >> 4) & 0x1ff;
 
     if (!(dcacheHit(lineIndex, actualAddress))) {
@@ -616,8 +645,7 @@ uint32_t Bus::readDataCache(uint64_t address, bool ignoreCycles) {
     return dcache[lineIndex].words[(actualAddress >> 2) & 3];
 }
 
-void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
-    uint64_t actualAddress = Bus::translateAddress(address);
+void Bus::writeDataCache(uint64_t actualAddress, uint32_t value, int64_t mask) {
     uint32_t lineIndex = (actualAddress >> 4) & 0x1ff;
 
     if (!dcacheHit(lineIndex, actualAddress)) {
@@ -630,7 +658,7 @@ void Bus::writeDataCache(uint64_t address, uint32_t value, int64_t mask) {
     }
 
     uint32_t returnValue = value;
-    uint32_t oldValue = dcache[lineIndex].words[(address >> 2) & 3];
+    uint32_t oldValue = dcache[lineIndex].words[(actualAddress >> 2) & 3];
 
     if (mask != -1) {
         returnValue = (oldValue & ~mask) | (value & mask);
@@ -700,8 +728,26 @@ void Bus::dcacheWriteback(uint64_t line, bool ignoreCycles) {
     }
 }
 
-uint64_t Bus::translateAddress(uint64_t address) {
+uint64_t Bus::translateAddress(uint64_t address, bool isWrite) {
+    if ((address & 0xc0000000) != 0x80000000) {
+        return getTlbAddress(address, isWrite);
+    }
     return address & 0x1FFFFFFF;
+}
+
+uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
+    uint64_t actualAddress = address & 0xffffffff;
+
+    if (isWrite) {
+        if (tlbWriteLut[actualAddress >> 12].address != 0) {
+            return tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+        }
+    } else if (tlbReadLut[actualAddress >> 12].address != 0) {
+        return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+    }
+
+    std::println("invalid TLB address given");
+    exit(1);
 }
 
 void Bus::tlbWrite(uint32_t index) {
@@ -731,7 +777,7 @@ void Bus::tlbWrite(uint32_t index) {
 
     tlbEntries[index].mask |= tlbEntries[index].mask >> 1;
 
-    tlbEntries[index].vpn2 &= tlbEntries[index].mask;
+    tlbEntries[index].vpn2 &= ~tlbEntries[index].mask;
 
     tlbEntries[index].startEven = (tlbEntries[index].vpn2 << 13) & 0xffffffff;
     tlbEntries[index].endEven = tlbEntries[index].startEven + (tlbEntries[index].mask << 12) + 0xfff;
@@ -806,6 +852,13 @@ void Bus::tlbMap(uint32_t index) {
             tlbReadLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
             tlbReadLut[i >> 12].cached = entry.cEven != 2;
         }
+
+        if (entry.dEven != 0) {
+            for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+                tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
+                tlbWriteLut[i >> 12].cached = entry.cEven != 2;
+            }
+        }
     }
 
     if (entry.vOdd != 0 &&
@@ -816,6 +869,13 @@ void Bus::tlbMap(uint32_t index) {
         for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
             tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
             tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
+        }
+
+        if (entry.dOdd != 0) {
+            for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+                tlbReadLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
+                tlbReadLut[i >> 12].cached = entry.cOdd != 2;
+            }
         }
     }
 
@@ -871,9 +931,9 @@ void Bus::dmaWrite() {
     }
     for (int i = 0; i < length; i++) {
         if (currCartAddr + i >= cartridge.size()) {
-            rdram[currDramAddr + i] = 0;
+            rdram[(currDramAddr + i) ^ 3] = 0;
         } else {
-            rdram[currDramAddr + i] = cartridge[currCartAddr + i];
+            rdram[(currDramAddr + i) ^ 3] = cartridge[currCartAddr + i];
         }
     }
 
@@ -919,4 +979,12 @@ void Bus::writeWithMask32(uint32_t* oldVal, uint32_t newVal, uint32_t mask) {
     }
 
     *oldVal = returnVal;
+}
+
+void Bus::writeValueLE(uint8_t* ptr, uint32_t value, int size) {
+    for (int i = 0; i < size; i++) {
+        int shift = i * 8;
+
+        ptr[i] = (uint8_t)(value >> shift);
+    }
 }

@@ -6,19 +6,6 @@
 #include "CPU.hpp"
 #include <cmath>
 
-// gotten from https://stackoverflow.com/questions/11611787/convert-a-32-bits-to-float-value
-union convu32
-{
-    uint32_t u32; // here_write_bits
-    float    f32; // here_read_float
-};
-
-union convi32
-{
-    int32_t i32; // here_write_bits
-    float   f32; // here_read_float
-};
-
 void COP1::ldc1(CPU* cpu, uint32_t instruction) {
     if (!cpu->cop0.status.cu1) {
         cpu->cop0.cause = (11 << 2) | (1 << 28);
@@ -130,8 +117,14 @@ void COP1::cop1_b_instrs(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::cop1_d_instrs(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cop1_d_instrs\n";
-    exit(1);
+    if (!cpu->cop0.status.cu1) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+
+        cpu->enterException(true);
+        return;
+    }
+
+    cpu->cop1.dInstructions[instruction & 0x3f](cpu, instruction);
 }
 
 void COP1::cop1_l_instrs(CPU* cpu, uint32_t instruction) {
@@ -283,8 +276,16 @@ uint32_t COP1::readRegister(uint32_t index) {
 }
 
 void COP1::cvtDW(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtDW\n";
-    exit(1);
+    uint32_t index = CPU::getRd(instruction);
+
+    int32_t value = (int32_t)cpu->cop1.fgr32[index];
+
+    if (cpu->cop0.status.fr) {
+        value = (int32_t)cpu->cop1.fgr64[index];
+    }
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), (double)value);
+    cpu->cop0.addCycles(4);
 }
 
 void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
@@ -296,15 +297,7 @@ void COP1::cvtSW(CPU* cpu, uint32_t instruction) {
         value = (int32_t)cpu->cop1.fgr64[index];
     }
 
-    uint32_t dest = CPU::getFd(instruction);
-
-    int32_t destValue = ((union convi32){.f32 = (float)value}).i32;
-
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = destValue;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)destValue;
-    }
+    cpu->cop1.setFloat(CPU::getFd(instruction), (float)value);
 
     cpu->cop0.addCycles(4);
 }
@@ -313,31 +306,14 @@ void COP1::addS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    uint32_t op1;
-    uint32_t op2;
-
-    if (!cpu->cop0.status.fr) {
-        op1 = cpu->cop1.fgr32[rd];
-        op2 = cpu->cop1.fgr32[rt];
-    } else {
-        op1 = (uint32_t)cpu->cop1.fgr64[rd];
-        op2 = (uint32_t)cpu->cop1.fgr64[rt];
-    }
-
-    float float1 = ((union convu32){.u32 = op1}).f32;
-    float float2 = ((union convu32){.u32 = op2}).f32;
+    float float1 = cpu->cop1.getFloat(rd);
+    float float2 = cpu->cop1.getFloat(rt);
 
     float result = float1 + float2;
 
-    uint32_t returnVal = ((union convu32){.f32 = result }).u32;
-
     uint32_t dest = CPU::getFd(instruction);
 
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = returnVal;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
-    }
+    cpu->cop1.setFloat(dest, result);
 
     cpu->cop0.addCycles(2);
 }
@@ -345,31 +321,14 @@ void COP1::subS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    uint32_t op1;
-    uint32_t op2;
-
-    if (!cpu->cop0.status.fr) {
-        op1 = cpu->cop1.fgr32[rd];
-        op2 = cpu->cop1.fgr32[rt];
-    } else {
-        op1 = (uint32_t)cpu->cop1.fgr64[rd];
-        op2 = (uint32_t)cpu->cop1.fgr64[rt];
-    }
-
-    float float1 = ((union convu32){.u32 = op1}).f32;
-    float float2 = ((union convu32){.u32 = op2}).f32;
+    float float1 = cpu->cop1.getFloat(rd);
+    float float2 = cpu->cop1.getFloat(rt);
 
     float result = float1 - float2;
 
-    uint32_t returnVal = ((union convu32){.f32 = result }).u32;
-
     uint32_t dest = CPU::getFd(instruction);
 
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = returnVal;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
-    }
+    cpu->cop1.setFloat(dest, result);
 
     cpu->cop0.addCycles(2);
 }
@@ -377,31 +336,14 @@ void COP1::mulS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    uint32_t op1;
-    uint32_t op2;
-
-    if (!cpu->cop0.status.fr) {
-        op1 = cpu->cop1.fgr32[rd];
-        op2 = cpu->cop1.fgr32[rt];
-    } else {
-        op1 = (uint32_t)cpu->cop1.fgr64[rd];
-        op2 = (uint32_t)cpu->cop1.fgr64[rt];
-    }
-
-    float float1 = ((union convu32){.u32 = op1}).f32;
-    float float2 = ((union convu32){.u32 = op2}).f32;
+    float float1 = cpu->cop1.getFloat(rd);
+    float float2 = cpu->cop1.getFloat(rt);
 
     float result = float1 * float2;
 
-    uint32_t returnVal = ((convu32){.f32 = result }).u32;
-
     uint32_t dest = CPU::getFd(instruction);
 
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = returnVal;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
-    }
+    cpu->cop1.setFloat(dest, result);
 
     cpu->cop0.addCycles(4);
 }
@@ -409,52 +351,27 @@ void COP1::divS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    uint32_t numeratorBits;
-    uint32_t denominatorBits;
-
-    if (!cpu->cop0.status.fr) {
-        numeratorBits = cpu->cop1.fgr32[rd];
-        denominatorBits = cpu->cop1.fgr32[rt];
-    } else {
-        numeratorBits = (uint32_t)cpu->cop1.fgr64[rd];
-        denominatorBits = (uint32_t)cpu->cop1.fgr64[rt];
-    }
-
-    float numerator = ((union convu32){.u32 = numeratorBits}).f32;
-    float denominator = ((union convu32){.u32 = denominatorBits }).f32;
+    float numerator = cpu->cop1.getFloat(rd);
+    float denominator = cpu->cop1.getFloat(rt);
 
     float result = numerator / denominator;
-    uint32_t returnVal = ((union convu32){.f32 = result }).u32;
 
     uint32_t dest = CPU::getFd(instruction);
 
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = returnVal;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
-    }
+    cpu->cop1.setFloat(dest, result);
+
     cpu->cop0.addCycles(28);
 }
 void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
 
-    uint32_t bits = !cpu->cop0.status.fr ? cpu->cop1.fgr32[rd] : (uint32_t)cpu->cop1.fgr64[rd];
-
-    float value = ((union convu32){.u32 = bits }).f32;
+    float value = cpu->cop1.getFloat(rd);
 
     float result = sqrt(value);
 
-    uint32_t returnVal = ((union convu32){.f32 = result }).u32;
-
     uint32_t dest = CPU::getFd(instruction);
 
-    std::cout << "setting destination to " << std::hex << returnVal << "\n";
-
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = returnVal;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
-    }
+    cpu->cop1.setFloat(dest, result);
 
     cpu->cop0.addCycles(28);
 }
@@ -463,12 +380,17 @@ void COP1::absS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::movS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: movS\n";
-    exit(1);
+    double result = cpu->cop1.getDouble(CPU::getRd(instruction));
+    cpu->cop1.setDouble(CPU::getFd(instruction), result);
 }
 void COP1::negS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: negS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+
+    float value = cpu->cop1.getFloat(rd);
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    cpu->cop1.setFloat(dest, -value);
 }
 void COP1::roundLS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: roundLS\n";
@@ -505,15 +427,10 @@ void COP1::truncWS(CPU* cpu, uint32_t instruction) {
 
     float result = ((convi32){.i32 = truncated}).f32;
 
-    uint32_t returnVal = ((convu32){.f32 = result }).u32;
-
     uint32_t dest = CPU::getFd(instruction);
 
-    if (!cpu->cop0.status.fr) {
-        cpu->cop1.fgr32[dest] = returnVal;
-    } else {
-        cpu->cop1.fgr64[dest] = (uint64_t)returnVal;
-    }
+    cpu->cop1.setFloat(dest, result);
+
     cpu->cop0.addCycles(4);
 }
 void COP1::ceilWS(CPU* cpu, uint32_t instruction) {
@@ -525,8 +442,11 @@ void COP1::floorWS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cvtDS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtDS\n";
-    exit(1);
+    float result = cpu->cop1.getFloat(CPU::getRd(instruction));
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), (double)result);
+
+    cpu->cop0.addCycles(4);
 }
 void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
     switch (cpu->cop1.fcsr.roundingMode) {
@@ -561,8 +481,19 @@ void COP1::cUnS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cEqS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cEqS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    float float1 = cpu->cop1.getFloat(rd);
+    float float2 = cpu->cop1.getFloat(rt);
+
+    if (std::isnan(float1) || std::isnan(float2)) {
+        cpu->cop1.fcsr.condition = 0;
+    } else if (float1 == float2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
 }
 void COP1::cUeqS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cUeqS\n";
@@ -605,19 +536,8 @@ void COP1::cLtS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    uint32_t bits1;
-    uint32_t bits2;
-
-    if (!cpu->cop0.status.fr) {
-        bits1 = cpu->cop1.fgr32[rd];
-        bits2 = cpu->cop1.fgr32[rt];
-    } else {
-        bits1 = (uint32_t)cpu->cop1.fgr64[rd];
-        bits2 = (uint32_t)cpu->cop1.fgr64[rt];
-    }
-
-    float float1 = ((union convu32){.u32 = bits1}).f32;
-    float float2 = ((union convu32){.u32 = bits2}).f32;
+    float float1 = cpu->cop1.getFloat(rd);
+    float float2 = cpu->cop1.getFloat(rt);
 
     if (float1 < float2) {
         cpu->cop1.fcsr.condition = 1;
@@ -630,8 +550,17 @@ void COP1::cNgeS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::cLeS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cLeS\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    float float1 = cpu->cop1.getFloat(rd);
+    float float2 = cpu->cop1.getFloat(rt);
+
+    if (float1 <= float2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
 }
 void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: cNgtS\n";
@@ -640,7 +569,6 @@ void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
 
 void COP1::bc1f(CPU* cpu, uint32_t instruction) {
     if (!cpu->cop1.fcsr.condition) {
-        std::cout << "ayyyy elmo im branching out\n";
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
 
         cpu->fastForwardRelativeLoop((int16_t)amount);
@@ -650,14 +578,240 @@ void COP1::bc1f(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void COP1::bc1t(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bc1t\n";
-    exit(1);
+    if (cpu->cop1.fcsr.condition) {
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+    }
+    cpu->inDelaySlot = true;
 }
 void COP1::bc1fl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bc1fl\n";
-    exit(1);
+    if (!cpu->cop1.fcsr.condition) {
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+
+        cpu->inDelaySlot = true;
+    } else {
+        cpu->pc = cpu->nextPc;
+        cpu->discarded = true;
+    }
 }
 void COP1::bc1tl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: bc1tl\n";
+    exit(1);
+}
+
+void COP1::addD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    cpu->cop1.setDouble(dest, double1 + double2);
+
+    cpu->cop0.addCycles(2);
+}
+void COP1::subD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    cpu->cop1.setDouble(dest, double1 - double2);
+
+    cpu->cop0.addCycles(2);
+}
+void COP1::mulD(CPU* cpu, uint32_t instruction) {
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    double double1 = cpu->cop1.getDouble(rd);
+    double double2 = cpu->cop1.getDouble(rt);
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    double result = double1 * double2;
+
+    cpu->cop1.setDouble(dest, result);
+
+    cpu->cop0.addCycles(7);
+}
+void COP1::divD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), double1 / double2);
+
+    cpu->cop0.addCycles(57);
+}
+void COP1::sqrtD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: sqrtD\n";
+    exit(1);
+}
+void COP1::absD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: absD\n";
+    exit(1);
+}
+void COP1::movD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), double1);
+}
+void COP1::negD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: negD\n";
+    exit(1);
+}
+void COP1::roundLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: roundLD\n";
+    exit(1);
+}
+void COP1::truncLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: truncLD\n";
+    exit(1);
+}
+void COP1::ceilLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ceilD\n";
+    exit(1);
+}
+void COP1::floorLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: floorLD\n";
+    exit(1);
+}
+void COP1::roundWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: roundWD\n";
+    exit(1);
+}
+void COP1::truncWD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+
+    float result = ((union convi32){.i32 = (int32_t)double1}).f32;
+
+    cpu->cop1.setFloat(CPU::getFd(instruction), result);
+
+    cpu->cop0.addCycles(4);
+}
+void COP1::ceilWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: ceilWD\n";
+    exit(1);
+}
+void COP1::floorWD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: floorWD\n";
+    exit(1);
+}
+void COP1::cvtSD(CPU* cpu, uint32_t instruction) {
+    double result = cpu->cop1.getDouble(CPU::getRd(instruction));
+
+    cpu->cop1.setFloat(CPU::getFd(instruction), (float)result);
+}
+void COP1::cvtWD(CPU* cpu, uint32_t instruction) {
+    switch (cpu->cop1.fcsr.roundingMode) {
+        case 0:
+            COP1::roundWD(cpu, instruction);
+            break;
+        case 1:
+            COP1::truncWD(cpu, instruction);
+            break;
+        case 2:
+            COP1::ceilWD(cpu, instruction);
+            break;
+        case 3:
+            COP1::floorWD(cpu, instruction);
+            break;
+    }
+}
+void COP1::cvtLD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cvtLD\n";
+    exit(1);
+}
+void COP1::cFD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cFD\n";
+    exit(1);
+}
+void COP1::cUnD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUnD\n";
+    exit(1);
+}
+void COP1::cEqD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    if (std::isnan(double1) || std::isnan(double2)) {
+        cpu->cop1.fcsr.condition = 0;
+        return;
+    }
+
+    if (double1 == double2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
+}
+void COP1::cUeqD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUeqD\n";
+    exit(1);
+}
+void COP1::cOltD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cOltD\n";
+    exit(1);
+}
+void COP1::cUltD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUltD\n";
+    exit(1);
+}
+void COP1::cOleD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cOleD\n";
+    exit(1);
+}
+void COP1::cUleD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cUleD\n";
+    exit(1);
+}
+void COP1::cSfD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cSfD\n";
+    exit(1);
+}
+void COP1::cNgleD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgleD\n";
+    exit(1);
+}
+void COP1::cSeqD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cSeqD\n";
+    exit(1);
+}
+void COP1::cNglD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNglD\n";
+    exit(1);
+}
+void COP1::cLtD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    if (double1 < double2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
+}
+void COP1::cNgeD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgeD\n";
+    exit(1);
+}
+void COP1::cLeD(CPU* cpu, uint32_t instruction) {
+    double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
+    double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
+
+    if (double1 <= double2) {
+        cpu->cop1.fcsr.condition = 1;
+    } else {
+        cpu->cop1.fcsr.condition = 0;
+    }
+}
+void COP1::cNgtD(CPU* cpu, uint32_t instruction) {
+    std::cout << "TODO: cNgtD\n";
     exit(1);
 }

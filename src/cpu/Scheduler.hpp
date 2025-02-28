@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <queue>
 #include <vector>
-#include <unordered_map>
+#include <queue>
 
 enum EventType {
     VideoInterrupt,
@@ -13,7 +13,9 @@ enum EventType {
     PIDma,
     CompareCount,
     SIDma,
-    AIDma
+    AIDma,
+    RDPEvent,
+    NoEvent
 };
 
 class Event {
@@ -25,26 +27,23 @@ public:
         this->eventType = eventType;
         this->cycles = cycles;
     };
-};
 
-class UniqueQueue {
-private:
-    std::vector<Event> elements = {};
-    std::unordered_map<EventType, int> events;
-public:
-    void insert(Event event);
-    void remove(EventType eventType);
-    bool empty();
-    Event peek();
-    Event pop();
+    Event() {
+        this->eventType = NoEvent;
+        this->cycles = 0xffffffffffffffff;
+    };
 };
 
 class Scheduler {
 private:
-    UniqueQueue queue;
+    std::array<Event, 9> events = {};
+    uint64_t timeToNextEvent = 0xffffffffffffffff;
+    EventType nextEvent = NoEvent;
 public:
     void addEvent(Event event);
     void removeEvent(EventType eventType);
+
+    void updateNextEvent();
 
     bool hasNextEvent(uint64_t cycles);
 

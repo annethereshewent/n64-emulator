@@ -2,7 +2,7 @@
 
 #include "CPU.hpp"
 
-COP1::COP1() {
+COP1::COP1(CPU& cpu): cpu(cpu) {
     instructions = {
         COP1::mfc1,           // 0
         COP1::dmfc1,          // 1
@@ -112,6 +112,73 @@ COP1::COP1() {
         COP1::bc1fl,
         COP1::bc1tl
     };
+
+    dInstructions = {
+        COP1::addD,
+        COP1::subD,
+        COP1::mulD,
+        COP1::divD,
+        COP1::sqrtD,
+        COP1::absD,
+        COP1::movD,
+        COP1::negD,
+        COP1::roundLD,
+        COP1::truncLD,
+        COP1::ceilLD,
+        COP1::floorLD,
+        COP1::roundWD,
+        COP1::truncWD,
+        COP1::ceilWD,
+        COP1::floorWD,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::cvtSD,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::cvtWD,
+        COP1::cvtLD,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::cFD,
+        COP1::cUnD,
+        COP1::cEqD,
+        COP1::cUeqD,
+        COP1::cOltD,
+        COP1::cUltD,
+        COP1::cOleD,
+        COP1::cUleD,
+        COP1::cSfD,
+        COP1::cNgleD,
+        COP1::cSeqD,
+        COP1::cNglD,
+        COP1::cLtD,
+        COP1::cNgeD,
+        COP1::cLeD,
+        COP1::cNgtD,
+    };
 }
 
 void COP1::setCop1Registers(Cop0Status status) {
@@ -124,5 +191,44 @@ void COP1::setCop1Registers(Cop0Status status) {
         for (int i = 0; i < fgr64.size(); i += 2) {
             fgr64[i] = ((uint64_t)fgr32[i]) | ((uint64_t)fgr32[i + 1] << 32);
         }
+    }
+}
+
+float COP1::getFloat(uint32_t index) {
+    if (!cpu.cop0.status.fr) {
+        return ((union convu32){.u32 = fgr32[index]}).f32;
+    }
+
+    return ((union convu32){.u32 = (uint32_t)fgr64[index]}).f32;
+}
+
+void COP1::setFloat(uint32_t index, float value) {
+    uint32_t bits = ((union convu32){.f32 = value}).u32;
+
+    if (!cpu.cop0.status.fr) {
+        fgr32[index] = bits;
+    } else {
+        fgr64[index] = (uint64_t)bits;
+    }
+}
+
+double COP1::getDouble(uint32_t index) {
+    if (!cpu.cop0.status.fr) {
+        uint64_t bits = (uint64_t)fgr32[index] | ((uint64_t)fgr32[index + 1] << 32);
+
+        return ((union convu64){.u64 = bits}).f64;
+    }
+
+    return ((union convu64){.u64 = fgr64[index]}).f64;
+}
+
+void COP1::setDouble(uint32_t index, double value) {
+    uint64_t bits = ((union convu64){.f64 = value}).u64;
+
+    if (!cpu.cop0.status.fr) {
+        fgr32[index] = (uint32_t)bits;
+        fgr32[index + 1] = (uint32_t)(bits >> 32);
+    } else {
+        fgr64[index] = bits;
     }
 }

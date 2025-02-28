@@ -4,6 +4,7 @@
 #include "SPStatus.hpp"
 #include "SPLength.hpp"
 #include "../DmaDirection.hpp"
+#include <unordered_map>
 
 const uint32_t NUM_RSP_REGISTERS = 8;
 
@@ -44,6 +45,11 @@ public:
     uint32_t semaphore;
 
     Bus& bus;
+
+    std::array<uint16_t, 512> reciprocals = {};
+    std::array<uint16_t, 512> inverseSquareRoots = {};
+
+    std::unordered_map<uint32_t, std::vector<uint32_t>> found;
 
     RSP(Bus& bus) : bus(bus) {
         // gotten from https://github.com/hulkholden/n64js/blob/master/src/rsp.js#L147
@@ -295,18 +301,50 @@ public:
             RSP::vzero,
             RSP::vnop,
         };
+
+        reciprocals[0] = 0xffff;
+
+        for (uint64_t i = 1; i < reciprocals.size(); i++) {
+            uint64_t numerator = (uint64_t)1 << 34;
+            uint64_t denominator = i + 512;
+
+            uint64_t fraction = numerator / denominator;
+
+            reciprocals[i] = (uint16_t)((fraction + 1) >> 8);
+        }
+
+        for (uint64_t i = 0; i < inverseSquareRoots.size(); i++) {
+            uint64_t shift = 0;
+            if ((i & 1) == 1) {
+                shift = 1;
+            }
+
+            uint64_t a = (i + 512) >> shift;
+            uint64_t b = 1 << 17;
+            uint64_t c = (uint64_t)1 << 44;
+
+            while (a * (b + 1) * (b + 1) < c) {
+                b++;
+            }
+
+            inverseSquareRoots[i] = (uint16_t)(b >> 1);
+        }
     };
 
     std::array<uint32_t, 32> r = {};
     std::array<std::array<uint8_t, 16>, 32> vpr = {};
 
-    uint16_t vuVCO = 0;
-    uint16_t vuVCC = 0;
-    uint8_t vuVCE = 0;
+    uint16_t vco = 0;
+    uint16_t vcc = 0;
+    uint8_t vce = 0;
 
     bool divDp = false;
+    int16_t divIn = 0;
+    int16_t divOut = 0;
 
-    std::array<uint8_t, 64> vAcc = {};
+    std::array<uint8_t, 16> accLo = {};
+    std::array<uint8_t, 16> accMid = {};
+    std::array<uint8_t, 16> accHi = {};
 
     std::array<uint32_t, 16> vecSelect;
 
@@ -335,6 +373,8 @@ public:
     std::array<RSPInstruction, 12> swc2 = {};
     std::array<RSPInstruction, 64> vecInstructions = {};
 
+    static uint16_t getAccumulator16(uint8_t* ptr);
+
     uint8_t memRead8(uint32_t address);
     uint16_t memRead16(uint32_t address);
     // this one uses a ptr because need to read from either imem or dmem, other methods just read from dmem
@@ -356,19 +396,22 @@ public:
     void setVec8(uint8_t vt, uint8_t velement, uint8_t value);
     void setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value);
     uint8_t getVec8(uint8_t vt, uint8_t velement);
-    int16_t getVec16(uint8_t vt, uint8_t element);
+    uint16_t getVec16(uint8_t vt, uint8_t element);
     void setVec16(uint8_t vt, uint8_t element, uint16_t value);
 
     void updateAccumulatorMid32(int element, int32_t result, bool accumulate);
     void updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate);
     void updateAccumulatorLow32(int element, uint32_t result, bool accumulate);
-    void updateAccumulatorHigh32(int element, uint32_t result, bool accumulate);
+    void updateAccumulatorHigh32(int element, int32_t result, bool accumulate);
 
+    void setAccumulatorFromVector(uint8_t vd, uint8_t vt, uint8_t vte);
+
+    void setVecFromAccLow(uint8_t vd);
     void setVecFromAccSignedMid(uint8_t vd);
     void setVecFromAccSignedLow(uint8_t vd);
     void setVecFromAccMid(uint8_t vd);
 
-    void writeAcc32(int offset, uint32_t value);
+    void writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo);
 
     uint32_t readRegisters(uint32_t offset);
     void writeRegisters(uint32_t offset, uint32_t value);
@@ -506,12 +549,17 @@ public:
     static void vectorMultiplyPartialLow(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMultiplyPartialHigh(RSP* rsp, uint32_t instruction, bool accumulate);
     static void vectorMulPartialMidM(RSP* rsp, uint32_t instruction, bool accumulate);
+    static void vectorMultiplyPartialMidN(RSP* rsp, uint32_t instruction, bool accumulate);
+    static void vectorLogicalOp(RSP* rsp, uint32_t instruction, auto fn);
+    static void vectorCalculateReciprocal(RSP* rsp, uint32_t instruction, bool useDp, bool inverseSquareRoot);
 
-    static uint32_t getVOffset(uint32_t instruction);
+    static void vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction);
+
+    static int32_t getVOffset(uint32_t instruction);
     static uint8_t getVElement(uint32_t instruction);
     static uint8_t getVt(uint32_t instruction);
     static uint8_t getVs(uint32_t instruction);
     static uint8_t getVte(uint32_t instruction);
     static uint8_t getVd(uint32_t instruction);
-
+    static uint8_t getDe(uint32_t instruction);
 };

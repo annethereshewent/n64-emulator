@@ -6,6 +6,7 @@
 #include "CPU.hpp"
 
 typedef unsigned __int128 u128;
+typedef __int128 i128;
 
 void CPU::set(int i, uint64_t val) {
     if (i != 0) {
@@ -157,7 +158,7 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[base] + offset;
 
-    uint64_t actualAddress = Bus::translateAddress(address);
+    uint64_t actualAddress = cpu->bus.translateAddress(address);
 
     switch (cacheOp) {
         case 0x0: {
@@ -204,6 +205,16 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             }
             break;
         }
+        case 0x15: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            if (cpu->bus.dcacheHit(line, actualAddress)) {
+                cpu->bus.dcacheWriteback(line);
+
+                cpu->bus.dcache[line].valid = false;
+            }
+            break;
+        }
         case 0x19: {
             uint64_t line = (actualAddress >> 4) & 0x1ff;
 
@@ -220,12 +231,10 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
     }
 }
 void CPU::daddi(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: daddi\n";
-    exit(1);
+    CPU::daddiu(cpu, instruction);
 }
 void CPU::daddiu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: daddiu\n";
-    exit(1);
+    cpu->r[getRt(instruction)] = cpu->r[getRs(instruction)] + getSignedImmediate(instruction);
 }
 void CPU::j(CPU* cpu, uint32_t instruction) {
     uint32_t offset = (instruction & 0x3ffffff) << 2;
@@ -645,8 +654,18 @@ void CPU::dmultu(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(7);
 }
 void CPU::ddiv(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ddiv\n";
-    exit(1);
+    int64_t numerator = (int64_t)cpu->r[getRs(instruction)];
+    int64_t denominator = (int64_t)cpu->r[getRt(instruction)];
+
+    if (denominator != 0) {
+        cpu->lo = (uint64_t)(numerator / denominator);
+        cpu->hi = (uint64_t)(numerator % denominator);
+    } else {
+        cpu->lo = numerator < 0 ? 1 : 0xffffffffffffffff;
+        cpu->hi = numerator;
+    }
+
+    cpu->cop0.addCycles(68);
 }
 void CPU::ddivu(CPU* cpu, uint32_t instruction) {
     uint64_t numerator = cpu->r[getRs(instruction)];

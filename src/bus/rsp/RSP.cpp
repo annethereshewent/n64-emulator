@@ -3,6 +3,7 @@
 #include "RSP.hpp"
 #include <iostream>
 #include "RSPInstructions.cpp"
+#include "../../util/VectorUtils.cpp"
 
 void RSP::handleDma(SPDma dma) {
     uint32_t length = dma.length.length + 1;
@@ -25,7 +26,7 @@ void RSP::handleDma(SPDma dma) {
 
                 uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
 
-                Bus::writeWord(ramPtr, value);
+                memcpy(ramPtr, &value, sizeof(uint32_t));
 
                 memAddress += 4;
                 dramAddress += 4;
@@ -40,7 +41,7 @@ void RSP::handleDma(SPDma dma) {
 
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
 
-                Bus::writeWord(&bus.rdram[dramAddress], value);
+                memcpy(&bus.rdram[dramAddress], &value, sizeof(uint32_t));
 
                 memAddress += 4;
                 dramAddress += 4;
@@ -82,9 +83,9 @@ void RSP::pushDma(DmaDirection direction) {
         fifo[0] = entry;
 
         status.dmaBusy = 1;
-    }
 
-    handleDma(fifo[0]);
+        handleDma(fifo[0]);
+    }
 }
 
 void RSP::updateStatus(uint32_t value) {
@@ -346,7 +347,7 @@ uint64_t RSP::runRsp() {
                     default:
                         if (((instruction >> 21) & 0x1f) > 15) {
                             instructionType = Vector;
-                            vecInstructions[instruction & 0xf](this, instruction);
+                            vecInstructions[instruction & 0x3f](this, instruction);
                         } else {
                             RSP::reserved(this, instruction);
                         }
@@ -409,12 +410,16 @@ uint64_t RSP::runRsp() {
 }
 
 void RSP::memWrite32(uint32_t address, uint32_t value) {
-    Bus::writeWord(&dmem[address & 0xfff], value);
+    // Bus::writeWord(&dmem[address & 0xfff], value);
+    uint32_t swapped = std::byteswap(value);
+    memcpy(&dmem[address & 0xfff], &swapped, sizeof(uint32_t));
 }
 
 
 void RSP::memWrite16(uint32_t address, uint16_t value) {
-    Bus::writeHalf(&dmem[address & 0xfff], value);
+    uint16_t swapped = std::byteswap(value);
+    memcpy(&dmem[address & 0xfff], &swapped, sizeof(uint16_t));
+    // Bus::writeHalf(&dmem[address & 0xfff], value);
 }
 
 uint32_t RSP::memRead32(uint8_t* ptr) {
@@ -445,8 +450,11 @@ void RSP::restartRsp() {
     startRsp();
 }
 
-uint32_t RSP::getVOffset(uint32_t instruction) {
-    return (int8_t)(int32_t)(uint32_t)(((instruction & 0x7f) << 1) >> 1);
+int32_t RSP::getVOffset(uint32_t instruction) {
+    int8_t voffset = (int8_t)(((instruction & 0x7f) << 1) & 0x80);
+    voffset = voffset | (instruction & 0x7f);
+
+    return (int32_t)voffset;
 }
 
 uint8_t RSP::getVElement(uint32_t instruction) {
@@ -465,6 +473,9 @@ uint8_t RSP::getVte(uint32_t instruction) {
 
 uint8_t RSP::getVd(uint32_t instruction) {
     return (uint8_t)((instruction >> 6) & 0x1f);
+}
+uint8_t RSP::getDe(uint32_t instruction) {
+    return (instruction >> 11) & 0x7;
 }
 
 uint8_t RSP::memRead8(uint32_t address) {
@@ -491,12 +502,14 @@ void RSP::setVec16UnalignedNoWrap(uint8_t vt, uint8_t velement, uint16_t value) 
     }
 }
 
-int16_t RSP::getVec16(uint8_t vt, uint8_t element) {
+uint16_t RSP::getVec16(uint8_t vt, uint8_t element) {
     return std::byteswap(*(uint16_t*)&vpr[vt][element * 2]);
 }
 
 void RSP::setVec16(uint8_t vt, uint8_t element, uint16_t value) {
-    Bus::writeHalf(&vpr[vt][element * 2], value);
+    // Bus::writeHalf(&vpr[vt][element * 2], value);
+    uint16_t byteswapped = std::byteswap(value);
+    memcpy(&vpr[vt][element * 2], &byteswapped, sizeof(uint16_t));
 }
 
 void RSP::updateAccumulatorMid32(int element, int32_t result, bool accumulate) {
@@ -507,19 +520,19 @@ void RSP::updateAccumulatorMid32(int element, int32_t result, bool accumulate) {
 
 void RSP::updateAccumulatorHiLo(int element, int32_t v1, int32_t result, bool accumulate) {
     if (accumulate) {
-        int32_t x1 = *(int32_t*)&vAcc[(element * 2 + 1) * 4];
-        int32_t x0 = *(int32_t*)&vAcc[(element * 2) * 4];
+        int32_t x1 = (int16_t)(int32_t)getAccumulator16(&accHi[element * 2]);
+        uint32_t x0 = (uint32_t)getAccumulator16(&accLo[element * 2]) | (uint32_t)getAccumulator16(&accMid[element * 2]) << 16;
 
-        int32_t z0 = (int64_t)x0 + (int64_t)result;
+        int64_t z0 = (int64_t)x0 + (int64_t)result;
 
-        int64_t c = ((x0 & result) | ((x0 | result) & ~z0)) >> 31;
-        int32_t z1 = x1 + v1 + c;
+        uint64_t c = uint64_t((x0 & result) | ((x0 | result) & ~z0)) >> 31;
+        int64_t z1 = x1 + v1 + c;
 
-        writeAcc32((element * 2 + 1) * 4, (uint32_t)((z1 << 16) >> 16));
-        writeAcc32((element * 2) * 4, (uint32_t)z0);
+        writeAcc32(&accHi[element * 2], element * 2, (uint32_t)((z1 << 16) >> 16), false);
+        writeAcc32(&accLo[element * 2], element * 2, (uint32_t)z0, true);
     } else {
-        writeAcc32((element * 2 + 1) * 4, v1);
-        writeAcc32((element * 2) * 4, result);
+        writeAcc32(&accHi[element * 2], element * 2, v1, false);
+        writeAcc32(&accLo[element * 2], element * 2, result, true);
     }
 }
 
@@ -527,54 +540,79 @@ void RSP::updateAccumulatorLow32(int element, uint32_t result, bool accumulate) 
     updateAccumulatorHiLo(element, 0, result, accumulate);
 }
 
-void RSP::updateAccumulatorHigh32(int element, uint32_t result, bool accumulate) {
+void RSP::updateAccumulatorHigh32(int element, int32_t result, bool accumulate) {
     updateAccumulatorHiLo(element, result >> 16, result << 16, accumulate);
 }
 
 
-void RSP::writeAcc32(int offset, uint32_t value) {
-    for (int i = 0; i < 4; i++) {
-        int shift = 8 * i;
-        vAcc[offset + i] = (uint8_t)(value >> shift);
+void RSP::writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo) {
+    ptr[1] = (uint8_t)value;
+    ptr[0] = (uint8_t)(value >> 8);
+
+    if (isLo) {
+        accMid[upperOffset + 1] = (uint8_t)(value >> 16);
+        accMid[upperOffset] = (uint8_t)(value >> 24);
     }
 }
 
 void RSP::setVecFromAccSignedMid(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
-        int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];
+        int32_t himid = (int32_t)getAccumulator16(&accMid[i * 2]) | (int32_t)((uint32_t)getAccumulator16(&accHi[i * 2]) << 16);
 
         int16_t result;
 
         if (himid >= 0) {
             result = (himid & 0xffff8000) ? 0x7fff : himid;
         } else {
-            result = (~himid & 0xffff8000) ? 0x8000 : himid;
+            result = ((~himid) & 0xffff8000) ? 0x8000 : himid;
         }
 
         setVec16(vd, i, (uint16_t)result);
     }
+}
+
+void RSP::setVecFromAccLow(uint8_t vd) {
+    // for (int i = 0; i < 8; i++) {
+    //     int16_t lo = getAccumulator16(&accLo[i * 2]);
+    //     setVec16(vd, i, lo);
+    // }
+    memcpy(&vpr[vd], &accLo, sizeof(u128));
 }
 
 void RSP::setVecFromAccSignedLow(uint8_t vd) {
     for (int i = 0; i < 8; i++) {
-        int32_t himid = *(int32_t*)&vAcc[((i * 4) + 1) * 2];
-        int16_t lo = *(int16_t*)&vAcc[(i * 4) * 2];
+        int32_t himid = (int32_t)getAccumulator16(&accMid[i * 2]) | (int32_t)((uint32_t)getAccumulator16(&accHi[i * 2]) << 16);
+
+        int16_t lo = getAccumulator16(&accLo[i * 2]);
 
         int16_t result;
 
         if (himid >= 0) {
-            result = (himid & 0xffff8000) ? 0x7fff : lo;
+            result = (himid & 0xffff8000) ? 0xffff : lo;
         } else {
-            result = (~himid & 0xffff8000) ? 0x8000 : lo;
+            result = (~himid & 0xffff8000) ? 0 : lo;
         }
 
-        setVec16(vd, i, (uint16_t)result);
+        setVec16(vd, i, result);
     }
 }
 
 void RSP::setVecFromAccMid(uint8_t vd) {
-    for (int i = 0; i < 8; i++) {
-        int16_t mid = *(int16_t*)&vAcc[(i * 4 + 1) * 2];
-        setVec16(vd, i, (uint16_t)mid);
+    // for (int i = 0; i < 8; i++) {
+    //     int16_t mid = getAccumulator16(&accMid[i * 2]);
+    //     setVec16(vd, i, mid);
+    // }
+    memcpy(&vpr[vd], &accMid, sizeof(u128));
+}
+
+uint16_t RSP::getAccumulator16(uint8_t* ptr) {
+    return std::byteswap(*(uint16_t*)&ptr[0]);
+}
+
+void RSP::setAccumulatorFromVector(uint8_t vd, uint8_t vt, uint8_t vte) {
+    for (int el = 0, select = vecSelect[vte]; el < 8; el++, select >>= 4) {
+        uint16_t value = std::byteswap(getVec16(vt, select & 0x7));
+        memcpy(&accLo[el * 2], &value, sizeof(uint16_t));
+        // Bus::writeHalf(&accLo[el * 2], value);
     }
 }

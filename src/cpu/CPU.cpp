@@ -1,20 +1,23 @@
 
 #pragma once
-
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <print>
+#include <bit>
+#include <chrono>
+#include <thread>
 #include "CPU.hpp"
 #include "../bus/Bus.cpp"
 #include "CPUInstructions.cpp"
 #include "COP1Instructions.cpp"
 #include "COP0Instructions.cpp"
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <bit>
 #include "COP0.cpp"
 #include "COP1.cpp"
 #include "Scheduler.cpp"
 
-CPU::CPU(): bus(*this), cop0(*this) {
+
+CPU::CPU(): bus(*this), cop0(*this), cop1(*this) {
     r[0] = 0;
 
     pc = 0xBFC00000;
@@ -327,11 +330,10 @@ void CPU::loadRom(std::string filename) {
 }
 
 void CPU::step() {
-
     uint32_t opcode = (pc & 0x20000000) != 0 ? bus.memRead32(pc) : bus.readInstructionCache(pc);
     uint32_t command = opcode >> 26;
 
-    previousPc = Bus::translateAddress(pc);
+    previousPc = pc;
 
     if (!discarded) {
         pc = nextPc;
@@ -353,9 +355,12 @@ void CPU::step() {
     //     } else if (command == 16) {
     //         std::cout << "command is cop0\n";
     //         actualCommand = (opcode >> 21) & 0x1f;
+    //     } else if (command == 17) {
+    //         std::cout << "command is cop1\n";
+    //         actualCommand = (opcode >> 21) & 0x1f;
     //     }
-    //      std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
-    //     // std::cout << "pc = " << std::hex << Bus::translateAddress(previousPc) << "\n";
+    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
+    //     // std::cout << "pc = " << std::hex << previousPc << "\n";
     //     visited.insert(previousPc);
     // }
 
@@ -392,6 +397,8 @@ void CPU::step() {
 
         switch (event.eventType) {
             case VideoInterrupt:
+                rdp_update_screen();
+                bus.rdp.frameFinished = true;
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
@@ -445,6 +452,17 @@ void CPU::step() {
 
                 bus.audioInterface.popDma();
                 break;
+            case RDPEvent:
+                bus.rdp.status.gclk = 0;
+                bus.rdp.status.cmdBusy = 0;
+                bus.rdp.status.pipeBusy = 0;
+
+                bus.setInterrupt(DP_INTERRUPT_FLAG);
+                break;
+            case NoEvent:
+                std::println("should never happen");
+                exit(1);
+                break;
         }
     }
 }
@@ -459,6 +477,26 @@ void CPU::fastForwardRelativeLoop(int16_t amount) {
     if (amount == -4 && bus.memRead32(pc, false, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
+}
+
+void CPU::limitFps() {
+    auto p1 = std::chrono::system_clock::now();
+
+    uint64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        p1.time_since_epoch()).count();
+
+    if (timestamp != 0) {
+        uint64_t diff = time - timestamp;
+
+        if (diff < FPS_INTERVAL) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(FPS_INTERVAL - diff));
+        }
+    }
+
+    p1 = std::chrono::system_clock::now();
+
+    timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        p1.time_since_epoch()).count();;
 }
 
 uint32_t CPU::getImmediate(uint32_t instruction) {

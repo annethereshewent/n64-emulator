@@ -158,10 +158,10 @@ int main(int argc, char **argv) {
                         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
                             cpu.bus.updateButton(DpadRight, true);
                             break;
-                        case SDL_GAMEPAD_BUTTON_LABEL_A:
+                        case SDL_GAMEPAD_BUTTON_EAST:
                             cpu.bus.updateButton(AButton, true);
                             break;
-                        case SDL_GAMEPAD_BUTTON_LABEL_B:
+                        case SDL_GAMEPAD_BUTTON_SOUTH:
                             cpu.bus.updateButton(BButton, true);
                             break;
                         case SDL_GAMEPAD_BUTTON_START:
@@ -189,10 +189,10 @@ int main(int argc, char **argv) {
                         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
                             cpu.bus.updateButton(DpadRight, false);
                             break;
-                        case SDL_GAMEPAD_BUTTON_LABEL_A:
+                        case SDL_GAMEPAD_BUTTON_EAST:
                             cpu.bus.updateButton(AButton, false);
                             break;
-                        case SDL_GAMEPAD_BUTTON_LABEL_B:
+                        case SDL_GAMEPAD_BUTTON_SOUTH:
                             cpu.bus.updateButton(BButton, false);
                             break;
                         case SDL_GAMEPAD_BUTTON_START:

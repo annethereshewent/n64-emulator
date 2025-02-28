@@ -1021,7 +1021,7 @@ void Bus::restartAudio() {
 }
 
 void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {
-    int16_t samples[8192];
+    int16_t samples[length / 2];
 
     for (int i = 0; i < length / 2; i++) {
         if ((i & 1) == 0) {

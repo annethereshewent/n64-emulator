@@ -2,6 +2,7 @@
 #include <cstdint>
 
 const int8_t MAX_AXIS_VAL = 85;
+const double AXIS_DIVISOR = 385.5;
 
 enum JoypadButton {
     DpadRight,

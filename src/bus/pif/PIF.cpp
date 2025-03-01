@@ -118,13 +118,24 @@ void PIF::processCartridge(Bus& bus) {
     switch (command) {
         case 0:
         case 0xff: {
-            if (bus.saveType != -1) {
-                ram[channels[CART_CHANNEL].rxBuf] = (uint8_t)bus.saveType;
-                ram[channels[CART_CHANNEL].rxBuf + 1] = (uint8_t)(bus.saveType >> 8);
-                ram[channels[CART_CHANNEL].rxBuf + 2] = 0;
-            } else {
-                ram[channels[CART_CHANNEL].rxBuf] |= 0x80;
+            uint16_t saveType;
+
+            switch (bus.saveType) {
+                case Eeprom16k:
+                    saveType = EEPROM_16K;
+                    break;
+                case Eeprom4k:
+                    saveType = EEPROM_4K;
+                    break;
+                default:
+                    ram[channels[CART_CHANNEL].rx] |= 0x80;
+                    return;
+                    break;
             }
+
+            ram[channels[CART_CHANNEL].rxBuf] = (uint8_t)bus.saveType;
+            ram[channels[CART_CHANNEL].rxBuf + 1] = (uint8_t)(bus.saveType >> 8);
+            ram[channels[CART_CHANNEL].rxBuf + 2] = 0;
             break;
         }
         case 4:
@@ -187,13 +198,13 @@ void PIF::readEeprom(Bus& bus) {
 
     uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;
 
-    memcpy(&ram[channels[CART_CHANNEL].rxBuf], &bus.backup[address], 8);
+    memcpy(&ram[channels[CART_CHANNEL].rxBuf], &bus.eeprom[address], 8);
 }
 
 void PIF::formatEeprom(Bus& bus) {
-    if (bus.backup.size() == 0) {
-        bus.backup.resize(0x800);
-        std::fill(bus.backup.begin(), bus.backup.end(), 0xff);
+    if (bus.eeprom.size() == 0) {
+        bus.eeprom.resize(0x800);
+        std::fill(bus.eeprom.begin(), bus.eeprom.end(), 0xff);
     }
 }
 
@@ -202,7 +213,7 @@ void PIF::writeEeprom(Bus& bus) {
 
     uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;
 
-    memcpy(&bus.backup[address], &ram[channels[CART_CHANNEL].txBuf + 2], 8);
+    memcpy(&bus.eeprom[address], &ram[channels[CART_CHANNEL].txBuf + 2], 8);
 
     ram[channels[CART_CHANNEL].rxBuf] = 0;
 }

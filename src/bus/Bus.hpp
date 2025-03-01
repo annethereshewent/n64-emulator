@@ -27,6 +27,18 @@ const uint32_t DP_INTERRUPT_FLAG = 1 << 5;
 const uint32_t EEPROM_4K = 0x8000;
 const uint32_t EEPROM_16K = 0xc000;
 
+const uint32_t SRAM_SIZE = 0x8000;
+const uint32_t FLASH_SIZE = 0x20000;
+
+enum SaveType {
+    Sram,
+    Flash,
+    Eeprom4k,
+    Eeprom16k,
+    Mempak,
+    NoSave
+};
+
 class Bus {
 public:
     std::vector<uint8_t> rdram = {};
@@ -37,10 +49,12 @@ public:
 
     std::array<TlbEntry, 32> tlbEntries = {};
 
-    std::vector<uint8_t> backup;
+    std::vector<uint8_t> eeprom = {};
+    std::vector<uint8_t> sram = {};
+    std::vector<uint8_t> flash = {};
 
     char gameId[4];
-    int32_t saveType = -1;
+    SaveType saveType = Eeprom4k;
 
     uint32_t input = 0;
 
@@ -69,7 +83,7 @@ public:
 
     PIF pif;
 
-    std::vector<uint8_t> cartridge;
+    std::vector<uint8_t> cartridge = {};
 
     std::array<ICache, 512> icache;
     std::array<DCache, 512> dcache;

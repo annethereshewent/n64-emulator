@@ -7,6 +7,7 @@
 #include <bit>
 #include <chrono>
 #include <thread>
+#include <string>
 #include "CPU.hpp"
 #include "../bus/Bus.cpp"
 #include "CPUInstructions.cpp"
@@ -15,7 +16,6 @@
 #include "COP0.cpp"
 #include "COP1.cpp"
 #include "Scheduler.cpp"
-
 
 CPU::CPU(): bus(*this), cop0(*this), cop1(*this) {
     r[0] = 0;
@@ -286,21 +286,19 @@ void CPU::loadRom(std::string filename) {
 
         switch (saveType) {
             case 0:
-                bus.saveType = -1;
+                bus.saveType = NoSave;
                 break;
             case 1:
-                bus.saveType = EEPROM_4K;
+                bus.saveType = Eeprom4k;
                 break;
             case 2:
-                bus.saveType = EEPROM_16K;
+                bus.saveType = Eeprom16k;
                 break;
             case 3:
-                bus.saveType = -1;
-                std::cout << "TODO: implement SRAM save type\n";
+                bus.saveType = Sram;
                 break;
             case 5:
-                bus.saveType = -1;
-                std::cout << "TODO: implement flash save type\n";
+                bus.saveType = Flash;
                 break;
             default:
                 std::cout << "unknown save type detected: " << std::dec << saveType << "\n";
@@ -308,8 +306,63 @@ void CPU::loadRom(std::string filename) {
                 break;
         }
     } else {
-        // TODO: actually determine this
-        bus.saveType = EEPROM_4K;
+        std::array<std::string, 23> eeprom16KSaves = {
+            "NB7",
+            "NGT",
+            "NFU",
+            "NCW",
+            "NCZ",
+            "ND6",
+            "NDO",
+            "ND2",
+            "N3D",
+            "NMX",
+            "NGC",
+            "NIM",
+            "NNB",
+            "NMV",
+            "NM8",
+            "NEV",
+            "NPP",
+            "NUB",
+            "NPD",
+            "NRZ",
+            "NR7",
+            "NEP",
+            "NYS"
+        };
+
+        std::array<std::string, 19> flashSaves = {
+            "NCC",
+            "NDA",
+            "NAF",
+            "NJF",
+            "NKJ",
+            "NZS",
+            "NM6",
+            "NCK",
+            "NMQ",
+            "NPN",
+            "NPF",
+            "NPO",
+            "CP2",
+            "NP3",
+            "NRH",
+            "NSQ",
+            "NT9",
+            "NW4",
+            "NDP"
+        };
+
+        if (std::find(eeprom16KSaves.begin(), eeprom16KSaves.end(), bus.gameId) != eeprom16KSaves.end()) {
+            bus.saveType = Eeprom16k;
+        } else if (std::find(flashSaves.begin(), flashSaves.end(), bus.gameId) != flashSaves.end()) {
+            bus.saveType = Flash;
+        } else if (strcmp(bus.gameId, "NPQ") == 0) {
+            bus.saveType = NoSave;
+        } else {
+            bus.saveType = Eeprom4k;
+        }
     }
 }
 

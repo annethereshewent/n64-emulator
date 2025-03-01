@@ -51,8 +51,6 @@ public:
 
     void step();
 
-    void loadRom(std::string filename);
-
     void checkIrqs(bool usePreviousPc = true);
     void enterException(bool usePreviousPc = false);
 

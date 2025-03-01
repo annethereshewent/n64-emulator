@@ -139,6 +139,7 @@ void PIF::processCartridge(Bus& bus) {
             break;
         }
         case 4:
+            std::println("reading eeprom.");
             readEeprom(bus);
             break;
         case 5:
@@ -194,26 +195,23 @@ void PIF::processController(int channel, Bus& bus) {
 }
 
 void PIF::readEeprom(Bus& bus) {
-    formatEeprom(bus);
+    std::println("wtf it should be going in here");
+    bus.formatEeprom();
 
     uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;
 
     memcpy(&ram[channels[CART_CHANNEL].rxBuf], &bus.eeprom[address], 8);
 }
 
-void PIF::formatEeprom(Bus& bus) {
-    if (bus.eeprom.size() == 0) {
-        bus.eeprom.resize(0x800);
-        std::fill(bus.eeprom.begin(), bus.eeprom.end(), 0xff);
-    }
-}
-
 void PIF::writeEeprom(Bus& bus) {
-    formatEeprom(bus);
+    bus.formatEeprom();
 
     uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;
 
     memcpy(&bus.eeprom[address], &ram[channels[CART_CHANNEL].txBuf + 2], 8);
 
     ram[channels[CART_CHANNEL].rxBuf] = 0;
+
+    std::println("hello world!");
+    bus.saveDirty = true;
 }

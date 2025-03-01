@@ -16,6 +16,8 @@
 #include "cache/DCache.hpp"
 #include "tlb/TlbEntry.hpp"
 #include "../controller/Controller.hpp"
+#include <iostream>
+#include <fstream>
 
 const uint32_t SP_INTERRUPT_FLAG = 1;
 const uint32_t SI_INTERRUPT_FLAG = 1 << 1;
@@ -52,6 +54,10 @@ public:
     std::vector<uint8_t> eeprom = {};
     std::vector<uint8_t> sram = {};
     std::vector<uint8_t> flash = {};
+
+    std::fstream* saveFile = nullptr;
+
+    bool saveDirty = false;
 
     char gameId[4];
     SaveType saveType = Eeprom4k;
@@ -108,6 +114,11 @@ public:
 
     uint32_t readDataCache(uint64_t address, bool ignoreCycles = false);
     uint32_t readInstructionCache(uint64_t address);
+
+    void formatEeprom();
+    void loadRom(std::string filename);
+    void openSave(std::string saveName);
+    void writeSave();
 
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <regex>
 #include "cpu/CPU.cpp"
 #include <iterator>
 #include <SDL3/SDL.h>
@@ -144,7 +145,6 @@ int main(int argc, char **argv) {
         cpu.limitFps();
 
         if (cpu.bus.saveDirty) {
-            std::println("save is dirty, writing to file.");
             cpu.bus.writeSave();
         }
 

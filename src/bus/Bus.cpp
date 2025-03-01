@@ -227,9 +227,8 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             return audioInterface.audioLength;
             break;
         case 0x450000c:
-            // TODO: implement this audio register
             cpu.cop0.addCycles(20);
-            return 0;
+            return audioInterface.status.value;
             break;
         case 0x4600010:
             cpu.cop0.addCycles(20);

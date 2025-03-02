@@ -910,8 +910,8 @@ void CPU::dsll32(CPU* cpu, uint32_t instruction) {
     cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shift;
 }
 void CPU::dsrl32(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsrl32\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction) + 32;
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] >> shift;
 }
 void CPU::dsra32(CPU* cpu, uint32_t instruction) {
     uint32_t shift = shiftAmount(instruction) + 32;

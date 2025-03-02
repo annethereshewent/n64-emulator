@@ -539,8 +539,12 @@ void CPU::srlv(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rt] >> shift);
 }
 void CPU::srav(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: srav\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+    uint32_t shift = cpu->r[rs] & 0x1f;
+
+    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((int64_t)cpu->r[rt] >> shift);
 }
 void CPU::jr(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
             uint64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
                 p1.time_since_epoch()).count();
 
-            if (currentTime - cpu.bus.timeSinceSaveWrite >= 1000) {
+            if (currentTime - cpu.bus.timeSinceSaveWrite >= 500) {
                 cpu.bus.writeSave();
             }
 

@@ -3,6 +3,7 @@
 #include "Bus.hpp"
 #include <iostream>
 #include <bit>
+#include <regex>
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
 #include "rsp/RSP.cpp"
@@ -627,6 +628,13 @@ void Bus::openSave(std::string saveName) {
                     sram.resize(fileSize);
                     saveFile.read(reinterpret_cast<char*>(sram.data()), fileSize);
                     break;
+                case NoSave:
+                    // do nothing
+                    break;
+                case Mempak:
+                    std::println("todo: mempak");
+                    exit(1);
+                    break;
             }
         } else {
             std::println("an error occurred while reading existing file.");
@@ -653,10 +661,44 @@ void Bus::writeSave() {
             case Sram:
                 saveFile.write((char*)&sram[0], sizeof(uint8_t) * sram.size());
                 break;
+            case NoSave:
+                // do nothing
+                break;
+            case Mempak:
+                std::println("todo: mempak");
+                exit(1);
+                break;
         }
     }
 
     timeSinceSaveWrite = 0;
+}
+
+std::string Bus::getSaveName(std::string filename) {
+    std::string saveName;
+    std::string extension;
+    switch (saveType) {
+        case Eeprom16k:
+        case Eeprom4k:
+            extension = ".eep";
+            break;
+        case Flash:
+            extension = ".fla";
+            break;
+        case Sram:
+            extension = ".sra";
+            break;
+        case NoSave:
+            return "";
+            break;
+        case Mempak:
+            extension = ".mem";
+            break;
+    }
+    saveName = std::regex_replace(filename, std::regex("\\.n64$|\\.z64$|\\.N64$|\\.Z64$"), extension);
+    saveName = std::regex_replace(saveName, std::regex(".*/"), "");
+
+    return saveName;
 }
 
 void Bus::formatEeprom() {

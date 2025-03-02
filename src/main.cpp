@@ -1,5 +1,4 @@
 #include <iostream>
-#include <regex>
 #include "cpu/CPU.cpp"
 #include <iterator>
 #include <SDL3/SDL.h>
@@ -46,8 +45,7 @@ int main(int argc, char **argv) {
     }
 
     cpu.bus.loadRom(argv[1]);
-    std::string saveName = std::regex_replace(argv[1], std::regex("\\.n64$|\\.z64$|\\.N64$|\\.Z64$"), ".sav");
-    saveName = std::regex_replace(saveName, std::regex(".*/"), "");
+    std::string saveName = cpu.bus.getSaveName(argv[1]);
 
     std::string basePath;
 
@@ -83,11 +81,7 @@ int main(int argc, char **argv) {
 
     saveName = savesDir + saveName;
 
-    std::println("saveName = {}", saveName);
-
     cpu.bus.openSave(saveName);
-
-    std::println("successfully opened save!");
 
     GFX_INFO gfxInfo;
 

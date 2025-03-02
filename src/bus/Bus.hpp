@@ -119,6 +119,7 @@ public:
     void loadRom(std::string filename);
     void openSave(std::string saveName);
     void writeSave();
+    std::string getSaveName(std::string filename);
 
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);

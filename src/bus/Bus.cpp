@@ -571,6 +571,32 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 return;
             }
+            if (actualAddress >= 0x13ff0000 && actualAddress <= 0x13ffffff) {
+                uint32_t offset = actualAddress & 0xffff;
+
+                if (offset == 0x14) {
+                    uint32_t length = mask != -1 ? value & mask : value;
+
+                    char result[length + 1];
+
+                    memcpy(&result, &consoleBuffer[0x20], length * sizeof(uint8_t));
+                    result[length] = 0;
+
+                    std::string output = result;
+
+                    std::print("{}", output);
+                } else {
+                    uint32_t returnVal = std::byteswap(*(uint32_t*)&consoleBuffer[offset]);
+
+                    Bus::writeWithMask32(&returnVal, value, mask);
+
+                    returnVal = std::byteswap(returnVal);
+
+                    memcpy(&consoleBuffer[offset], &returnVal, sizeof(uint32_t));
+                }
+
+                return;
+            }
             if (actualAddress >= 0x1FC007C0 && actualAddress <= 0x1FC007FF) {
                 uint32_t offset = actualAddress - 0x1fc007c0;
 

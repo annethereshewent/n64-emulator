@@ -46,8 +46,9 @@ public:
     std::vector<uint8_t> rdram = {};
     std::vector<bool> rdram9 = {};
 
-    std::vector<TlbLut> tlbReadLut;
-    std::vector<TlbLut> tlbWriteLut;
+    std::vector<TlbLut> tlbReadLut = {};
+    std::vector<TlbLut> tlbWriteLut = {};
+    std::vector<uint8_t> consoleBuffer = {};
 
     std::array<TlbEntry, 32> tlbEntries = {};
 
@@ -74,6 +75,8 @@ public:
 
         tlbReadLut.resize(0x100000);
         tlbWriteLut.resize(0x100000);
+
+        consoleBuffer.resize(0x10000);
 
         rsp.status.value = 1;
 

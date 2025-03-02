@@ -94,8 +94,18 @@ void CPU::bgtz(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void CPU::bgtzl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bgtzl\n";
-    exit(1);
+    if ((int64_t)cpu->r[getRs(instruction)] > 0) {
+        uint32_t immediate = getImmediate(instruction);
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+        cpu->inDelaySlot = true;
+    } else {
+        cpu->discarded = true;
+        cpu->pc = cpu->nextPc;
+    }
 }
 void CPU::blez(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
@@ -213,7 +223,7 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
             ICache* icachePtr = &cpu->bus.icache[line];
 
-            if (icachePtr[0].valid && (icachePtr[0].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff)) {
+            if (cpu->bus.icacheHit(line, actualAddress)) {
                 icachePtr[0].valid = false;
             }
             break;
@@ -390,6 +400,7 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
 
     uint64_t address = cpu->r[baseReg] + immediate;
+
     uint32_t value = cpu->bus.memRead32(address);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;

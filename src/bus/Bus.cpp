@@ -4,6 +4,7 @@
 #include <iostream>
 #include <bit>
 #include <regex>
+#include <openssl/sha.h>
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
 #include "rsp/RSP.cpp"
@@ -1337,4 +1338,47 @@ void Bus::updateAxis(uint8_t xAxis, uint8_t yAxis) {
     input &= 0xffff;
     input |= xAxis << 16;
     input |= yAxis << 24;
+}
+
+void Bus::setCic() {
+    std::string hash = generateHash();
+
+    std::transform(hash.begin(), hash.end(), hash.begin(),
+    [](unsigned char c){ return std::toupper(c); });
+
+    // wish c++ supported switch case with strings lmao (why doesn't it?)
+    uint8_t cicSeed = 0x3f;
+    if (hash == "B99F06C4802C2377E31E388435955EF3E99C618A6D55D24699D828EB1075F1EB") {
+        cicSeed = 0x3f;
+    } else if (hash == "61E88238552C356C23D19409FE5570EE6910419586BC6FC740F638F761ADC46E") {
+        cicSeed = 0x3f;
+    } else if (hash == "BF3620D30817007091EBE9BDDD1B88C23B8A0052170B3309CDE5B6B4238E45E7") {
+        cicSeed = 0x78;
+    } else if (hash == "04B7BC6717A9F0EB724CF927E74AD3876C381CBB280D841736FC5E55580B756B") {
+        cicSeed = 0x91;
+    } else if (hash == "36ADC40148AF56F0D78CD505EB6A90117D1FD6F11C6309E52ED36BC4C6BA340E") {
+        cicSeed = 0x85;
+    } else if (hash == "53C0088FB777870D0AF32F0251E964030E2E8B72E830C26042FD191169508C05") {
+        cicSeed = 0xdd;
+    }
+
+    pif.ram[0x26] = cicSeed;
+    pif.ram[0x26] = cicSeed;
+}
+
+// see: https://stackoverflow.com/questions/50489951/openssl-convert-binary-bytes-to-sha256-c
+std::string Bus::generateHash() {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    uint16_t size = 0x1000 - 0x40;
+    SHA256_Update(&sha256, &cartridge[0x40], sizeof(uint8_t) * size);
+    SHA256_Final(hash, &sha256);
+
+    std::stringstream ss;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+
+    return ss.str();
 }

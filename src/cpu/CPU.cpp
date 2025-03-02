@@ -334,7 +334,7 @@ void CPU::step() {
             case CompareCount:
                 cop0.pendingInterrupt = true;
 
-                scheduler.addEvent(Event(CompareCount, scheduler.getTimeToNext() + 0xffffffff));
+                scheduler.addEvent(Event(CompareCount, cop0.count + 0xffffffff));
 
                 checkIrqs();
                 break;

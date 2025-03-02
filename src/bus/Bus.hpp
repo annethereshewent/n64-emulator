@@ -164,6 +164,9 @@ public:
     uint64_t translateAddress(uint64_t address, bool isWrite = false);
     uint64_t getTlbAddress(uint64_t address, bool isWrite = false);
 
+    std::string generateHash();
+    void setCic();
+
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);
     static void writeHalf(uint8_t* ptr, uint16_t value);

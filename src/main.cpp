@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
     }
 
     cpu.bus.loadRom(argv[1]);
+    cpu.bus.setCic();
     std::string saveName = cpu.bus.getSaveName(argv[1]);
 
     std::string basePath;

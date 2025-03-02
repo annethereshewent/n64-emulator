@@ -6,13 +6,14 @@ set(CMAKE_CXX_FLAGS "-O3")
 
 find_package(PkgConfig REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(OpenSSL REQUIRED)
 pkg_check_modules(SDL3 REQUIRED sdl3)
 
 include_directories()
 
 add_executable(n64-plus ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 
-target_link_libraries(n64-plus ${SDL3_LIBRARIES} Vulkan::Vulkan)
+target_link_libraries(n64-plus ${SDL3_LIBRARIES} Vulkan::Vulkan OpenSSL::SSL)
 target_include_directories(
     n64-plus PUBLIC ${SDL3_INCLUDE_DIRS}
     PUBLIC ${VULKAN_INCLUDE_DIRS}

@@ -8,10 +8,7 @@ class Bus;
 const uint32_t CART_CHANNEL = 4;
 
 PIF::PIF() {
-    // TODO: actually calculate these. it's hardcoded to get super mario 64 booting for now.
     ram = {};
-    ram[0x26] = 0x3f;
-    ram[0x27] = 0x3f;
 }
 
 void PIF::executeCommand() {

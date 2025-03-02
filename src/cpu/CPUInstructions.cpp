@@ -414,12 +414,38 @@ void CPU::sd(CPU* cpu, uint32_t instruction) {
     cpu->bus.memWrite64(address, cpu->r[getRt(instruction)]);
 }
 void CPU::sdl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sdl\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = immediate + cpu->r[rs];
+
+    uint32_t shift = (address & 0x7) * 8;
+
+    uint32_t maskShift = 8 * (8 - (address & 0x7));
+
+    uint64_t mask = (address & 0x7) == 0 ? 0xffffffffffffffff : ((uint64_t)1 << maskShift) - 1;
+
+    uint64_t value = (cpu->r[rt] >> shift);
+
+    cpu->bus.memWrite64(address & ~0x7, value, mask);
 }
 void CPU::sdr(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sdr\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = immediate + cpu->r[rs];
+
+    uint32_t shift = 8 * (7 - (address & 0x7));
+
+    uint64_t mask = ~(((uint64_t)1 << shift) - 1);
+
+    uint32_t value = cpu->r[rt] << shift;
+
+    cpu->bus.memWrite64(address & ~0x7, value, mask);
 }
 void CPU::sh(CPU* cpu, uint32_t instruction) {
     uint16_t half = (uint16_t)cpu->r[getRt(instruction)];
@@ -476,7 +502,7 @@ void CPU::swl(CPU* cpu, uint32_t instruction) {
 
     uint32_t value = (uint32_t)(cpu->r[rt] >> shift);
 
-    cpu->bus.memWrite32(address & ~3, value, false, mask);
+    cpu->bus.memWrite32(address & ~0x3, value, false, mask);
 }
 void CPU::swr(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -598,8 +624,19 @@ void CPU::dsrav(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::mult(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mult\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    int64_t val1 = (int32_t)(int64_t)cpu->r[rs];
+    int64_t val2 = (int32_t)(int64_t)cpu->r[rt];
+
+    int64_t result = val1 * val2;
+
+    cpu->lo = (int32_t)(int64_t)(uint64_t)result;
+
+    cpu->hi = (int32_t)(int64_t)(uint64_t)(result >> 32);
+
+    cpu->cop0.addCycles(4);
 }
 void CPU::multu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

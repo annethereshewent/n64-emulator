@@ -151,19 +151,20 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
     }
 }
 
-void Bus::memWrite64(uint64_t address, uint64_t value) {
+void Bus::memWrite64(uint64_t address, uint64_t value, uint64_t mask) {
     uint64_t actualAddress = translateAddress(address, true);
 
     bool cached = (address & 0x20000000) == 0;
 
     if (cached) {
-        writeDataCache(actualAddress + 4, (uint32_t)value);
-        writeDataCache(actualAddress, (uint32_t)(value >> 32));
+        writeDataCache(actualAddress + 4, (uint32_t)value, (uint32_t)(int64_t)mask);
+        writeDataCache(actualAddress, (uint32_t)(value >> 32), (uint32_t)(int64_t)(mask >> 32));
         return;
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        writeValueLE(&rdram[actualAddress], value, 8);
+        // writeValueLE(&rdram[actualAddress], value, 8);
+        memcpy(&rdram[actualAddress], &value, sizeof(uint64_t));
         return;
     }
 }
@@ -198,6 +199,10 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             cpu.cop0.addCycles(20);
             return rsp.status.value;
             break;
+        case 0x4040014:
+            cpu.cop0.addCycles(20);
+            return rsp.status.dmaFull;
+            break;
         case 0x4040018:
             cpu.cop0.addCycles(20);
             return rsp.status.dmaBusy;
@@ -209,6 +214,10 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
         case 0x410000c:
             cpu.cop0.addCycles(20);
             return rdp.status.value;
+            break;
+        case 0x4300004:
+            cpu.cop0.addCycles(20);
+            return mips.mipsVersion;
             break;
         case 0x4300008:
             cpu.cop0.addCycles(20);
@@ -636,9 +645,6 @@ void Bus::openSave(std::string saveName) {
                     exit(1);
                     break;
             }
-        } else {
-            std::println("an error occurred while reading existing file.");
-            exit(1);
         }
     } else {
         saveFile = std::fstream(saveName, std::ios::out);

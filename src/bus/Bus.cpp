@@ -351,6 +351,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&rsp.spReadLength.value, value, mask);
             rsp.pushDma(DmaDirection::Read);
             break;
+        case 0x404000c:
+            Bus::writeWithMask32(&rsp.spWriteLength.value, value, mask);
+            rsp.pushDma(DmaDirection::Write);
+            break;
         case 0x4040010:
             rsp.updateStatus(value);
             break;

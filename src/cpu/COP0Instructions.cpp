@@ -15,8 +15,10 @@ void COP0::cp0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::dmfc0(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dmfc0\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    cpu->r[rt] = cpu->cop0.readRegister(rd);
 }
 
 void COP0::dmtc0(CPU* cpu, uint32_t instruction) {

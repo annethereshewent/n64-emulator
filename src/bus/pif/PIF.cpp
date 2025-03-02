@@ -210,6 +210,5 @@ void PIF::writeEeprom(Bus& bus) {
 
     ram[channels[CART_CHANNEL].rxBuf] = 0;
 
-    std::println("hello world!");
     bus.saveDirty = true;
 }

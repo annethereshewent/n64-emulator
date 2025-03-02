@@ -358,6 +358,9 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
         case 0x4040010:
             rsp.updateStatus(value);
             break;
+        case 0x404001c:
+            rsp.semaphore = 0;
+            break;
         case 0x4080000:
             Bus::writeWithMask32(&rsp.pc, value & 0xffc, mask);
             rsp.nextPc = rsp.pc + 4;
@@ -370,6 +373,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             if ((value >> 11 & 0b1) == 1) {
                 clearInterrupt(DP_INTERRUPT_FLAG);
             }
+            checkIrqs();
+            cpu.checkIrqs();
+            break;
+        case 0x4300008:
+            Bus::writeWithMask32(&mips.mipsInterrupt.value, value, mask);
             checkIrqs();
             cpu.checkIrqs();
             break;

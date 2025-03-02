@@ -251,7 +251,7 @@ void CPU::step() {
 
     bool oldDelaySlot = inDelaySlot;
 
-    // if (debugOn && !visited.contains(previousPc)) {
+    // if (!visited.contains(previousPc)) {
     //     uint32_t actualCommand = command;
     //     if (command == 0) {
     //         std::cout << "command is secondary\n";

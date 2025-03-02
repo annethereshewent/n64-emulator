@@ -24,7 +24,7 @@ void RSP::handleDma(SPDma dma) {
             for (int j = 0; j < length; j += 4) {
                 uint32_t value = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress]);
 
-                uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
+                uint8_t* ramPtr = isImem ? &imem[memAddress & 0xfff] : &dmem[memAddress & 0xfff];
 
                 memcpy(ramPtr, &value, sizeof(uint32_t));
 
@@ -37,8 +37,7 @@ void RSP::handleDma(SPDma dma) {
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
 
-                uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
-
+                uint8_t* ramPtr = isImem ? &imem[memAddress & 0xfff] : &dmem[memAddress & 0xfff];
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
 
                 memcpy(&bus.rdram[dramAddress], &value, sizeof(uint32_t));
@@ -181,7 +180,6 @@ void RSP::popDma() {
         fifo[0] = fifo[1];
 
         status.dmaFull = 0;
-
         handleDma(fifo[0]);
     } else {
         status.dmaBusy = 0;

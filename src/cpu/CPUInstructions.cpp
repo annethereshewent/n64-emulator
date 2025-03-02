@@ -187,6 +187,14 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             cpu->bus.icache[line].tag = tag;
             break;
         }
+        case 0x9: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            cpu->bus.dcache[line].valid = ((cpu->cop0.tagLo >> 7) & 0b1) == 1;
+            cpu->bus.dcache[line].valid = ((cpu->cop0.tagLo >> 6) & 0b1) == 1;
+            cpu->bus.dcache[line].tag = ((cpu->cop0.tagLo & 0xfffff00) << 4);
+            break;
+        }
         case 0x10: {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
             ICache* icachePtr = &cpu->bus.icache[line];
@@ -335,7 +343,6 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
 
     uint64_t address = cpu->r[baseReg] + immediate;
-
     uint32_t value = cpu->bus.memRead32(address);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;

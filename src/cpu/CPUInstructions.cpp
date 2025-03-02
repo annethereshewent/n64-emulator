@@ -879,12 +879,10 @@ void CPU::sltu(CPU* cpu, uint32_t instruction) {
     }
 }
 void CPU::dadd(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dadd\n";
-    exit(1);
+    cpu->r[getRd(instruction)] = cpu->r[getRs(instruction)] + cpu->r[getRt(instruction)];
 }
 void CPU::daddu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: daddu\n";
-    exit(1);
+    CPU::dadd(cpu, instruction);
 }
 void CPU::dsub(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsub\n";

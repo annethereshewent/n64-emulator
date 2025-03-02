@@ -1325,6 +1325,18 @@ void RSP::bltzal(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::bgezal(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: bgezal\n";
-    exit(1);
+    uint32_t rs = CPU::getRs(instruction);
+
+    uint32_t nextPc = rsp->nextPc;
+    if ((int32_t)rsp->r[rs] >= 0) {
+        uint32_t immediate = CPU::getImmediate(instruction);
+
+        uint32_t amount = (int16_t)(int32_t)(uint32_t)(immediate << 2);
+
+        rsp->nextPc = rsp->pc + amount;
+    }
+
+    rsp->r[31] = nextPc;
+
+    rsp->inDelaySlot = true;
 }

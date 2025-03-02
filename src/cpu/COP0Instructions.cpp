@@ -20,8 +20,12 @@ void COP0::dmfc0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::dmtc0(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dmtc0\n";
-    exit(1);
+    uint32_t rd = CPU::getRd(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    cpu->cop0.writeRegister(rd, cpu->r[rt], &cpu->scheduler);
+
+    cpu->checkIrqs();
 }
 
 void COP0::mfc0(CPU* cpu, uint32_t instruction) {

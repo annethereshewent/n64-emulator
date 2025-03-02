@@ -190,13 +190,40 @@ void COP1::dctc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::dmfc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dmfc1\n";
-    exit(1);
+    if (!cpu->cop0.status.cu1) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+        cpu->enterException(true);
+        return;
+    }
+
+    uint64_t returnVal;
+
+    uint32_t rd = CPU::getRd(instruction);
+
+    if (!cpu->cop0.status.fr) {
+        returnVal = (uint64_t)cpu->cop1.fgr32[rd] | (uint64_t)cpu->cop1.fgr32[rd + 1] << 32;
+    } else {
+        returnVal = cpu->cop1.fgr64[rd];
+    }
+
+    cpu->r[CPU::getRt(instruction)] = returnVal;
 }
 
 void COP1::dmtc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dmtc1\n";
-    exit(1);
+    if (!cpu->cop0.status.cu1) {
+        cpu->cop0.cause = (11 << 2) | (1 << 28);
+        cpu->enterException(true);
+        return;
+    }
+    uint64_t value = cpu->r[CPU::getRt(instruction)];
+    uint32_t index = CPU::getRd(instruction);
+
+    if (!cpu->cop0.status.fr) {
+        cpu->cop1.fgr32[index] = (uint32_t)value;
+        cpu->cop1.fgr32[index + 1] = (uint32_t)(value >> 32);
+    } else {
+        cpu->cop1.fgr64[index] = value;
+    }
 }
 
 void COP1::mfc1(CPU* cpu, uint32_t instruction) {

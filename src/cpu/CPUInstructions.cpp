@@ -894,8 +894,8 @@ void CPU::tne(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void CPU::dsll(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsll\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction);
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shift;
 }
 void CPU::dsrl(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: dsrl\n";

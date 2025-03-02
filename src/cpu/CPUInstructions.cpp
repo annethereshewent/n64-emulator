@@ -300,12 +300,35 @@ void CPU::ld(CPU* cpu, uint32_t instruction) {
     cpu->r[rt] = cpu->bus.memRead64(address);
 }
 void CPU::ldl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ldl\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint32_t shift = 8 * (address & 0x7);
+
+    uint64_t mask = (((uint64_t)1 << shift) - 1);
+
+    uint64_t value = cpu->bus.memRead64(address & ~0x7);
+
+    cpu->r[rt] = (cpu->r[rt] & mask) | (value << shift);
 }
 void CPU::ldr(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ldr\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint32_t shift = 8 * (7 - (address & 0x7));
+    uint32_t maskShift = 8 * ((address & 0x7) + 1);
+
+    uint64_t mask = (address & 0x7) == 7 ? 0 : ~(((uint64_t)1 << maskShift) - 1);
+
+    uint64_t value = cpu->bus.memRead64(address & ~0x7);
+
+    cpu->r[rt] = (cpu->r[rt] & mask) | (value >> shift);
 }
 void CPU::lh(CPU* cpu, uint32_t instruction) {
     uint64_t offset = getSignedImmediate(instruction);
@@ -330,8 +353,18 @@ void CPU::lhu(CPU* cpu, uint32_t instruction) {
     cpu->r[rt] = value;
 }
 void CPU::ll(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ll\n";
-    exit(1);
+    cpu->llbit = true;
+
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+    uint32_t value = cpu->bus.memRead32(address);
+
+    cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
+
+    cpu->cop0.llAddress = cpu->bus.translateAddress(address) >> 4;
 }
 void CPU::lld(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: lld\n";
@@ -372,7 +405,7 @@ void CPU::lwr(CPU* cpu, uint32_t instruction) {
     uint32_t shift = 8 * (3 - (address & 0x3));
     uint32_t maskShift = 8 * ((address & 0x3) + 1);
 
-    uint32_t mask = (address & 0x3) == 3 ? 0 : ~(1 << maskShift);
+    uint32_t mask = (address & 0x3) == 3 ? 0 : ~((1 << maskShift) - 1);
 
     uint32_t value = cpu->bus.memRead32(address & ~0x3);
 
@@ -405,8 +438,21 @@ void CPU::sb(CPU* cpu, uint32_t instruction) {
     cpu->bus.memWrite8(address, byte);
 }
 void CPU::sc(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sc\n";
-    exit(1);
+    uint32_t rt = getRt(instruction);
+    if (cpu->llbit) {
+        cpu->llbit = false;
+
+        uint64_t immediate = getSignedImmediate(instruction);
+        uint32_t baseReg = getRs(instruction);
+
+        uint64_t address = cpu->r[baseReg] + immediate;
+
+        cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
+
+        cpu->r[rt] = 1;
+    } else {
+        cpu->r[rt] = 0;
+    }
 }
 void CPU::scd(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: scd\n";
@@ -594,8 +640,7 @@ void CPU::jalr(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = cpu->r[getRs(instruction)];
 }
 void CPU::sync(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sync\n";
-    exit(1);
+    // NOP
 }
 void CPU::mfhi(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);

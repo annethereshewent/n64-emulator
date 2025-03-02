@@ -61,4 +61,5 @@ void Scheduler::rebaseEvents(uint64_t oldCycles, uint64_t newCycles) {
         event.cycles -= oldCycles;
         event.cycles += newCycles;
     }
+    updateNextEvent();
 }

@@ -415,10 +415,6 @@ uint64_t rdp_process_commands()
 				cmd_data[2 * cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
 				cmd_data[2 * cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
 
-				if (*gfx_info.debugOn) {
-					std::println("read words {:x} and {:x} from addresses {:x} and {:x}", cmd_data[2 * cmd_ptr + 0], cmd_data[2 * cmd_ptr + 1], offset, offset + 4);
-				}
-
 				offset += sizeof(uint64_t);
 				cmd_ptr++;
 			} while (--length > 0);

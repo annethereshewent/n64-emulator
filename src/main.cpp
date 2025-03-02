@@ -4,6 +4,10 @@
 #include <SDL3/SDL.h>
 #include "interface.cpp"
 #include "controller/Controller.hpp"
+#if __APPLE__
+    #include <sysdir.h>  // for sysdir_start_search_path_enumeration
+    #include <glob.h>    // for glob needed to expand ~ to user dir
+#endif
 
 SDL_Gamepad* findController() {
     int count;
@@ -40,7 +44,44 @@ int main(int argc, char **argv) {
         printf("window creation Error: %s\n", SDL_GetError());
     }
 
-    cpu.loadRom(argv[1]);
+    cpu.bus.loadRom(argv[1]);
+    std::string saveName = cpu.bus.getSaveName(argv[1]);
+
+    std::string basePath;
+
+    // gotten from https://stackoverflow.com/questions/5123361/finding-library-application-support-from-c
+    #if __APPLE__
+        char path[PATH_MAX];
+        auto state = sysdir_start_search_path_enumeration(SYSDIR_DIRECTORY_APPLICATION_SUPPORT,
+                                                        SYSDIR_DOMAIN_MASK_USER);
+        if ((state = sysdir_get_next_search_path_enumeration(state, path))) {
+            glob_t globbuf;
+            if (glob(path, GLOB_TILDE, nullptr, &globbuf) == 0) {
+                std::string result(globbuf.gl_pathv[0]);
+                globfree(&globbuf);
+                basePath = result;
+            } else {
+                std::println("Unable to expand tilde");
+                exit(1);
+            }
+        } else {
+            std::println("could not open directory to application support");
+            exit(1);
+        }
+    #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+        std::println("TODO: Windows support");
+        exit(1);
+    #endif
+
+    std::string separator = "/N64+/";
+
+    std::string savesDir = basePath + separator;
+
+    std::filesystem::create_directory(savesDir);
+
+    saveName = savesDir + saveName;
+
+    cpu.bus.openSave(saveName);
 
     GFX_INFO gfxInfo;
 
@@ -97,12 +138,25 @@ int main(int argc, char **argv) {
 
         cpu.limitFps();
 
+        if (cpu.bus.timeSinceSaveWrite != 0) {
+            auto p1 = std::chrono::system_clock::now();
+
+            uint64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                p1.time_since_epoch()).count();
+
+            if (currentTime - cpu.bus.timeSinceSaveWrite >= 500) {
+                cpu.bus.writeSave();
+            }
+
+        }
+
         cpu.bus.rdp.frameFinished = false;
 
         while(SDL_PollEvent(&event) > 0) {
             switch(event.type) {
                 case SDL_EVENT_QUIT:
-                    exit(1);
+                    cpu.bus.saveFile.close();
+                    exit(0);
                     break;
                 case SDL_EVENT_KEY_DOWN:
                     if (keyboardMap.contains(event.key.key)) {

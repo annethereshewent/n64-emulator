@@ -3,6 +3,7 @@
 #include "Bus.hpp"
 #include <iostream>
 #include <bit>
+#include <regex>
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
 #include "rsp/RSP.cpp"
@@ -227,9 +228,8 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             return audioInterface.audioLength;
             break;
         case 0x450000c:
-            // TODO: implement this audio register
             cpu.cop0.addCycles(20);
-            return 0;
+            return audioInterface.status.value;
             break;
         case 0x4600010:
             cpu.cop0.addCycles(20);
@@ -603,6 +603,243 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             exit(1);
             break;
     }
+}
+
+void Bus::openSave(std::string saveName) {
+    saveFile = std::fstream(saveName, std::ios::binary | std::ios::in | std::ios::out);
+
+    if (saveFile.is_open()) {
+        saveFile.seekg(0, std::ios::end);
+        size_t fileSize = saveFile.tellg();
+        saveFile.seekg(0, std::ios::beg);
+
+        if (fileSize != 0) {
+            switch (saveType) {
+                case Eeprom16k:
+                case Eeprom4k:
+                    eeprom.resize(fileSize);
+                    saveFile.read(reinterpret_cast<char*>(eeprom.data()), fileSize);
+                    break;
+                case Flash:
+                    flash.resize(fileSize);
+                    saveFile.read(reinterpret_cast<char*>(flash.data()), fileSize);
+                    break;
+                case Sram:
+                    sram.resize(fileSize);
+                    saveFile.read(reinterpret_cast<char*>(sram.data()), fileSize);
+                    break;
+                case NoSave:
+                    // do nothing
+                    break;
+                case Mempak:
+                    std::println("todo: mempak");
+                    exit(1);
+                    break;
+            }
+        } else {
+            std::println("an error occurred while reading existing file.");
+            exit(1);
+        }
+    } else {
+        saveFile = std::fstream(saveName, std::ios::out);
+    }
+}
+
+void Bus::writeSave() {
+    if (saveFile.is_open()) {
+        std::println("writing save....");
+        saveFile.seekg(0, std::ios::beg);
+
+        switch (saveType) {
+            case Eeprom16k:
+            case Eeprom4k:
+                saveFile.write((char*)&eeprom[0], sizeof(uint8_t) * eeprom.size());
+                break;
+            case Flash:
+                saveFile.write((char*)&flash[0], sizeof(uint8_t) * flash.size());
+                break;
+            case Sram:
+                saveFile.write((char*)&sram[0], sizeof(uint8_t) * sram.size());
+                break;
+            case NoSave:
+                // do nothing
+                break;
+            case Mempak:
+                std::println("todo: mempak");
+                exit(1);
+                break;
+        }
+    }
+
+    timeSinceSaveWrite = 0;
+}
+
+std::string Bus::getSaveName(std::string filename) {
+    std::string saveName;
+    std::string extension;
+    switch (saveType) {
+        case Eeprom16k:
+        case Eeprom4k:
+            extension = ".eep";
+            break;
+        case Flash:
+            extension = ".fla";
+            break;
+        case Sram:
+            extension = ".sra";
+            break;
+        case NoSave:
+            return "";
+            break;
+        case Mempak:
+            extension = ".mem";
+            break;
+    }
+    saveName = std::regex_replace(filename, std::regex("\\.n64$|\\.z64$|\\.N64$|\\.Z64$"), extension);
+    saveName = std::regex_replace(saveName, std::regex(".*/"), "");
+
+    return saveName;
+}
+
+void Bus::formatEeprom() {
+    if (eeprom.size() == 0) {
+        eeprom.resize(0x800);
+        std::fill(eeprom.begin(), eeprom.end(), 0xff);
+    }
+}
+
+void Bus::loadRom(std::string filename) {
+    std::ifstream file(filename, std::ios::binary);
+
+    // get its size:
+    file.seekg(0, std::ios::end);
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // reserve capacity
+    std::vector<uint8_t> rom;
+    rom.resize(fileSize);
+
+    file.read(reinterpret_cast<char*>(rom.data()), fileSize);
+
+    std::vector<uint8_t> formattedRom;
+
+    formattedRom.resize(fileSize);
+
+    uint32_t cartridgeFormat = std::byteswap(*(uint32_t*)&rom[0]);
+
+    switch (cartridgeFormat) {
+        case 0x80371240:
+            formattedRom = rom;
+            break;
+        case 0x37804012:
+            for (int i = 0; i < rom.size(); i += 2) {
+                uint16_t data = std::byteswap(*(uint16_t*)&rom[i]);
+                memcpy(&formattedRom[i], &data, sizeof(uint16_t));
+            }
+            break;
+        case 0x40123780:
+            for (int i = 0; i < rom.size(); i += 4) {
+                uint32_t data = std::byteswap(*(uint32_t*)&rom[i]);
+                memcpy(&formattedRom[i], &data, sizeof(uint32_t));
+            }
+            break;
+    }
+
+    cartridge = formattedRom;
+
+    memcpy(&gameId, &cartridge[0x3b], 3);
+    gameId[3] = 0;
+
+    char header[3];
+
+    memcpy(header, &cartridge[0x3c], 2);
+    header[2] = 0;
+
+    if (strcmp(header, "ED") == 0) {
+        uint8_t saveType = cartridge[0x3f] >> 4;
+
+        switch (saveType) {
+            case 0:
+                saveType = NoSave;
+                break;
+            case 1:
+                saveType = Eeprom4k;
+                break;
+            case 2:
+                saveType = Eeprom16k;
+                break;
+            case 3:
+                saveType = Sram;
+                break;
+            case 5:
+                saveType = Flash;
+                break;
+            default:
+                std::cout << "unknown save type detected: " << std::dec << saveType << "\n";
+                exit(1);
+                break;
+        }
+    } else {
+        std::array<std::string, 23> eeprom16KSaves = {
+            "NB7",
+            "NGT",
+            "NFU",
+            "NCW",
+            "NCZ",
+            "ND6",
+            "NDO",
+            "ND2",
+            "N3D",
+            "NMX",
+            "NGC",
+            "NIM",
+            "NNB",
+            "NMV",
+            "NM8",
+            "NEV",
+            "NPP",
+            "NUB",
+            "NPD",
+            "NRZ",
+            "NR7",
+            "NEP",
+            "NYS"
+        };
+
+        std::array<std::string, 19> flashSaves = {
+            "NCC",
+            "NDA",
+            "NAF",
+            "NJF",
+            "NKJ",
+            "NZS",
+            "NM6",
+            "NCK",
+            "NMQ",
+            "NPN",
+            "NPF",
+            "NPO",
+            "CP2",
+            "NP3",
+            "NRH",
+            "NSQ",
+            "NT9",
+            "NW4",
+            "NDP"
+        };
+
+        if (std::find(eeprom16KSaves.begin(), eeprom16KSaves.end(), gameId) != eeprom16KSaves.end()) {
+            saveType = Eeprom16k;
+        } else if (std::find(flashSaves.begin(), flashSaves.end(), gameId) != flashSaves.end()) {
+            saveType = Flash;
+        } else if (strcmp(gameId, "NPQ") == 0) {
+            saveType = NoSave;
+        } else {
+            saveType = Eeprom4k;
+        }
+    }
+    file.close();
 }
 
 uint32_t Bus::readInstructionCache(uint64_t address) {

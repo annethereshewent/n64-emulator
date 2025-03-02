@@ -7,6 +7,7 @@
 #include <bit>
 #include <chrono>
 #include <thread>
+#include <string>
 #include "CPU.hpp"
 #include "../bus/Bus.cpp"
 #include "CPUInstructions.cpp"
@@ -15,7 +16,6 @@
 #include "COP0.cpp"
 #include "COP1.cpp"
 #include "Scheduler.cpp"
-
 
 CPU::CPU(): bus(*this), cop0(*this), cop1(*this) {
     r[0] = 0;
@@ -233,86 +233,6 @@ void CPU::enterException(bool usePreviousPc) {
     cop0.addCycles(2);
 }
 
-void CPU::loadRom(std::string filename) {
-    std::ifstream file(filename, std::ios::binary);
-
-    // get its size:
-    file.seekg(0, std::ios::end);
-    size_t fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    // reserve capacity
-    std::vector<uint8_t> rom;
-    rom.resize(fileSize);
-
-    file.read(reinterpret_cast<char*>(rom.data()), fileSize);
-
-    std::vector<uint8_t> formattedRom;
-
-    formattedRom.resize(fileSize);
-
-    uint32_t cartridgeFormat = std::byteswap(*(uint32_t*)&rom[0]);
-
-    switch (cartridgeFormat) {
-        case 0x80371240:
-            formattedRom = rom;
-            break;
-        case 0x37804012:
-            for (int i = 0; i < rom.size(); i += 2) {
-                uint16_t data = std::byteswap(*(uint16_t*)&rom[i]);
-                memcpy(&formattedRom[i], &data, sizeof(uint16_t));
-            }
-            break;
-        case 0x40123780:
-            for (int i = 0; i < rom.size(); i += 4) {
-                uint32_t data = std::byteswap(*(uint32_t*)&rom[i]);
-                memcpy(&formattedRom[i], &data, sizeof(uint32_t));
-            }
-            break;
-    }
-
-    bus.cartridge = formattedRom;
-
-    memcpy(&bus.gameId, &bus.cartridge[0x3b], 3);
-    bus.gameId[3] = 0;
-
-    char header[3];
-
-    memcpy(header, &bus.cartridge[0x3c], 2);
-    header[2] = 0;
-
-    if (strcmp(header, "ED") == 0) {
-        uint8_t saveType = bus.cartridge[0x3f] >> 4;
-
-        switch (saveType) {
-            case 0:
-                bus.saveType = -1;
-                break;
-            case 1:
-                bus.saveType = EEPROM_4K;
-                break;
-            case 2:
-                bus.saveType = EEPROM_16K;
-                break;
-            case 3:
-                bus.saveType = -1;
-                std::cout << "TODO: implement SRAM save type\n";
-                break;
-            case 5:
-                bus.saveType = -1;
-                std::cout << "TODO: implement flash save type\n";
-                break;
-            default:
-                std::cout << "unknown save type detected: " << std::dec << saveType << "\n";
-                exit(1);
-                break;
-        }
-    } else {
-        // TODO: actually determine this
-        bus.saveType = EEPROM_4K;
-    }
-}
-
 void CPU::step() {
     uint32_t opcode = (pc & 0x20000000) != 0 ? bus.memRead32(pc) : bus.readInstructionCache(pc);
     uint32_t command = opcode >> 26;
@@ -331,7 +251,7 @@ void CPU::step() {
 
     bool oldDelaySlot = inDelaySlot;
 
-    // if (!visited.contains(previousPc)) {
+    // if (debugOn && !visited.contains(previousPc)) {
     //     uint32_t actualCommand = command;
     //     if (command == 0) {
     //         std::cout << "command is secondary\n";
@@ -346,8 +266,8 @@ void CPU::step() {
     //         std::cout << "command is regImm\n";
     //         actualCommand = (opcode >> 16) & 0x1f;
     //     }
-    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
-    //     // std::cout << "pc = " << std::hex << previousPc << "\n";
+    //     std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
+    //     // std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << "\n";
     //     visited.insert(previousPc);
     // }
 

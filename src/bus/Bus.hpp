@@ -16,6 +16,8 @@
 #include "cache/DCache.hpp"
 #include "tlb/TlbEntry.hpp"
 #include "../controller/Controller.hpp"
+#include <iostream>
+#include <fstream>
 
 const uint32_t SP_INTERRUPT_FLAG = 1;
 const uint32_t SI_INTERRUPT_FLAG = 1 << 1;
@@ -27,6 +29,18 @@ const uint32_t DP_INTERRUPT_FLAG = 1 << 5;
 const uint32_t EEPROM_4K = 0x8000;
 const uint32_t EEPROM_16K = 0xc000;
 
+const uint32_t SRAM_SIZE = 0x8000;
+const uint32_t FLASH_SIZE = 0x20000;
+
+enum SaveType {
+    Sram,
+    Flash,
+    Eeprom4k,
+    Eeprom16k,
+    Mempak,
+    NoSave
+};
+
 class Bus {
 public:
     std::vector<uint8_t> rdram = {};
@@ -37,10 +51,16 @@ public:
 
     std::array<TlbEntry, 32> tlbEntries = {};
 
-    std::vector<uint8_t> backup;
+    std::vector<uint8_t> eeprom = {};
+    std::vector<uint8_t> sram = {};
+    std::vector<uint8_t> flash = {};
+
+    std::fstream saveFile;
+
+    uint64_t timeSinceSaveWrite = 0;
 
     char gameId[4];
-    int32_t saveType = -1;
+    SaveType saveType = Eeprom4k;
 
     uint32_t input = 0;
 
@@ -69,7 +89,7 @@ public:
 
     PIF pif;
 
-    std::vector<uint8_t> cartridge;
+    std::vector<uint8_t> cartridge = {};
 
     std::array<ICache, 512> icache;
     std::array<DCache, 512> dcache;
@@ -94,6 +114,12 @@ public:
 
     uint32_t readDataCache(uint64_t address, bool ignoreCycles = false);
     uint32_t readInstructionCache(uint64_t address);
+
+    void formatEeprom();
+    void loadRom(std::string filename);
+    void openSave(std::string saveName);
+    void writeSave();
+    std::string getSaveName(std::string filename);
 
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);

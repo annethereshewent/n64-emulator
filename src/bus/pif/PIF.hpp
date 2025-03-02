@@ -111,7 +111,6 @@ public:
     void processCartridge(Bus& bus);
 
     void readEeprom(Bus& bus);
-    void formatEeprom(Bus& bus);
     void writeEeprom(Bus& bus);
 
     PIF();

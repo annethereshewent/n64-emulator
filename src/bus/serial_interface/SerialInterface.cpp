@@ -46,7 +46,7 @@ uint64_t SerialInterface::processChannel(int channelId, Bus& bus) {
     if (channelId == 0) {
         bus.pif.processController(channelId, bus);
     } else if (channelId == CART_CHANNEL) {
-       bus.pif.processCartridge(bus);
+        bus.pif.processCartridge(bus);
     } else {
         bus.pif.ram[bus.pif.channels[channelId].rx] |= 0x80;
         return 0;

@@ -32,7 +32,7 @@ void COP0::mfc0(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
     uint32_t rt = CPU::getRt(instruction);
 
-    cpu->r[rt] = cpu->cop0.readRegister(rd);
+    cpu->r[rt] = (int32_t)(int64_t)(uint64_t)cpu->cop0.readRegister(rd);
 }
 
 void COP0::mtc0(CPU* cpu, uint32_t instruction) {

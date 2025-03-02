@@ -72,6 +72,8 @@ COP0::COP0(CPU& cpu): cpu(cpu) {
         COP0::reserved, // 30
         COP0::reserved, // 31
     };
+
+    config = 0x7006E463;
 }
 
 // mask values gotten mostly from https://github.com/gopher64

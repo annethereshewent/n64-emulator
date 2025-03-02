@@ -245,6 +245,38 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             cpu.cop0.addCycles(20);
             return peripheralInterface.piStatus.value;
             break;
+        case 0x4600014:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Latch;
+            break;
+        case 0x4600018:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Pwd;
+            break;
+        case 0x460001c:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Pgs;
+            break;
+        case 0x4600020:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Rls;
+            break;
+        case 0x4600024:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Latch;
+            break;
+        case 0x4600028:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Pwd;
+            break;
+        case 0x460002c:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Pgs;
+            break;
+        case 0x4600030:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Rls;
+            break;
         case 0x470000C:
             // just return 0x14 to skip the initialization process
             // TODO: actually implement rdInterface related stuff

@@ -251,7 +251,7 @@ void CPU::step() {
 
     bool oldDelaySlot = inDelaySlot;
 
-    // if (!visited.contains(previousPc)) {
+    // if (debugOn && !visited.contains(previousPc)) {
     //     uint32_t actualCommand = command;
     //     if (command == 0) {
     //         std::cout << "command is secondary\n";
@@ -266,8 +266,8 @@ void CPU::step() {
     //         std::cout << "command is regImm\n";
     //         actualCommand = (opcode >> 16) & 0x1f;
     //     }
-    //     std::cout << "pc = " << std::hex << previousPc << ", command = " << std::dec << actualCommand << "\n";
-    //     // std::cout << "pc = " << std::hex << previousPc << "\n";
+    //     std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
+    //     // std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << "\n";
     //     visited.insert(previousPc);
     // }
 

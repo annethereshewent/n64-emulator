@@ -605,7 +605,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 }
 
 void Bus::openSave(std::string saveName) {
-    std::fstream saveFile(saveName, std::ios::binary | std::ios::app);
+    saveFile = std::fstream(saveName, std::ios::binary | std::ios::in | std::ios::out);
 
     if (saveFile.is_open()) {
         saveFile.seekg(0, std::ios::end);
@@ -616,34 +616,41 @@ void Bus::openSave(std::string saveName) {
             switch (saveType) {
                 case Eeprom16k:
                 case Eeprom4k:
+                    eeprom.resize(fileSize);
                     saveFile.read(reinterpret_cast<char*>(eeprom.data()), fileSize);
                     break;
                 case Flash:
+                    flash.resize(fileSize);
                     saveFile.read(reinterpret_cast<char*>(flash.data()), fileSize);
                     break;
                 case Sram:
+                    sram.resize(fileSize);
                     saveFile.read(reinterpret_cast<char*>(sram.data()), fileSize);
                     break;
             }
+        } else {
+            std::println("an error occurred while reading existing file.");
+            exit(1);
         }
-
-        this->saveFile = &saveFile;
+    } else {
+        saveFile = std::fstream(saveName, std::ios::out);
     }
 }
 
 void Bus::writeSave() {
-    if (saveFile != nullptr) {
-        saveFile->seekg(0, std::ios::beg);
+    if (saveFile.is_open()) {
+        saveFile.seekg(0, std::ios::beg);
+
         switch (saveType) {
             case Eeprom16k:
             case Eeprom4k:
-                saveFile->write((char*)&eeprom, sizeof(uint8_t) * eeprom.size());
+                saveFile.write((char*)&eeprom, sizeof(uint8_t) * eeprom.size());
                 break;
             case Flash:
-                saveFile->write((char*)&flash, sizeof(uint8_t) * flash.size());
+                saveFile.write((char*)&flash, sizeof(uint8_t) * flash.size());
                 break;
             case Sram:
-                saveFile->write((char*)&sram, sizeof(uint8_t) * sram.size());
+                saveFile.write((char*)&sram, sizeof(uint8_t) * sram.size());
                 break;
         }
     }
@@ -789,6 +796,7 @@ void Bus::loadRom(std::string filename) {
             saveType = Eeprom4k;
         }
     }
+    file.close();
 }
 
 uint32_t Bus::readInstructionCache(uint64_t address) {

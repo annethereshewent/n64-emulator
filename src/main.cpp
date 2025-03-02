@@ -153,7 +153,8 @@ int main(int argc, char **argv) {
         while(SDL_PollEvent(&event) > 0) {
             switch(event.type) {
                 case SDL_EVENT_QUIT:
-                    exit(1);
+                    cpu.bus.saveFile.close();
+                    exit(0);
                     break;
                 case SDL_EVENT_KEY_DOWN:
                     if (keyboardMap.contains(event.key.key)) {

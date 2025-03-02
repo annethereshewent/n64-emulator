@@ -55,7 +55,7 @@ public:
     std::vector<uint8_t> sram = {};
     std::vector<uint8_t> flash = {};
 
-    std::fstream* saveFile = nullptr;
+    std::fstream saveFile;
 
     bool saveDirty = false;
 

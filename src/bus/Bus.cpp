@@ -644,13 +644,13 @@ void Bus::writeSave() {
         switch (saveType) {
             case Eeprom16k:
             case Eeprom4k:
-                saveFile.write((char*)&eeprom, sizeof(uint8_t) * eeprom.size());
+                saveFile.write((char*)&eeprom[0], sizeof(uint8_t) * eeprom.size());
                 break;
             case Flash:
-                saveFile.write((char*)&flash, sizeof(uint8_t) * flash.size());
+                saveFile.write((char*)&flash[0], sizeof(uint8_t) * flash.size());
                 break;
             case Sram:
-                saveFile.write((char*)&sram, sizeof(uint8_t) * sram.size());
+                saveFile.write((char*)&sram[0], sizeof(uint8_t) * sram.size());
                 break;
         }
     }

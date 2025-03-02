@@ -629,8 +629,18 @@ void COP1::bc1fl(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::bc1tl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bc1tl\n";
-    exit(1);
+    if (cpu->cop1.fcsr.condition) {
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+
+        cpu->inDelaySlot = true;
+    } else {
+        cpu->pc = cpu->nextPc;
+        cpu->discarded = true;
+    }
 }
 
 void COP1::addD(CPU* cpu, uint32_t instruction) {

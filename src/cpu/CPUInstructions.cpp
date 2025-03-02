@@ -113,8 +113,22 @@ void CPU::blez(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void CPU::blezl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: blezl\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+
+    if ((int64_t)cpu->r[rs] <= 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+
+        cpu->inDelaySlot = true;
+    } else {
+        cpu->discarded = true;
+        cpu->pc = cpu->nextPc;
+    }
 }
 void CPU::bne(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

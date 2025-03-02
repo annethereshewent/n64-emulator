@@ -210,8 +210,7 @@ void RSP::xor_(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] ^ rsp->r[CPU::getRt(instruction)];
 }
 void RSP::nor(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: nor\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = ~(rsp->r[CPU::getRs(instruction)] | rsp->r[CPU::getRt(instruction)]);
 }
 
 void RSP::slt(RSP* rsp, uint32_t instruction) {

@@ -297,6 +297,10 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
+            if (actualAddress >= 0x5000000 && actualAddress <= 0x05ffffff) {
+                // N64 DD registers, ignore
+                return actualAddress & 0xffff | ((actualAddress & 0xffff) << 16);
+            }
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint32_t offset = actualAddress & 0xfffffff;
 
@@ -643,6 +647,10 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 memcpy(&rsp.imem[offset], &returnVal, sizeof(uint32_t));
 
+                return;
+            }
+            if (actualAddress >= 0x5000000 && actualAddress <= 0x05ffffff) {
+                // N64 DD registers, ignore
                 return;
             }
 

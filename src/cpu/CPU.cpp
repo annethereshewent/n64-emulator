@@ -234,6 +234,7 @@ void CPU::enterException(bool usePreviousPc) {
 }
 
 void CPU::step() {
+    r[0] = 0;
     uint32_t opcode = (pc & 0x20000000) != 0 ? bus.memRead32(pc) : bus.readInstructionCache(pc);
     uint32_t command = opcode >> 26;
 

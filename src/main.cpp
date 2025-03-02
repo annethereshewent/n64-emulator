@@ -144,8 +144,16 @@ int main(int argc, char **argv) {
 
         cpu.limitFps();
 
-        if (cpu.bus.saveDirty) {
-            cpu.bus.writeSave();
+        if (cpu.bus.timeSinceSaveWrite != 0) {
+            auto p1 = std::chrono::system_clock::now();
+
+            uint64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                p1.time_since_epoch()).count();
+
+            if (currentTime - cpu.bus.timeSinceSaveWrite >= 1000) {
+                cpu.bus.writeSave();
+            }
+
         }
 
         cpu.bus.rdp.frameFinished = false;

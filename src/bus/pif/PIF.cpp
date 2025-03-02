@@ -210,5 +210,8 @@ void PIF::writeEeprom(Bus& bus) {
 
     ram[channels[CART_CHANNEL].rxBuf] = 0;
 
-    bus.saveDirty = true;
+    auto p1 = std::chrono::system_clock::now();
+
+    bus.timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+        p1.time_since_epoch()).count();
 }

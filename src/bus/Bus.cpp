@@ -639,6 +639,7 @@ void Bus::openSave(std::string saveName) {
 
 void Bus::writeSave() {
     if (saveFile.is_open()) {
+        std::println("writing save....");
         saveFile.seekg(0, std::ios::beg);
 
         switch (saveType) {
@@ -655,7 +656,7 @@ void Bus::writeSave() {
         }
     }
 
-    saveDirty = false;
+    timeSinceSaveWrite = 0;
 }
 
 void Bus::formatEeprom() {

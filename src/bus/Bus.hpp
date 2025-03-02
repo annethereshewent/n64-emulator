@@ -57,7 +57,7 @@ public:
 
     std::fstream saveFile;
 
-    bool saveDirty = false;
+    uint64_t timeSinceSaveWrite = 0;
 
     char gameId[4];
     SaveType saveType = Eeprom4k;

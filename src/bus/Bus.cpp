@@ -533,6 +533,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
         case 0x4600004:
             Bus::writeWithMask32(&peripheralInterface.cartAddress, value & 0xfffffe, mask);
             break;
+        case 0x4600008:
+            Bus::writeWithMask32(&peripheralInterface.rdLen, value & 0xffffff, mask);
+
+            // dmaRead();
+            break;
         case 0x460000c:
             Bus::writeWithMask32(&peripheralInterface.wrLen, value & 0xffffff, mask);
 
@@ -557,7 +562,19 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&peripheralInterface.dom1Pgs, value & 0xff, mask);
             break;
         case 0x4600020:
-            Bus::writeWithMask32(&peripheralInterface.dom1Rls, value & 0xff, mask);
+            Bus::writeWithMask32(&peripheralInterface.dom1Rls, value & 0x3, mask);
+            break;
+        case 0x4600024:
+            Bus::writeWithMask32(&peripheralInterface.dom2Latch, value & 0xff, mask);
+            break;
+        case 0x4600028:
+            Bus::writeWithMask32(&peripheralInterface.dom2Pwd, value & 0xff, mask);
+            break;
+        case 0x460002c:
+            Bus::writeWithMask32(&peripheralInterface.dom2Pgs, value & 0xf, mask);
+            break;
+        case 0x4600030:
+            Bus::writeWithMask32(&peripheralInterface.dom2Rls, value & 0x3, mask);
             break;
         case 0x4700000:
             Bus::writeWithMask32(&rdInterface.mode.value, value & 0xf, mask);

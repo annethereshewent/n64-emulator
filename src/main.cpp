@@ -98,8 +98,7 @@ int main(int argc, char **argv) {
     rdp_init(window, gfxInfo, false, false, false);
 
     cpu.bus.initAudio();
-
-    SDL_Gamepad* gamepad = findController();
+    cpu.bus.gamepad = findController();
 
     uint8_t xAxis = 0;
     uint8_t yAxis = 0;
@@ -213,14 +212,14 @@ int main(int argc, char **argv) {
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-                    if (gamepad != nullptr) {
-                        double xAxisL = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
-                        double yAxisL = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+                    if (cpu.bus.gamepad != nullptr) {
+                        double xAxisL = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
+                        double yAxisL = (double)-SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
 
-                        double xAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
-                        double yAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
+                        double xAxisR = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
+                        double yAxisR = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
 
-                        double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+                        double rightTrigger = SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
                         xAxis = std::abs(xAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisL) : 0;
                         yAxis = std::abs(yAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisL) : 0;
@@ -251,7 +250,7 @@ int main(int argc, char **argv) {
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_ADDED:
-                    gamepad = findController();
+                    cpu.bus.gamepad = findController();
                     break;
             }
         }

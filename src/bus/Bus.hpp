@@ -63,12 +63,14 @@ public:
     char gameId[4];
     SaveType saveType = Eeprom4k;
 
+    SDL_Gamepad* gamepad = nullptr;
+
     uint32_t input = 0;
 
     CPU& cpu;
     RSP rsp;
 
-    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this) {
+    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this), pif(*this) {
         rdram.resize(0x800000);
         rdram9.resize(0x800000);
         spdmem.resize(0x1000);
@@ -166,6 +168,8 @@ public:
 
     std::string generateHash();
     void setCic();
+
+    void writeRumblePak(int channel, uint16_t address);
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);

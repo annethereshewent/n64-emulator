@@ -1,15 +1,12 @@
 #pragma once
 
-#include "PIF.hpp"
 #include <iostream>
+#include "PIF.hpp"
+#include "../Bus.hpp"
 
 class Bus;
 
 const uint32_t CART_CHANNEL = 4;
-
-PIF::PIF() {
-    ram = {};
-}
 
 void PIF::executeCommand() {
     uint8_t commandByte = ram[0x3f];
@@ -109,7 +106,7 @@ void PIF::disablePIFChannel(int channel) {
     channels[channel].rxBuf = -1;
 }
 
-void PIF::processCartridge(Bus& bus) {
+void PIF::processCartridge() {
     uint8_t command = ram[channels[CART_CHANNEL].txBuf];
 
     switch (command) {
@@ -136,10 +133,10 @@ void PIF::processCartridge(Bus& bus) {
             break;
         }
         case 4:
-            readEeprom(bus);
+            readEeprom();
             break;
         case 5:
-            writeEeprom(bus);
+            writeEeprom();
             break;
         case 6:
             std::cout << "TODO: RTC_STATUS\n";
@@ -160,7 +157,7 @@ void PIF::processCartridge(Bus& bus) {
     }
 }
 
-void PIF::processController(int channel, Bus& bus) {
+void PIF::processController(int channel) {
     if (channels[channel].txBuf == -1) {
         std::cout << "found a value of -1 for txBuf, shouldn't happen\n";
         exit(1);
@@ -180,17 +177,64 @@ void PIF::processController(int channel, Bus& bus) {
             memcpy(&ram[channels[channel].rxBuf], &bus.input, sizeof(uint32_t));
             break;
         case 0x2:
-            std::cout << "controller command not implemented: 0x2\n";
-            exit(1);
+            readPakBlock(
+                channels[channel].txBuf + 1,
+                channels[channel].rxBuf,
+                channels[channel].rxBuf + 32,
+                channel
+            );
             break;
         case 0x3:
-            std::cout << "controller command not implemented: 0x3\n";
-            exit(1);
+            writePakBlock(
+                channels[channel].txBuf + 1,
+                channels[channel].txBuf + 3,
+                channels[channel].rxBuf,
+                channel
+            );
             break;
     }
 }
 
-void PIF::readEeprom(Bus& bus) {
+uint8_t PIF::getCrc(int channel, uint16_t address, int data) {
+    uint8_t crc = 0;
+
+    for (int i = 0; i <= 32; i++) {
+
+        for (int mask = 0x80; mask >= 1; mask >>= 1) {
+            uint8_t xorT = (crc & 0x80)!= 0 ? 0x85 : 0;
+            crc <<= 1;
+            if (i != 32 && (ram[data + i] & mask) != 0) {
+                crc |= 1;
+            }
+            crc ^= xorT;
+        }
+    }
+
+    return crc;
+}
+
+void PIF::readPakBlock(int addrAcrc, int data, int dcrc, int channel) {
+    uint16_t address = (uint16_t)ram[addrAcrc] << 8 | (uint16_t)(ram[addrAcrc + 1] & 0xe0);
+
+    uint8_t value = address >= 0x8000 && address <= 0x9000 ? 0x80 : 0;
+
+    for (int i = 0; i < 32; i++) {
+        ram[data + i] = value;
+    }
+
+    ram[dcrc] = getCrc(channel, address, data);
+}
+
+void PIF::writePakBlock(int addrAcrc, int data, int dcrc, int channel) {
+    uint16_t address = (uint16_t)ram[addrAcrc] << 8 | (uint16_t)(ram[addrAcrc + 1] & 0xe0);
+
+    // TODO: implement other kinds of paks. but rumble pak should be fine for now
+    bus.writeRumblePak(channel, address);
+
+    ram[dcrc] = getCrc(channel, address, data);
+}
+
+void PIF::readEeprom() {
     bus.formatEeprom();
 
     uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;
@@ -198,7 +242,7 @@ void PIF::readEeprom(Bus& bus) {
     memcpy(&ram[channels[CART_CHANNEL].rxBuf], &bus.eeprom[address], 8);
 }
 
-void PIF::writeEeprom(Bus& bus) {
+void PIF::writeEeprom() {
     bus.formatEeprom();
 
     uint32_t address = ram[channels[CART_CHANNEL].txBuf + 1] * 8;

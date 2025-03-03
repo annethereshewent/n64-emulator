@@ -44,9 +44,9 @@ uint64_t SerialInterface::processChannel(int channelId, Bus& bus) {
 
     // TODO: process other controllers, but for now just do the first controller
     if (channelId == 0) {
-        bus.pif.processController(channelId, bus);
+        bus.pif.processController(channelId);
     } else if (channelId == CART_CHANNEL) {
-        bus.pif.processCartridge(bus);
+        bus.pif.processCartridge();
     } else {
         bus.pif.ram[bus.pif.channels[channelId].rx] |= 0x80;
         return 0;

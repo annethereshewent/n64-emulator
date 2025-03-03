@@ -1396,6 +1396,23 @@ void Bus::setCic() {
     pif.ram[0x26] = cicSeed;
 }
 
+void Bus::writeRumblePak(int channel, uint16_t address) {
+    if (address == 0xc000) {
+        uint16_t rumble = (uint16_t)pif.ram[address];
+
+        // todo: implement more controllers, but for now there's only one.
+        if (channel == 0) {
+            // todo: check if these values are right or whether they can vary
+            SDL_RumbleGamepad(
+                gamepad,
+                (rumble & 1) * 0xffff,
+                (rumble & 1) * 0xffff,
+                (rumble & 1) * 60000
+            );
+        }
+    }
+}
+
 // see: https://stackoverflow.com/questions/50489951/openssl-convert-binary-bytes-to-sha256-c
 std::string Bus::generateHash() {
     unsigned char hash[SHA256_DIGEST_LENGTH];

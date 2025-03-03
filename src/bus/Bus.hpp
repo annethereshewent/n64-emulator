@@ -169,7 +169,7 @@ public:
     std::string generateHash();
     void setCic();
 
-    void writeRumblePak(int channel, uint16_t address);
+    void writeRumblePak(int channel, uint16_t address, int data);
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);

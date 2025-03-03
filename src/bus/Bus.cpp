@@ -610,7 +610,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             serialInterface.status.dmaBusy = 1;
 
             uint64_t cycles = serialInterface.processRam(*this);
-
             cpu.scheduler.addEvent(Event(SIDma, cpu.cop0.count + cycles));
             break;
         }
@@ -1424,9 +1423,9 @@ void Bus::setCic() {
     pif.ram[0x26] = cicSeed;
 }
 
-void Bus::writeRumblePak(int channel, uint16_t address) {
+void Bus::writeRumblePak(int channel, uint16_t address, int data) {
     if (address == 0xc000) {
-        uint16_t rumble = (uint16_t)pif.ram[address];
+        uint16_t rumble = (uint16_t)pif.ram[data + 32 - 1];
 
         // todo: implement more controllers, but for now there's only one.
         if (channel == 0) {

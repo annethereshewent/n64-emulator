@@ -162,6 +162,7 @@ void PIF::processController(int channel) {
         std::cout << "found a value of -1 for txBuf, shouldn't happen\n";
         exit(1);
     }
+
     uint8_t command = ram[channels[channel].txBuf];
 
     switch (command) {
@@ -177,6 +178,7 @@ void PIF::processController(int channel) {
             memcpy(&ram[channels[channel].rxBuf], &bus.input, sizeof(uint32_t));
             break;
         case 0x2:
+
             readPakBlock(
                 channels[channel].txBuf + 1,
                 channels[channel].rxBuf,
@@ -229,7 +231,7 @@ void PIF::writePakBlock(int addrAcrc, int data, int dcrc, int channel) {
     uint16_t address = (uint16_t)ram[addrAcrc] << 8 | (uint16_t)(ram[addrAcrc + 1] & 0xe0);
 
     // TODO: implement other kinds of paks. but rumble pak should be fine for now
-    bus.writeRumblePak(channel, address);
+    bus.writeRumblePak(channel, address, data);
 
     ram[dcrc] = getCrc(channel, address, data);
 }

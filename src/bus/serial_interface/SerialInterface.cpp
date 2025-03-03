@@ -35,7 +35,11 @@ uint64_t SerialInterface::processRam(Bus& bus) {
 }
 
 uint64_t SerialInterface::processChannel(int channelId, Bus& bus) {
-    if (bus.pif.channels[channelId].tx == -1) {
+    if (bus.pif.channels[channelId].tx == -1
+        || bus.pif.channels[channelId].txBuf == -1
+        || bus.pif.channels[channelId].rx == -1
+        || bus.pif.channels[channelId].rxBuf == -1
+    ) {
         return 0;
     }
 

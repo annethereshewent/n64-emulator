@@ -531,18 +531,31 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&peripheralInterface.dramAddress, value & 0xfffffe, mask);
             break;
         case 0x4600004:
-            Bus::writeWithMask32(&peripheralInterface.cartAddress, value & 0xfffffe, mask);
+            Bus::writeWithMask32(&peripheralInterface.cartAddress, value, mask);
             break;
         case 0x4600008:
             Bus::writeWithMask32(&peripheralInterface.rdLen, value & 0xffffff, mask);
 
             // dmaRead();
             break;
-        case 0x460000c:
+        case 0x460000c: {
             Bus::writeWithMask32(&peripheralInterface.wrLen, value & 0xffffff, mask);
+            uint32_t cartAddress = peripheralInterface.cartAddress;
 
-            dmaWrite();
+            if (cartAddress >= 0x1ffe0000 && cartAddress <= 0x1ffe1fff) {
+                std::println("todo: sc64 dma");
+                exit(1);
+            } else if (cartAddress >= 0x10000000 && cartAddress <= 0x1fbfffff) {
+                dmaCartWrite();
+            } else if (cartAddress >= 0x8000000 && cartAddress <= 0xfffffff) {
+                std::println("todo: sram dma");
+                exit(1);
+            } else {
+                std::println("unknown cartridge address received: {:x}", cartAddress);
+                exit(1);
+            }
             break;
+        }
         case 0x4600010:
             if ((value & 0b1) == 1) {
                 peripheralInterface.piStatus.value = 0;
@@ -620,7 +633,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                // Bus::writeValueLE(&rdram[actualAddress], returnVal, 4);
                 memcpy(&rdram[actualAddress], &returnVal, sizeof(uint32_t));
 
                 return;
@@ -660,7 +672,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 returnVal = std::byteswap(returnVal);
 
-                // Bus::writeWord(&pif.ram[offset], returnVal);
                 memcpy(&pif.ram[offset], &returnVal, sizeof(uint32_t));
 
                 cpu.scheduler.addEvent(Event(PIFExecuteCommand, cpu.cop0.count + 3200));
@@ -680,8 +691,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 memcpy(&rsp.dmem[offset], &returnVal, sizeof(uint32_t));
 
-                // Bus::writeWord(&rsp.dmem[offset], returnVal);
-
                 return;
             }
             if (actualAddress >= 0x4001000 && actualAddress <= 0x4001FFF) {
@@ -692,7 +701,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                // Bus::writeWord(&rsp.imem[offset], returnVal);
                 returnVal = std::byteswap(returnVal);
 
                 memcpy(&rsp.imem[offset], &returnVal, sizeof(uint32_t));
@@ -1263,9 +1271,10 @@ void Bus::clearInterrupt(uint32_t flag) {
     cpu.checkIrqs();
 }
 
-void Bus::dmaWrite() {
+void Bus::dmaCartWrite() {
     uint32_t currDramAddr = peripheralInterface.dramAddress;
-    uint32_t currCartAddr = peripheralInterface.cartAddress;
+    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xfffffe;
+
     uint32_t length = peripheralInterface.wrLen + 1;
 
     if (length > 0x7f & (length & 1) != 0) {
@@ -1276,8 +1285,10 @@ void Bus::dmaWrite() {
     }
     for (int i = 0; i < length; i++) {
         if (currCartAddr + i >= cartridge.size()) {
+            // xoring with 3 essentially byteswaps the values
             rdram[(currDramAddr + i) ^ 3] = 0;
         } else {
+            // see above comment
             rdram[(currDramAddr + i) ^ 3] = cartridge[currCartAddr + i];
         }
     }

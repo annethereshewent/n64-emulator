@@ -143,7 +143,7 @@ public:
     void setInterrupt(uint32_t flag);
     void clearInterrupt(uint32_t flag);
 
-    void dmaWrite();
+    void dmaCartWrite();
     void handleRspDma(SPDma dma);
 
     void checkIrqs();

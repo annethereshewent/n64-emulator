@@ -890,12 +890,10 @@ void CPU::daddu(CPU* cpu, uint32_t instruction) {
     CPU::dadd(cpu, instruction);
 }
 void CPU::dsub(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsub\n";
-    exit(1);
+    cpu->r[getRd(instruction)] = cpu->r[getRs(instruction)] - cpu->r[getRt(instruction)];
 }
 void CPU::dsubu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsubu\n";
-    exit(1);
+    CPU::dsub(cpu, instruction);
 }
 void CPU::tge(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: tge\n";
@@ -926,12 +924,12 @@ void CPU::dsll(CPU* cpu, uint32_t instruction) {
     cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shift;
 }
 void CPU::dsrl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsrl\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction);
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] >> shift;
 }
 void CPU::dsra(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsra\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction);
+    cpu->r[getRd(instruction)] = (uint64_t)((int64_t)cpu->r[getRt(instruction)] >> shift);
 }
 void CPU::dsll32(CPU* cpu, uint32_t instruction) {
     uint32_t shift = shiftAmount(instruction) + 32;
@@ -1040,8 +1038,22 @@ void CPU::tnei(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::bltzal(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bltzal\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+
+    uint64_t nextPc = cpu->nextPc;
+    if ((int64_t)cpu->r[rs] < 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+    }
+
+    cpu->r[31] = nextPc;
+
+    cpu->inDelaySlot = true;
 }
 void CPU::bgezal(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

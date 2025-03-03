@@ -21,6 +21,10 @@ union convu64 {
     uint64_t u64;
     double f64;
 };
+union convi64 {
+    int64_t i64;
+    double f64;
+};
 
 class CPU;
 

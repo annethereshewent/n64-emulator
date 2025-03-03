@@ -424,8 +424,18 @@ void COP1::roundLS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::truncLS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: truncLS\n";
+    float value = cpu->cop1.getFloat(CPU::getRd(instruction));
+
+    int64_t intValue = (int64_t)trunc(value);
+
+    std::println("intValue = {:x}, float = {}", (uint64_t)intValue, value);
+
+    double returnValue = ((convi64){.i64 = intValue}).f64;
+
+    std::println("got back value {}", returnValue);
     exit(1);
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), returnValue);
 }
 void COP1::ceilLS(CPU* cpu, uint32_t instruction) {
     std::cout << "TODO: ceilLS\n";
@@ -436,8 +446,13 @@ void COP1::floorLS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::roundWS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: roundWS\n";
-    exit(1);
+    float value = cpu->cop1.getFloat(CPU::getRd(instruction));
+
+    int32_t valueI32 = (int32_t)(round(value / 2.0) * 2.0);
+
+    float returnValue = ((convi32){.i32 = valueI32}).f32;
+
+    cpu->cop1.setFloat(CPU::getFd(instruction), returnValue);
 }
 void COP1::truncWS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);

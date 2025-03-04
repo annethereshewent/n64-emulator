@@ -243,7 +243,7 @@ void COP1::mfc1(CPU* cpu, uint32_t instruction) {
         returnVal = (uint32_t)cpu->cop1.fgr64[rd];
     }
 
-    cpu->r[CPU::getRt(instruction)] = returnVal;
+    cpu->r[CPU::getRt(instruction)] = (int32_t)(int64_t)(uint32_t)returnVal;
 }
 
 void COP1::mtc1(CPU* cpu, uint32_t instruction) {

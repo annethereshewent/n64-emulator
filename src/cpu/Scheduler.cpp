@@ -3,6 +3,41 @@
 #include "Scheduler.hpp"
 #include <iostream>
 
+std::string Event::getEventName() {
+    switch (eventType) {
+        case VideoInterrupt:
+            return "VideoInterrupt";
+            break;
+        case PIFExecuteCommand:
+            return "PIFExecuteCommand";
+            break;
+        case RspDmaPop:
+            return "RspDmaPop";
+            break;
+        case RunRspPc:
+            return "RunRspPc";
+            break;
+        case PIDma:
+            return "PIDma";
+            break;
+        case CompareCount:
+            return "CompareCount";
+            break;
+        case SIDma:
+            return "SIDma";
+            break;
+        case AIDma:
+            return "AIDma";
+            break;
+        case RDPEvent:
+            return "RDPEvent";
+            break;
+        case NoEvent:
+            return "NoEvent";
+            break;
+    }
+}
+
 void Scheduler::addEvent(Event event) {
     events[event.eventType] = event;
 

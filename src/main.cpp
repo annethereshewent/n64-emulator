@@ -7,6 +7,7 @@
 #if __APPLE__
     #include <sysdir.h>  // for sysdir_start_search_path_enumeration
     #include <glob.h>    // for glob needed to expand ~ to user dir
+    #include <execinfo.h>
 #endif
 
 SDL_Gamepad* findController() {
@@ -23,8 +24,26 @@ SDL_Gamepad* findController() {
 
     return nullptr;
 }
+#if __APPLE__
+    void handler(int sig) {
+        void *array[50];
+        size_t size;
+
+        // get void*'s for all entries on the stack
+        size = backtrace(array, 50);
+
+        // print out all the frames to stderr
+        fprintf(stderr, "Error: signal %d:\n", sig);
+        backtrace_symbols_fd(array, size, STDERR_FILENO);
+        exit(1);
+    }
+#endif
 
 int main(int argc, char **argv) {
+    #if __APPLE__
+        signal(SIGSEGV, handler);
+    #endif
+
     CPU cpu;
     SDL_Event event;
 

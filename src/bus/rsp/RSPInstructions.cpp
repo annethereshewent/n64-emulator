@@ -181,8 +181,11 @@ void RSP::jr(RSP* rsp, uint32_t instruction) {
     rsp->inDelaySlot = true;
 }
 void RSP::jalr(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: jalr\n";
-    exit(1);
+    rsp->r[CPU::getRd(instruction)] = rsp->nextPc;
+
+    rsp->inDelaySlot = true;
+
+    rsp->nextPc = rsp->r[CPU::getRs(instruction)];
 }
 void RSP::break_(RSP* rsp, uint32_t instruction) {
     rsp->cpuBroken = true;

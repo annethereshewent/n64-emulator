@@ -310,6 +310,8 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
                 // TODO: implement saves
+                std::println("todo: sram read");
+                exit(1);
                 return 0xff;
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
@@ -1430,7 +1432,7 @@ void Bus::setCic() {
 
 void Bus::writeRumblePak(int channel, uint16_t address, int data) {
     if (address == 0xc000) {
-        uint16_t rumble = (uint16_t)pif.ram[data + 32 - 1];
+        uint16_t rumble = (uint16_t)pif.ram[data + 31];
 
         // todo: implement more controllers, but for now there's only one.
         if (channel == 0) {

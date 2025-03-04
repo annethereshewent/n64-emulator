@@ -413,8 +413,10 @@ void COP1::sqrtS(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(28);
 }
 void COP1::absS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: absS\n";
-    exit(1);
+    float value = cpu->cop1.getFloat(CPU::getRd(instruction));
+
+    cpu->cop1.setFloat(CPU::getFd(instruction), std::abs(value));
+    cpu->cop0.addCycles(2);
 }
 void COP1::movS(CPU* cpu, uint32_t instruction) {
     double result = cpu->cop1.getDouble(CPU::getRd(instruction));
@@ -720,8 +722,10 @@ void COP1::sqrtD(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::absD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: absD\n";
-    exit(1);
+    double value = cpu->cop1.getDouble(CPU::getRd(instruction));
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), std::abs(value));
+    cpu->cop0.addCycles(2);
 }
 void COP1::movD(CPU* cpu, uint32_t instruction) {
     double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));

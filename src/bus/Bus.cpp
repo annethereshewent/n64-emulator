@@ -360,6 +360,9 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
 
                 return std::byteswap(*(uint32_t*)&pif.ram[offset]);
             }
+            if (actualAddress >= 0x1fd00000 && actualAddress <= 0x1fffffff) {
+                return actualAddress & 0xffff | ((actualAddress & 0xffff) << 16);
+            }
 
             std::cout << "(memRead32) unsupported address received: " << std::hex << actualAddress << "\n";
             exit(1);
@@ -537,6 +540,8 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&peripheralInterface.rdLen, value & 0xffffff, mask);
 
             // dmaRead();
+            std::println("todo: dmaRead");
+            exit(1);
             break;
         case 0x460000c: {
             Bus::writeWithMask32(&peripheralInterface.wrLen, value & 0xffffff, mask);

@@ -159,6 +159,12 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
                 writeValueLE(&rdram[actualAddress], value, 2);
+                // due to little endian/big endian conversions, need to something like this.
+                if ((actualAddress) & 0x3 == 0) {
+                    memcpy(&rdram[actualAddress + 2], &value, sizeof(uint16_t));
+                } else {
+                    memcpy(&rdram[actualAddress & ~0x3], &value, sizeof(uint16_t));
+                }
 
                 return;
             }

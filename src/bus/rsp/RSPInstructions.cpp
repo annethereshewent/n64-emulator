@@ -558,8 +558,19 @@ void RSP::mtc2(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::ctc2(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: ctc2\n";
-    exit(1);
+    uint16_t value = (uint16_t)rsp->r[CPU::getRt(instruction)];
+    switch (CPU::getRd(instruction) & 3) {
+        case 0:
+            rsp->vco = value;
+            break;
+        case 1:
+            rsp->vcc = value;
+            break;
+        case 2:
+        case 3:
+            rsp->vce = (uint8_t)value;
+            break;
+    }
 }
 
 void RSP::mfc2(RSP* rsp, uint32_t instruction) {

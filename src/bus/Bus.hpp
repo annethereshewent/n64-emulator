@@ -61,7 +61,7 @@ public:
     uint64_t timeSinceSaveWrite = 0;
 
     char gameId[4];
-    SaveType saveType = Eeprom4k;
+    std::vector<SaveType> saveTypes = {};
 
     SDL_Gamepad* gamepad = nullptr;
 
@@ -122,9 +122,9 @@ public:
 
     void formatEeprom();
     void loadRom(std::string filename);
-    void openSave(std::string saveName);
+    void openSaves(std::vector<std::string> saveNames);
     void writeSave();
-    std::string getSaveName(std::string filename);
+    std::vector<std::string> getSaveNames(std::string filename);
 
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);
@@ -143,6 +143,7 @@ public:
     void setInterrupt(uint32_t flag);
     void clearInterrupt(uint32_t flag);
 
+    void dmaSramWrite();
     void dmaCartWrite();
     void handleRspDma(SPDma dma);
 

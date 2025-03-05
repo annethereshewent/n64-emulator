@@ -114,17 +114,13 @@ void PIF::processCartridge() {
         case 0xff: {
             uint16_t saveType;
 
-            switch (bus.saveType) {
-                case Eeprom16k:
-                    saveType = EEPROM_16K;
-                    break;
-                case Eeprom4k:
-                    saveType = EEPROM_4K;
-                    break;
-                default:
-                    ram[channels[CART_CHANNEL].rx] |= 0x80;
-                    return;
-                    break;
+            if (std::find(bus.saveTypes.begin(), bus.saveTypes.end(), Eeprom16k) != bus.saveTypes.end()) {
+                saveType = EEPROM_16K;
+            } else if (std::find(bus.saveTypes.begin(), bus.saveTypes.end(), Eeprom4k) != bus.saveTypes.end()) {
+                saveType = EEPROM_4K;
+            } else {
+                ram[channels[CART_CHANNEL].rx] |= 0x80;
+                return;
             }
 
             ram[channels[CART_CHANNEL].rxBuf] = (uint8_t)saveType;

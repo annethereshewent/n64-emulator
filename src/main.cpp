@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
     cpu.bus.loadRom(argv[1]);
     cpu.bus.setCic();
-    std::string saveName = cpu.bus.getSaveName(argv[1]);
+    std::vector<std::string> saveNames = cpu.bus.getSaveNames(argv[1]);
 
     std::string basePath;
 
@@ -99,9 +99,11 @@ int main(int argc, char **argv) {
 
     std::filesystem::create_directory(savesDir);
 
-    saveName = savesDir + saveName;
+    for (std::string& saveName: saveNames) {
+        saveName = savesDir + saveName;
+    }
 
-    cpu.bus.openSave(saveName);
+    cpu.bus.openSaves(saveNames);
 
     GFX_INFO gfxInfo;
 

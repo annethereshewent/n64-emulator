@@ -555,8 +555,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             } else if (cartAddress >= 0x10000000 && cartAddress <= 0x1fbfffff) {
                 dmaCartWrite();
             } else if (cartAddress >= 0x8000000 && cartAddress <= 0xfffffff) {
-                std::println("todo: sram dma");
-                exit(1);
+                dmaSramWrite();
             } else {
                 std::println("unknown cartridge address received: {:x}", cartAddress);
                 exit(1);
@@ -724,28 +723,64 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
     }
 }
 
-void Bus::openSave(std::string saveName) {
-    saveFile = std::fstream(saveName, std::ios::binary | std::ios::in | std::ios::out);
+void Bus::openSaves(std::vector<std::string> saveNames) {
 
+    for (std::string saveName: saveNames) {
+        saveFile = std::fstream(saveName, std::ios::binary | std::ios::in | std::ios::out);
+
+        if (saveFile.is_open()) {
+            saveFile.seekg(0, std::ios::end);
+            size_t fileSize = saveFile.tellg();
+            saveFile.seekg(0, std::ios::beg);
+
+            if (fileSize != 0) {
+                for (SaveType saveType: saveTypes) {
+                    switch (saveType) {
+                        case Eeprom16k:
+                        case Eeprom4k:
+                            eeprom.resize(fileSize);
+                            saveFile.read(reinterpret_cast<char*>(eeprom.data()), fileSize);
+                            break;
+                        case Flash:
+                            flash.resize(fileSize);
+                            saveFile.read(reinterpret_cast<char*>(flash.data()), fileSize);
+                            break;
+                        case Sram:
+                            sram.resize(fileSize);
+                            saveFile.read(reinterpret_cast<char*>(sram.data()), fileSize);
+                            break;
+                        case NoSave:
+                            // do nothing
+                            break;
+                        case Mempak:
+                            std::println("todo: mempak");
+                            exit(1);
+                            break;
+                    }
+                }
+            }
+        } else {
+            saveFile = std::fstream(saveName, std::ios::out);
+        }
+    }
+}
+
+void Bus::writeSave() {
     if (saveFile.is_open()) {
-        saveFile.seekg(0, std::ios::end);
-        size_t fileSize = saveFile.tellg();
+        std::println("writing save....");
         saveFile.seekg(0, std::ios::beg);
 
-        if (fileSize != 0) {
-            switch (saveType) {
+        for (SaveType type: saveTypes) {
+            switch (type) {
                 case Eeprom16k:
                 case Eeprom4k:
-                    eeprom.resize(fileSize);
-                    saveFile.read(reinterpret_cast<char*>(eeprom.data()), fileSize);
+                    saveFile.write((char*)&eeprom[0], sizeof(uint8_t) * eeprom.size());
                     break;
                 case Flash:
-                    flash.resize(fileSize);
-                    saveFile.read(reinterpret_cast<char*>(flash.data()), fileSize);
+                    saveFile.write((char*)&flash[0], sizeof(uint8_t) * flash.size());
                     break;
                 case Sram:
-                    sram.resize(fileSize);
-                    saveFile.read(reinterpret_cast<char*>(sram.data()), fileSize);
+                    saveFile.write((char*)&sram[0], sizeof(uint8_t) * sram.size());
                     break;
                 case NoSave:
                     // do nothing
@@ -756,65 +791,43 @@ void Bus::openSave(std::string saveName) {
                     break;
             }
         }
-    } else {
-        saveFile = std::fstream(saveName, std::ios::out);
-    }
-}
-
-void Bus::writeSave() {
-    if (saveFile.is_open()) {
-        std::println("writing save....");
-        saveFile.seekg(0, std::ios::beg);
-
-        switch (saveType) {
-            case Eeprom16k:
-            case Eeprom4k:
-                saveFile.write((char*)&eeprom[0], sizeof(uint8_t) * eeprom.size());
-                break;
-            case Flash:
-                saveFile.write((char*)&flash[0], sizeof(uint8_t) * flash.size());
-                break;
-            case Sram:
-                saveFile.write((char*)&sram[0], sizeof(uint8_t) * sram.size());
-                break;
-            case NoSave:
-                // do nothing
-                break;
-            case Mempak:
-                std::println("todo: mempak");
-                exit(1);
-                break;
-        }
     }
 
     timeSinceSaveWrite = 0;
 }
 
-std::string Bus::getSaveName(std::string filename) {
+std::vector<std::string> Bus::getSaveNames(std::string filename) {
     std::string saveName;
     std::string extension;
-    switch (saveType) {
-        case Eeprom16k:
-        case Eeprom4k:
-            extension = ".eep";
-            break;
-        case Flash:
-            extension = ".fla";
-            break;
-        case Sram:
-            extension = ".sra";
-            break;
-        case NoSave:
-            return "";
-            break;
-        case Mempak:
-            extension = ".mem";
-            break;
-    }
-    saveName = std::regex_replace(filename, std::regex("\\.n64$|\\.z64$|\\.N64$|\\.Z64$"), extension);
-    saveName = std::regex_replace(saveName, std::regex(".*/"), "");
 
-    return saveName;
+    std::vector<std::string> names = {};
+
+    for (SaveType type: saveTypes) {
+        switch (type) {
+            case Eeprom16k:
+            case Eeprom4k:
+                extension = ".eep";
+                break;
+            case Flash:
+                extension = ".fla";
+                break;
+            case Sram:
+                extension = ".sra";
+                break;
+            case NoSave:
+                break;
+            case Mempak:
+                extension = ".mem";
+                break;
+        }
+        saveName = std::regex_replace(filename, std::regex("\\.n64$|\\.z64$|\\.N64$|\\.Z64$"), extension);
+        saveName = std::regex_replace(saveName, std::regex(".*/"), "");
+
+        names.push_back(saveName);
+    }
+
+
+    return names;
 }
 
 void Bus::formatEeprom() {
@@ -877,19 +890,19 @@ void Bus::loadRom(std::string filename) {
 
         switch (saveType) {
             case 0:
-                saveType = NoSave;
+                saveTypes = {};
                 break;
             case 1:
-                saveType = Eeprom4k;
+                saveTypes = { Eeprom4k };
                 break;
             case 2:
-                saveType = Eeprom16k;
+                saveTypes = { Eeprom16k };
                 break;
             case 3:
-                saveType = Sram;
+                saveTypes = { Sram };
                 break;
             case 5:
-                saveType = Flash;
+                saveTypes = { Flash };
                 break;
             default:
                 std::cout << "unknown save type detected: " << std::dec << saveType << "\n";
@@ -946,13 +959,13 @@ void Bus::loadRom(std::string filename) {
         };
 
         if (std::find(eeprom16KSaves.begin(), eeprom16KSaves.end(), gameId) != eeprom16KSaves.end()) {
-            saveType = Eeprom16k;
+            saveTypes = { Eeprom16k };
         } else if (std::find(flashSaves.begin(), flashSaves.end(), gameId) != flashSaves.end()) {
-            saveType = Flash;
+            saveTypes = { Flash };
         } else if (strcmp(gameId, "NPQ") == 0) {
-            saveType = NoSave;
+            saveTypes = {};
         } else {
-            saveType = Eeprom4k;
+            saveTypes = { Eeprom4k, Sram };
         }
     }
     file.close();
@@ -1309,6 +1322,10 @@ void Bus::dmaCartWrite() {
     uint64_t cycles = peripheralInterface.calculateCycles(1, length);
 
     cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
+void Bus::dmaSramWrite() {
+
 }
 
 // TODO: move this to mips interface. currently having compile

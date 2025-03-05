@@ -489,8 +489,15 @@ void COP1::ceilWS(CPU* cpu, uint32_t instruction) {
     exit(1);
 }
 void COP1::floorWS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: floorWS\n";
-    exit(1);
+    float value = cpu->cop1.getFloat(CPU::getRd(instruction));
+
+    int32_t intVal = (int32_t)std::floor(value);
+
+    float result = ((convi32){.i32 = intVal}).f32;
+
+    cpu->cop1.setFloat(CPU::getFd(instruction), result);
+
+    cpu->cop0.addCycles(4);
 }
 void COP1::cvtDS(CPU* cpu, uint32_t instruction) {
     float result = cpu->cop1.getFloat(CPU::getRd(instruction));

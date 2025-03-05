@@ -472,12 +472,14 @@ void RSP::sqv(RSP* rsp, uint32_t instruction) {
     uint8_t velement = getVElement(instruction);
     uint8_t vt = getVt(instruction);
 
-    uint32_t end = (address & 0xff0) + 16;
+    if (velement == 0 && (address & 0xf) == 0) {
+        memcpy(&rsp->dmem[address & 0xfff], &rsp->vpr[vt], sizeof(u128));
+    } else {
+        uint32_t end = 16 - (address & 0xf);
 
-    uint32_t len = end - address;
-
-    for (int i = 0; i < len; i++) {
-        rsp->memWrite8(address + i, rsp->getVec8(vt, (velement + i) & 0xf));
+        for (int i = 0; i < end; i++) {
+            rsp->memWrite8(address + i, rsp->vpr[vt][velement + i]);
+        }
     }
 }
 void RSP::srv(RSP* rsp, uint32_t instruction) {
@@ -587,7 +589,7 @@ void RSP::mfc2(RSP* rsp, uint32_t instruction) {
 
 void RSP::cfc2(RSP* rsp, uint32_t instruction) {
     uint32_t value;
-    switch (CPU::getRd(instruction)) {
+    switch (CPU::getRd(instruction) & 3) {
         case 0:
             value = (int16_t)(int32_t)(uint32_t)rsp->vco;
             break;

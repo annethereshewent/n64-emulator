@@ -39,25 +39,42 @@ uint8_t Bus::memRead8(uint64_t address) {
         }
     }
 
-    switch (actualAddress) {
-        default:
-            if (actualAddress <= 0x03EFFFFF) {
-                return rdram[actualAddress];
-            }
-            if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
-                uint64_t offset = actualAddress - 0x10000000;
-
-                if (offset < cartridge.size()) {
-                    return cartridge[offset];
-                }
-
-                std::cout << "invalid cartridge offset given!\n";
-                exit(1);
-            }
-            std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
-            break;
+    if (actualAddress <= 0x03EFFFFF) {
+        return rdram[actualAddress];
     }
+    if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
+        uint64_t offset = actualAddress - 0x10000000;
+
+        if (offset < cartridge.size()) {
+            return cartridge[offset];
+        }
+
+        std::cout << "invalid cartridge offset given!\n";
+        exit(1);
+    }
+
+    if (actualAddress >= 0x4000000 && actualAddress <= 0x4ffffff) {
+        uint32_t value = memRead32(actualAddress);
+
+        switch (actualAddress & 0x3) {
+            case 0:
+                return (uint8_t)(value >> 24);
+                break;
+            case 1:
+                return (uint8_t)(value >> 16);
+                break;
+            case 2:
+                return (uint8_t)(value >> 8);
+                break;
+            case 3:
+                return (uint8_t)value;
+                break;
+        }
+    }
+
+    std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
+    exit(1);
+
 }
 
 uint16_t Bus::memRead16(uint64_t address) {

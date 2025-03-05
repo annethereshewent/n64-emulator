@@ -555,7 +555,16 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             } else if (cartAddress >= 0x10000000 && cartAddress <= 0x1fbfffff) {
                 dmaCartWrite();
             } else if (cartAddress >= 0x8000000 && cartAddress <= 0xfffffff) {
-                dmaSramWrite();
+                if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                    dmaSramWrite();
+                } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
+                    std::println("TODO: dmaFlashWrite");
+                    exit(1);
+                    // dmaFlashWrite();
+                } else {
+                    std::println("invalid address given for PI dma write: {:x}", cartAddress);
+                    exit(1);
+                }
             } else {
                 std::println("unknown cartridge address received: {:x}", cartAddress);
                 exit(1);
@@ -831,7 +840,7 @@ std::vector<std::string> Bus::getSaveNames(std::string filename) {
 }
 
 void Bus::formatEeprom() {
-    if (eeprom.size() == 0) {
+    if (eeprom.size() < 0x800) {
         eeprom.resize(0x800);
         std::fill(eeprom.begin(), eeprom.end(), 0xff);
     }
@@ -1291,7 +1300,7 @@ void Bus::clearInterrupt(uint32_t flag) {
 }
 
 void Bus::dmaCartWrite() {
-    uint32_t currDramAddr = peripheralInterface.dramAddress;
+    uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
     uint32_t currCartAddr = peripheralInterface.cartAddress & 0xfffffe;
 
     uint32_t length = peripheralInterface.wrLen + 1;
@@ -1325,8 +1334,37 @@ void Bus::dmaCartWrite() {
 }
 
 void Bus::dmaSramWrite() {
+    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xffff;
+    uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
 
+    uint32_t length = peripheralInterface.wrLen + 1;
+
+    if (length > 0x7f & (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= (currDramAddr & 0x7);
+    }
+
+    formatSram();
+
+    for (int i = 0; i < length; i++) {
+        if (currCartAddr + i == sram.size()) {
+            break;
+        }
+
+        rdram[(currDramAddr + i) ^ 3] = sram[currCartAddr + i];
+    }
 }
+
+
+void Bus::formatSram() {
+    if (sram.size() < 0x8000) {
+        sram.resize(0x8000);
+        std::fill(sram.begin(), sram.end(), 0xff);
+    }
+}
+
 
 // TODO: move this to mips interface. currently having compile
 // issues putting the code in there :/

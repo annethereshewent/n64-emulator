@@ -299,17 +299,12 @@ uint64_t RSP::runRsp() {
 
         bool previousDelaySlot = inDelaySlot;
 
-        std::string actualCommand = std::to_string(command);
         uint32_t subCommand = 0;
         switch (command) {
             case 0:
-                subCommand = instruction & 0x3f;
-                actualCommand = "(secondary)" + std::to_string(subCommand);
                 secondary[instruction & 0x3f](this, instruction);
                 break;
             case 1:
-                subCommand = (instruction >> 16) & 0x1f;
-                actualCommand = "(branch)" + std::to_string(subCommand);
                 switch ((instruction >> 16) & 0x1f) {
                     case 0:
                         RSP::bltz(this, instruction);
@@ -329,8 +324,6 @@ uint64_t RSP::runRsp() {
                 }
                 break;
             case 16:
-                subCommand = (instruction >> 21) & 0x1f;
-                actualCommand = "(cop0)" + std::to_string(subCommand);
                 switch ((instruction >> 21) & 0x1f) {
                     case 0:
                         RSP::mfc0(this, instruction);
@@ -343,8 +336,6 @@ uint64_t RSP::runRsp() {
                 }
                 break;
             case 18:
-                subCommand = (instruction >> 21) & 0x1f;
-                actualCommand = "(cop2)" + std::to_string(subCommand);
                 switch ((instruction >> 21) & 0x1f) {
                     case 0:
                         RSP::mfc2(this, instruction);
@@ -360,8 +351,6 @@ uint64_t RSP::runRsp() {
                         break;
                     default:
                         if (((instruction >> 21) & 0x1f) > 15) {
-                            subCommand = instruction & 0x3f;
-                            actualCommand = "(vec)" + std::to_string(subCommand);
                             instructionType = Vector;
                             vecInstructions[instruction & 0x3f](this, instruction);
                         } else {
@@ -372,7 +361,6 @@ uint64_t RSP::runRsp() {
                 break;
             case 50: {
                 uint32_t op = (instruction >> 11) & 0x1f;
-                actualCommand = "(lwc2)" + std::to_string(op);
 
                 if (op < lwc2.size()) {
                     lwc2[op](this, instruction);
@@ -383,7 +371,6 @@ uint64_t RSP::runRsp() {
             }
             case 58: {
                 uint32_t op = (instruction >> 11) & 0x1f;
-                actualCommand = "(swc2)" + std::to_string(op);
 
                 if (op < swc2.size()) {
                     swc2[op](this, instruction);

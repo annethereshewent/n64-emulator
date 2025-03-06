@@ -102,14 +102,14 @@ void RSP::lw(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = value;
 }
 void RSP::lwu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lwu\n";
+    std::cerr << "TODO: lwu\n";
     exit(1);
 }
 void RSP::ori(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRt(instruction)] = rsp->r[CPU::getRs(instruction)] | CPU::getImmediate(instruction);
 }
 void RSP::reserved(RSP* rsp, uint32_t instruction) {
-    std::cout << "reserved RSP instruction received\n";
+    std::cerr << "reserved RSP instruction received\n";
     exit(1);
 }
 void RSP::sb(RSP* rsp, uint32_t instruction) {
@@ -128,11 +128,11 @@ void RSP::sh(RSP* rsp, uint32_t instruction) {
 
 }
 void RSP::slti(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: slti\n";
+    std::cerr << "TODO: slti\n";
     exit(1);
 }
 void RSP::sltiu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sltiu\n";
+    std::cerr << "TODO: sltiu\n";
     exit(1);
 }
 void RSP::sw(RSP* rsp, uint32_t instruction) {
@@ -219,7 +219,7 @@ void RSP::slt(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = (uint32_t)((int32_t)rsp->r[CPU::getRs(instruction)] < (int32_t)rsp->r[CPU::getRt(instruction)]);
 }
 void RSP::sltu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sltu\n";
+    std::cerr << "TODO: sltu\n";
     exit(1);
 }
 
@@ -253,7 +253,7 @@ void RSP::mfc0(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::lbv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lbv\n";
+    std::cerr << "TODO: lbv\n";
     exit(1);
 }
 void RSP::lsv(RSP* rsp, uint32_t instruction) {
@@ -376,15 +376,15 @@ void RSP::luv(RSP* rsp, uint32_t instruction) {
     memcpy(&rsp->vpr[CPU::getRt(instruction)], &returnValue, sizeof(returnValue));
 }
 void RSP::lhv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lhv\n";
+    std::cerr << "TODO: lhv\n";
     exit(1);
 }
 void RSP::lfv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lfv\n";
+    std::cerr << "TODO: lfv\n";
     exit(1);
 }
 void RSP::lwv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: lwv\n";
+    std::cerr << "TODO: lwv\n";
     exit(1);
 }
 void RSP::ltv(RSP* rsp, uint32_t instruction) {
@@ -482,7 +482,7 @@ void RSP::sqv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::srv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: srv\n";
+    std::cerr << "TODO: srv\n";
     exit(1);
 }
 void RSP::spv(RSP* rsp, uint32_t instruction) {
@@ -517,15 +517,15 @@ void RSP::suv(RSP* rsp, uint32_t instruction) {
     }
 }
 void RSP::shv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: shv\n";
+    std::cerr << "TODO: shv\n";
     exit(1);
 }
 void RSP::sfv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: sfv\n";
+    std::cerr << "TODO: sfv\n";
     exit(1);
 }
 void RSP::swv(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: swv\n";
+    std::cerr << "TODO: swv\n";
     exit(1);
 }
 void RSP::stv(RSP* rsp, uint32_t instruction) {
@@ -716,15 +716,15 @@ void RSP::vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::vmulu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmulu\n";
+    std::cerr << "TODO: vmulu\n";
     exit(1);
 }
 void RSP::vrndp(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vrndp\n";
+    std::cerr << "TODO: vrndp\n";
     exit(1);
 }
 void RSP::vmulq(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmulq\n";
+    std::cerr << "TODO: vmulq\n";
     exit(1);
 }
 void RSP::vmudl(RSP* rsp, uint32_t instruction) {
@@ -748,15 +748,15 @@ void RSP::vmacf(RSP* rsp, uint32_t instruction) {
     rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vmacu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmacu\n";
+    std::cerr << "TODO: vmacu\n";
     exit(1);
 }
 void RSP::vrndn(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vrndn\n";
+    std::cerr << "TODO: vrndn\n";
     exit(1);
 }
 void RSP::vmacq(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vmacq\n";
+    std::cerr << "TODO: vmacq\n";
     exit(1);
 }
 void RSP::vmadl(RSP* rsp, uint32_t instruction) {
@@ -825,7 +825,7 @@ void RSP::vsub(RSP* rsp, uint32_t instruction) {
     rsp->vco = 0;
 }
 void RSP::vzero(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vzero\n";
+    std::cerr << "TODO: vzero\n";
     exit(1);
 }
 void RSP::vabs(RSP* rsp, uint32_t instruction) {
@@ -1315,7 +1315,7 @@ void RSP::vrsqh(RSP* rsp, uint32_t instruction) {
     rsp->setVec16(getVd(instruction), getDe(instruction), rsp->divOut);
 }
 void RSP::vnop(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: vnop\n";
+    std::cerr << "TODO: vnop\n";
     exit(1);
 }
 void RSP::bgez(RSP* rsp, uint32_t instruction) {
@@ -1335,7 +1335,7 @@ void RSP::bltz(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::bltzal(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: bltzal\n";
+    std::cerr << "TODO: bltzal\n";
     exit(1);
 }
 

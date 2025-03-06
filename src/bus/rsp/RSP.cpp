@@ -93,7 +93,7 @@ void RSP::updateStatus(uint32_t value) {
     if ((value & 0b1) == 1 && ((value >> 1) & 0b1) == 0) {
         status.halted = 0;
     }
-    if ((value & 0b1) == 0 & ((value >> 1) & 0b1) == 1) {
+    if ((value & 0b1) == 0 && ((value >> 1) & 0b1) == 1) {
         status.halted = 1;
         bus.cpu.scheduler.removeEvent(EventType::RunRspPc);
     }

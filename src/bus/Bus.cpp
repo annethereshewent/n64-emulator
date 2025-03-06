@@ -40,6 +40,8 @@ uint8_t Bus::memRead8(uint64_t address) {
     }
 
     if (actualAddress <= 0x03EFFFFF) {
+        std::println("going in here! fix me!");
+        exit(1);
         return rdram[actualAddress];
     }
     if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
@@ -94,6 +96,8 @@ uint16_t Bus::memRead16(uint64_t address) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
+                std::cerr << "it's going in here! you need to fix this!\n";
+                exit(1);
                 return *(uint16_t*)&rdram[actualAddress];
             }
             std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";

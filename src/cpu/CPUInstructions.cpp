@@ -701,8 +701,13 @@ void CPU::dsrlv(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = cpu->r[rt] >> shift;
 }
 void CPU::dsrav(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsrav\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    uint32_t shift = cpu->r[rs] & 0x3f;
+
+    cpu->r[rd] = (uint64_t)((int64_t)cpu->r[rt] >> shift);
 }
 void CPU::mult(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);

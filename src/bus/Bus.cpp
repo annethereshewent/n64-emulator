@@ -129,6 +129,8 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
+                std::println("yeah it's going in here");
+                exit(1);
                 rdram[actualAddress] = value;
 
                 return;
@@ -353,7 +355,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
-            if (actualAddress >= 0x5000000 && actualAddress <= 0x05ffffff) {
+            if (actualAddress >= 0x5000000 && actualAddress <= 0x07ffffff) {
                 // N64 DD registers, ignore
                 return actualAddress & 0xffff | ((actualAddress & 0xffff) << 16);
             }

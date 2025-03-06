@@ -204,6 +204,12 @@ void RSP::startRsp() {
 
 uint32_t RSP::readRegisters(uint32_t offset) {
     switch (offset) {
+        case 0:
+            return dmaMemAddress;
+            break;
+        case 1:
+            return dmaRamAddress;
+            break;
         case 2:
             return spReadLength.value;
             break;

@@ -218,6 +218,18 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             cpu->bus.dcache[line].tag = ((cpu->cop0.tagLo & 0xfffff00) << 4);
             break;
         }
+        case 0xd: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            if (!cpu->bus.dcacheHit(line, actualAddress) && cpu->bus.dcache[line].dirty) {
+                cpu->bus.dcacheWriteback(line);
+            }
+
+            cpu->bus.dcache[line].tag = actualAddress & ~0xfff;
+            cpu->bus.dcache[line].dirty = true;
+            cpu->bus.dcache[line].valid = true;
+            break;
+        }
         case 0x10: {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
             ICache* icachePtr = &cpu->bus.icache[line];

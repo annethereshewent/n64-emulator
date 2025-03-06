@@ -200,8 +200,7 @@ void RSP::sub(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] - rsp->r[CPU::getRt(instruction)];
 }
 void RSP::subu(RSP* rsp, uint32_t instruction) {
-    std::cout << "TODO: subu\n";
-    exit(1);
+    RSP::sub(rsp, instruction);
 }
 void RSP::and_(RSP* rsp, uint32_t instruction) {
     rsp->r[CPU::getRd(instruction)] = rsp->r[CPU::getRs(instruction)] & rsp->r[CPU::getRt(instruction)];

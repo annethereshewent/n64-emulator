@@ -786,8 +786,15 @@ void CPU::divu(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(36);
 }
 void CPU::dmult(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dmult\n";
-    exit(1);
+    i128 val1 = (int64_t)(i128)cpu->r[getRs(instruction)];
+    i128 val2 = (int64_t)(i128)cpu->r[getRt(instruction)];
+
+    u128 result = (u128)(val1 * val2);
+
+    cpu->lo = (uint64_t)result;
+    cpu->hi = (uint64_t)(result >> 64);
+
+    cpu->cop0.addCycles(7);
 }
 void CPU::dmultu(CPU* cpu, uint32_t instruction) {
     u128 result = (u128)cpu->r[getRs(instruction)] * (u128)cpu->r[getRt(instruction)];

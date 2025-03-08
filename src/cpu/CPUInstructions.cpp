@@ -268,7 +268,7 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
         }
         default: {
             std::cout << "cache op not yet implemented: " << std::hex << cacheOp << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
         }
     }
@@ -402,8 +402,7 @@ void CPU::ll(CPU* cpu, uint32_t instruction) {
     cpu->cop0.llAddress = cpu->bus.translateAddress(address) >> 4;
 }
 void CPU::lld(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lld\n";
-    exit(1);
+    throw std::runtime_error("TODO: lld\n");
 }
 void CPU::lw(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -448,8 +447,7 @@ void CPU::lwr(CPU* cpu, uint32_t instruction) {
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value >> shift));
 }
 void CPU::lwu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lwu\n";
-    exit(1);
+    throw std::runtime_error("TODO: lwu\n");
 }
 void CPU::ori(CPU* cpu, uint32_t instruction) {
     uint32_t imm = getImmediate(instruction);
@@ -460,8 +458,8 @@ void CPU::ori(CPU* cpu, uint32_t instruction) {
     cpu->r[rt] = cpu->r[rs] | imm;
 }
 void CPU::reserved(CPU* cpu, uint32_t instruction) {
-    std::cout << "Error: opcode reserved\n";
-    exit(1);
+    throw std::runtime_error("Error: opcode reserved\n");
+
 }
 void CPU::sb(CPU* cpu, uint32_t instruction) {
     uint8_t byte = (uint8_t)cpu->r[getRt(instruction)];
@@ -491,8 +489,7 @@ void CPU::sc(CPU* cpu, uint32_t instruction) {
     }
 }
 void CPU::scd(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: scd\n";
-    exit(1);
+    throw std::runtime_error("TODO: scd\n");
 }
 void CPU::sd(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -913,28 +910,22 @@ void CPU::dsubu(CPU* cpu, uint32_t instruction) {
     CPU::dsub(cpu, instruction);
 }
 void CPU::tge(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tge\n";
-    exit(1);
+    throw std::runtime_error("TODO: tge\n");
 }
 void CPU::tgeu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tgeu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tgeu\n");
 }
 void CPU::tlt(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tlt\n";
-    exit(1);
+    throw std::runtime_error("TODO: tlt\n");
 }
 void CPU::tltu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tltu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tltu\n");
 }
 void CPU::teq(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: teq\n";
-    exit(1);
+    throw std::runtime_error("TODO: teq\n");
 }
 void CPU::tne(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tne\n";
-    exit(1);
+    throw std::runtime_error("TODO: tne\n");
 }
 void CPU::dsll(CPU* cpu, uint32_t instruction) {
     uint32_t shift = shiftAmount(instruction);
@@ -1028,30 +1019,25 @@ void CPU::tgei(CPU* cpu, uint32_t instruction) {
 
     if (value > immediate) {
         // throw an exception here!
-        std::cout << "TODO: throw exception\n";
-        exit(1);
+        throw std::runtime_error("TODO: throw exception\n");
+
     }
 }
 void CPU::tgeiu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tgeiu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tgeiu\n");
 }
 void CPU::tlti(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tlti\n";
-    exit(1);
+    throw std::runtime_error("TODO: tlti\n");
 }
 void CPU::tltiu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tltiu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tltiu\n");
 }
 void CPU::teqi(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: teqi\n";
-    exit(1);
+    throw std::runtime_error("TODO: teqi\n");
 }
 
 void CPU::tnei(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tnei\n";
-    exit(1);
+    throw std::runtime_error("TODO: tnei\n");
 }
 
 void CPU::bltzal(CPU* cpu, uint32_t instruction) {
@@ -1091,10 +1077,8 @@ void CPU::bgezal(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void CPU::bltzall(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bltzall\n";
-    exit(1);
+    throw std::runtime_error("TODO: bltzall\n");
 }
 void CPU::bgezall(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bgezall\n";
-    exit(1);
+    throw std::runtime_error("TODO: bgezall\n");
 }

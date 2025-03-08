@@ -40,8 +40,7 @@ uint8_t Bus::memRead8(uint64_t address) {
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        std::println("going in here! fix me!");
-        exit(1);
+        throw std::runtime_error("going inside memRead8 uncached! fix me!");
         return rdram[actualAddress];
     }
     if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
@@ -51,8 +50,7 @@ uint8_t Bus::memRead8(uint64_t address) {
             return cartridge[offset];
         }
 
-        std::cout << "invalid cartridge offset given!\n";
-        exit(1);
+        throw std::runtime_error("invalid cartridge offset given!");
     }
 
     if (actualAddress >= 0x4000000 && actualAddress <= 0x4ffffff) {
@@ -74,8 +72,8 @@ uint8_t Bus::memRead8(uint64_t address) {
         }
     }
 
-    std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
-    exit(1);
+    std::println("(memRead8) unsupported address received: {:x}", actualAddress);
+    throw std::runtime_error("");
 
 }
 
@@ -96,12 +94,11 @@ uint16_t Bus::memRead16(uint64_t address) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                std::cerr << "it's going in here! you need to fix this!\n";
-                exit(1);
+                throw std::runtime_error("it's going inside memRead16 uncached! fix this!");
                 return *(uint16_t*)&rdram[actualAddress];
             }
             std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -133,15 +130,14 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                std::println("yeah it's going in here");
-                exit(1);
+                throw std::runtime_error("it's going inside memWrite8 uncached! fix this!");
                 rdram[actualAddress] = value;
 
                 return;
             }
 
             std::cout << "(memWrite8) unsupported address given: " << std::hex << address << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -175,7 +171,7 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
             }
 
             std::cout << "(memWrite16) unsupported address given: " << std::hex << address << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -210,7 +206,7 @@ uint64_t Bus::memRead64(uint64_t address) {
     }
 
     std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
-    exit(1);
+    throw std::runtime_error("");
 
 }
 uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
@@ -337,8 +333,8 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
                 // cartridge sram
                 // TODO: implement saves
-                std::println("todo: sram read");
-                exit(1);
+                throw std::runtime_error("todo: sram read");
+
                 return 0xff;
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
@@ -371,7 +367,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
                 }
 
                 std::cout << "invalid offset given to cartridge: " << std::hex << offset << "\n";
-                exit(1);
+                throw std::runtime_error("");
             }
             if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
                 if (!ignoreCycles) {
@@ -394,7 +390,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             }
 
             std::cout << "(memRead32) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -569,32 +565,29 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&peripheralInterface.rdLen, value & 0xffffff, mask);
 
             // dmaRead();
-            std::println("todo: dmaRead");
-            exit(1);
+            throw std::runtime_error("todo: dmaRead");
             break;
         case 0x460000c: {
             Bus::writeWithMask32(&peripheralInterface.wrLen, value & 0xffffff, mask);
             uint32_t cartAddress = peripheralInterface.cartAddress;
 
             if (cartAddress >= 0x1ffe0000 && cartAddress <= 0x1ffe1fff) {
-                std::println("todo: sc64 dma");
-                exit(1);
+                throw std::runtime_error("todo: sc64 dma");
             } else if (cartAddress >= 0x10000000 && cartAddress <= 0x1fbfffff) {
                 dmaCartWrite();
             } else if (cartAddress >= 0x8000000 && cartAddress <= 0xfffffff) {
                 if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
                     dmaSramWrite();
                 } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
-                    std::println("TODO: dmaFlashWrite");
-                    exit(1);
+                    throw std::runtime_error("TODO: dmaFlashWrite");
                     // dmaFlashWrite();
                 } else {
                     std::println("invalid address given for PI dma write: {:x}", cartAddress);
-                    exit(1);
+                    throw std::runtime_error("");
                 }
             } else {
                 std::println("unknown cartridge address received: {:x}", cartAddress);
-                exit(1);
+                throw std::runtime_error("");
             }
             break;
         }
@@ -754,7 +747,7 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             }
 
             std::cout << "(memWrite32) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -789,8 +782,7 @@ void Bus::openSaves(std::vector<std::string> saveNames) {
                             // do nothing
                             break;
                         case Mempak:
-                            std::println("todo: mempak");
-                            exit(1);
+                            throw std::runtime_error("todo: mempak");
                             break;
                     }
                 }
@@ -822,8 +814,7 @@ void Bus::writeSave() {
                     // do nothing
                     break;
                 case Mempak:
-                    std::println("todo: mempak");
-                    exit(1);
+                    throw std::runtime_error("todo: mempak");
                     break;
             }
         }
@@ -942,7 +933,7 @@ void Bus::loadRom(std::string filename) {
                 break;
             default:
                 std::cout << "unknown save type detected: " << std::dec << saveType << "\n";
-                exit(1);
+                throw std::runtime_error("");
                 break;
         }
     } else {
@@ -1154,8 +1145,7 @@ uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
         return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
     }
 
-    std::println("invalid TLB address given");
-    exit(1);
+    throw std::runtime_error("invalid TLB address given");
 }
 
 void Bus::tlbWrite(uint32_t index) {

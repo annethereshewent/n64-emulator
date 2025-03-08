@@ -21,7 +21,7 @@ uint32_t RDPInterface::readRegisters(uint32_t offset) {
             break;
         default:
             std::cout << "(RDPInterface::readRegisters)offset not implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -60,7 +60,7 @@ void RDPInterface::writeRegisters(uint32_t offset, uint32_t value) {
             break;
         default:
             std::cout << "(RDPInterface::writeRegisters)offset not implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }

@@ -6,8 +6,7 @@
 #include "CPU.hpp"
 
 void COP0::reserved(CPU* cpu, uint32_t instruction) {
-    std::cout << "instruction reserved for COP0\n";
-    exit(1);
+    throw std::runtime_error("instruction reserved for COP0");
 }
 
 void COP0::cp0(CPU* cpu, uint32_t instruction) {
@@ -47,13 +46,11 @@ void COP0::mtc0(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::break_(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: break\n";
-    exit(1);
+    throw std::runtime_error("TODO: break");
 }
 
 void COP0::syscall(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: syscall";
-    exit(1);
+    throw std::runtime_error("TODO: syscall");
 }
 
 void COP0::tlbp(CPU* cpu, uint32_t instruction) {
@@ -69,7 +66,7 @@ void COP0::tlbwi(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
-    exit(1);
+    throw std::runtime_error("TODO: tlbwr");
 }
 
 void COP0::eret(CPU* cpu, uint32_t instruction) {

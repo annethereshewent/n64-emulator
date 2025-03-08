@@ -286,7 +286,7 @@ uint64_t COP0::readRegister(uint32_t index) {
             break;
         default:
             std::cout << "invalid register given for cop0: " << index << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }

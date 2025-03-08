@@ -242,7 +242,7 @@ uint32_t RSP::readRegisters(uint32_t offset) {
         }
         default:
             std::cout << "(rsp read registers)not yet implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -276,7 +276,7 @@ void RSP::writeRegisters(uint32_t offset, uint32_t value) {
             break;
         default:
             std::cout << "(rsp write registers)not yet implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }

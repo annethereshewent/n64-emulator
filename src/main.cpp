@@ -35,7 +35,7 @@ SDL_Gamepad* findController() {
         // print out all the frames to stderr
         fprintf(stderr, "Error: signal %d:\n", sig);
         backtrace_symbols_fd(array, size, STDERR_FILENO);
-        exit(1);
+        throw std::runtime_error("Runtime error");
     }
 #endif
 
@@ -48,19 +48,19 @@ int main(int argc, char **argv) {
     SDL_Event event;
 
     if (argc < 1) {
-        std::cout << "Please specify a filename.\n";
-        exit(1);
+        throw std::runtime_error("Please specify a filename.");
     }
 
     if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
-        std::cout << "could not load sdl :-(\n";
-        exit(1);
+        std::println("{}", SDL_GetError());
+        throw std::runtime_error("Could not initialize SDL");
     }
 
     SDL_Window* window = SDL_CreateWindow("N64+", 640, 480, SDL_WINDOW_VULKAN);
 
     if(window == NULL || window == nullptr) {
-        printf("window creation Error: %s\n", SDL_GetError());
+        std::println("window creation Error: %s\n", SDL_GetError());
+        throw std::runtime_error("Could not initialize SDL");
     }
 
     cpu.bus.loadRom(argv[1]);
@@ -81,16 +81,13 @@ int main(int argc, char **argv) {
                 globfree(&globbuf);
                 basePath = result;
             } else {
-                std::println("Unable to expand tilde");
-                exit(1);
+                throw std::runtime_error("Unable to expand tilde");
             }
         } else {
-            std::println("could not open directory to application support");
-            exit(1);
+            throw std::runtime_error("could not open directory to application support");
         }
     #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-        std::println("TODO: Windows support");
-        exit(1);
+        throw std::runtime_error("TODO: Windows support");
     #endif
 
     std::string separator = "/N64+/";

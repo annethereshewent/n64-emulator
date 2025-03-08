@@ -21,8 +21,7 @@ void PIF::executeCommand() {
     if (commandByte & 0x2) {
         // TODO: cic challenge
         mask |= 0x2;
-        std::cout << "received command 0x2\n";
-        exit(1);
+        throw std::runtime_error("received command 0x2");
     }
     if (commandByte & 0x8) {
         mask |= 0x8;
@@ -135,28 +134,24 @@ void PIF::processCartridge() {
             writeEeprom();
             break;
         case 6:
-            std::cout << "TODO: RTC_STATUS\n";
-            exit(1);
+            throw std::runtime_error("TODO: RTC_STATUS)");
             break;
         case 7:
-            std::cout << "TODO: RTC_READ\n";
-            exit(1);
+            throw std::runtime_error("TODO: RTC_READ");
             break;
         case 8:
-            std::cout << "TODO: RTC_WRITE\n";
-            exit(1);
+            throw std::runtime_error("TODO: RTC_WRITE");
             break;
         default:
             std::cout << "unknown command received for processCartridge: " << std::hex << command << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
 
 void PIF::processController(int channel) {
     if (channels[channel].txBuf == -1) {
-        std::cout << "found a value of -1 for txBuf, shouldn't happen\n";
-        exit(1);
+        throw std::runtime_error("found a value of -1 for txBuf, shouldn't happen");
     }
 
     uint8_t command = ram[channels[channel].txBuf];

@@ -55,8 +55,8 @@ void COP1::lwc1(CPU* cpu, uint32_t instruction) {
 
 }
 void COP1::reserved(CPU* cpu, uint32_t instruction) {
-    std::cout << "instruction reserved for COP1\n";
-    exit(1);
+    throw std::runtime_error("instruction reserved for COP1\n");
+
 }
 void COP1::sdc1(CPU* cpu, uint32_t instruction) {
     if (!cpu->cop0.status.cu1) {
@@ -137,7 +137,7 @@ void COP1::cop1_l_instrs(CPU* cpu, uint32_t instruction) {
             break;
         default:
             std::println("invalid option for l instrs given: {}", instruction & 0x3f);
-            exit(1);
+
             break;
     }
 }
@@ -190,13 +190,11 @@ void COP1::ctc1(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::dcfc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dcfc1\n";
-    exit(1);
+    throw std::runtime_error("TODO: dcfc1");
 }
 
 void COP1::dctc1(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dctc1\n";
-    exit(1);
+    throw std::runtime_error("TODO: dctc1");
 }
 
 void COP1::dmfc1(CPU* cpu, uint32_t instruction) {
@@ -285,14 +283,13 @@ void COP1::writeRegister(uint32_t index, uint64_t value) {
             uint32_t causeBits = (fcsr.value >> 12) & 0x1f;
 
             if (enableBits & causeBits || fcsr.caseUnimplemented) {
-                std::cout << "lmao im supposed to throw some sort of floating point exception\n";
-                exit(1);
+                throw std::runtime_error("lmao im supposed to throw some sort of floating point exception\n");
             }
             break;
         }
         default:
-            std::cout << "invalid index given: " << index << "\n";
-            exit(1);
+            throw std::runtime_error("invalid index given: " + index);
+
             break;
     }
 }
@@ -306,8 +303,8 @@ uint32_t COP1::readRegister(uint32_t index) {
             return fcsr.value;
             break;
         default:
-            std::cout << "invalid index given for COP1::readRegister: " << index << "\n";
-            exit(1);
+            throw std::runtime_error("invalid index given for COP1::readRegister: " + index);
+
             break;
     }
 }
@@ -432,8 +429,7 @@ void COP1::negS(CPU* cpu, uint32_t instruction) {
     cpu->cop1.setFloat(dest, -value);
 }
 void COP1::roundLS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: roundLS\n";
-    exit(1);
+    throw std::runtime_error("TODO: roundLS");
 }
 void COP1::truncLS(CPU* cpu, uint32_t instruction) {
     float value = cpu->cop1.getFloat(CPU::getRd(instruction));
@@ -446,12 +442,10 @@ void COP1::truncLS(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(4);
 }
 void COP1::ceilLS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ceilLS\n";
-    exit(1);
+    throw std::runtime_error("TODO: ceilLS");
 }
 void COP1::floorLS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: floorLS\n";
-    exit(1);
+    throw std::runtime_error("TODO: floorLS");
 }
 void COP1::roundWS(CPU* cpu, uint32_t instruction) {
     float value = cpu->cop1.getFloat(CPU::getRd(instruction));
@@ -485,8 +479,7 @@ void COP1::truncWS(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(4);
 }
 void COP1::ceilWS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ceilWS\n";
-    exit(1);
+    throw std::runtime_error("TODO: ceilWS");
 }
 void COP1::floorWS(CPU* cpu, uint32_t instruction) {
     float value = cpu->cop1.getFloat(CPU::getRd(instruction));
@@ -521,22 +514,19 @@ void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
             floorWS(cpu, instruction);
             break;
         default:
-            std::cout << "should be unreachable\n";
-            exit(1);
+            throw std::runtime_error("should be unreachable\n");
+
             break;
     }
 }
 void COP1::cvtLS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtLS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cvtLS");
 }
 void COP1::CFS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: CFS\n";
-    exit(1);
+    throw std::runtime_error("TODO: CFS");
 }
 void COP1::cUnS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUnS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUnS");
 }
 void COP1::cEqS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
@@ -554,8 +544,7 @@ void COP1::cEqS(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cUeqS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUeqS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUeqS");
 }
 
 void COP1::cOltS(CPU* cpu, uint32_t instruction) {
@@ -570,32 +559,25 @@ void COP1::cOltS(CPU* cpu, uint32_t instruction) {
     cpu->cop1.fcsr.condition = (uint8_t)(double1 < double2);
 }
 void COP1::cUltS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUltS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUltS");
 }
 void COP1::cOleS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cOleS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cOleS");
 }
 void COP1::cUleS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUleS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUleS");
 }
 void COP1::cSfS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cSfS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cSfS");
 }
 void COP1::cNgleS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNgleS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNgleS");
 }
 void COP1::cSeqS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cSeqS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cSeqS");
 }
 void COP1::cNglS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNglS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNglS");
 }
 void COP1::cLtS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
@@ -611,8 +593,7 @@ void COP1::cLtS(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cNgeS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNgeS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNgeS");
 }
 void COP1::cLeS(CPU* cpu, uint32_t instruction) {
     uint32_t rd = CPU::getRd(instruction);
@@ -628,8 +609,7 @@ void COP1::cLeS(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNgtS\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNgtS");
 }
 
 void COP1::bc1f(CPU* cpu, uint32_t instruction) {
@@ -725,8 +705,7 @@ void COP1::divD(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(57);
 }
 void COP1::sqrtD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sqrtD\n";
-    exit(1);
+    throw std::runtime_error("TODO: sqrtD");
 }
 void COP1::absD(CPU* cpu, uint32_t instruction) {
     double value = cpu->cop1.getDouble(CPU::getRd(instruction));
@@ -745,24 +724,19 @@ void COP1::negD(CPU* cpu, uint32_t instruction) {
     cpu->cop1.setDouble(CPU::getFd(instruction), -value);
 }
 void COP1::roundLD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: roundLD\n";
-    exit(1);
+    throw std::runtime_error("TODO: roundLD");
 }
 void COP1::truncLD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: truncLD\n";
-    exit(1);
+    throw std::runtime_error("TODO: truncLD");
 }
 void COP1::ceilLD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ceilD\n";
-    exit(1);
+    throw std::runtime_error("TODO: ceilD");
 }
 void COP1::floorLD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: floorLD\n";
-    exit(1);
+    throw std::runtime_error("TODO: floorLD");
 }
 void COP1::roundWD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: roundWD\n";
-    exit(1);
+    throw std::runtime_error("TODO: roundWD");
 }
 void COP1::truncWD(CPU* cpu, uint32_t instruction) {
     double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
@@ -774,12 +748,10 @@ void COP1::truncWD(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(4);
 }
 void COP1::ceilWD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ceilWD\n";
-    exit(1);
+    throw std::runtime_error("TODO: ceilWD");
 }
 void COP1::floorWD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: floorWD\n";
-    exit(1);
+    throw std::runtime_error("TODO: floorWD");
 }
 void COP1::cvtSD(CPU* cpu, uint32_t instruction) {
     double result = cpu->cop1.getDouble(CPU::getRd(instruction));
@@ -805,16 +777,13 @@ void COP1::cvtWD(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cvtLD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cvtLD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cvtLD");
 }
 void COP1::cFD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cFD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cFD");
 }
 void COP1::cUnD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUnD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUnD");
 }
 void COP1::cEqD(CPU* cpu, uint32_t instruction) {
     double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
@@ -832,40 +801,31 @@ void COP1::cEqD(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cUeqD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUeqD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUeqD");
 }
 void COP1::cOltD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cOltD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cOltD");
 }
 void COP1::cUltD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUltD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUltD");
 }
 void COP1::cOleD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cOleD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cOleD");
 }
 void COP1::cUleD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cUleD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cUleD");
 }
 void COP1::cSfD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cSfD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cSfD");
 }
 void COP1::cNgleD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNgleD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNgleD");
 }
 void COP1::cSeqD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cSeqD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cSeqD");
 }
 void COP1::cNglD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNglD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNglD");
 }
 void COP1::cLtD(CPU* cpu, uint32_t instruction) {
     double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
@@ -878,8 +838,7 @@ void COP1::cLtD(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cNgeD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNgeD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNgeD");
 }
 void COP1::cLeD(CPU* cpu, uint32_t instruction) {
     double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));
@@ -892,8 +851,7 @@ void COP1::cLeD(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cNgtD(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: cNgtD\n";
-    exit(1);
+    throw std::runtime_error("TODO: cNgtD");
 }
 void COP1::cvtDL(CPU* cpu, uint32_t instruction) {
     int64_t value;

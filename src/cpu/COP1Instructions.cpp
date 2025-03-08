@@ -288,8 +288,7 @@ void COP1::writeRegister(uint32_t index, uint64_t value) {
             break;
         }
         default:
-            throw std::runtime_error("invalid index given: " + index);
-
+            throw std::runtime_error("invalid index given: " + std::to_string(index));
             break;
     }
 }
@@ -297,14 +296,13 @@ void COP1::writeRegister(uint32_t index, uint64_t value) {
 uint32_t COP1::readRegister(uint32_t index) {
     switch (index) {
         case 0:
-            return 0b101000000000;
+            return 0xa00;
             break;
         case 0x1f:
             return fcsr.value;
             break;
         default:
-            throw std::runtime_error("invalid index given for COP1::readRegister: " + index);
-
+            throw std::runtime_error("invalid index given for COP1::readRegister: " + std::to_string(index));
             break;
     }
 }

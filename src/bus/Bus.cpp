@@ -40,8 +40,20 @@ uint8_t Bus::memRead8(uint64_t address) {
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        throw std::runtime_error("going inside memRead8 uncached! fix me!");
-        return rdram[actualAddress];
+        switch (actualAddress & 0x3) {
+            case 0:
+                return rdram[actualAddress + 3];
+                break;
+            case 1:
+                return rdram[actualAddress + 2];
+                break;
+            case 2:
+                return rdram[actualAddress + 1];
+                break;
+            case 3:
+                return rdram[actualAddress];
+                break;
+        }
     }
     if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
         uint64_t offset = actualAddress - 0x10000000;
@@ -91,16 +103,16 @@ uint16_t Bus::memRead16(uint64_t address) {
         return (uint16_t)value;
     }
 
-    switch (actualAddress) {
-        default:
-            if (actualAddress <= 0x03EFFFFF) {
-                throw std::runtime_error("it's going inside memRead16 uncached! fix this!");
-                return *(uint16_t*)&rdram[actualAddress];
-            }
-            std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
-            throw std::runtime_error("");
-            break;
+    if (actualAddress <= 0x03EFFFFF) {
+        if ((actualAddress & 0x3) == 0) {
+            return *(uint16_t*)&rdram[actualAddress + 1];
+        } else {
+            return *(uint16_t*)&rdram[actualAddress];
+        }
     }
+    std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
+    throw std::runtime_error("");
+
 }
 
 void Bus::memWrite8(uint64_t address, uint8_t value) {
@@ -130,8 +142,20 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                throw std::runtime_error("it's going inside memWrite8 uncached! fix this!");
-                rdram[actualAddress] = value;
+                switch (actualAddress & 0x3) {
+                    case 0:
+                        rdram[actualAddress + 3] = value;
+                        break;
+                    case 1:
+                        rdram[actualAddress + 2] = value;
+                        break;
+                    case 2:
+                        rdram[actualAddress + 1] = value;
+                        break;
+                    case 3:
+                        rdram[actualAddress] = value;
+                        break;
+                }
 
                 return;
             }
@@ -1145,7 +1169,8 @@ uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
         return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
     }
 
-    throw std::runtime_error("invalid TLB address given");
+    std::println("invalid TLB address given: {:x}", actualAddress);
+    throw std::runtime_error("");
 }
 
 void Bus::tlbWrite(uint32_t index) {
@@ -1448,7 +1473,7 @@ void Bus::restartAudio() {
     initAudio();
 }
 
-void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {
+void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
     int16_t samples[length / 2];
 
     for (int i = 0; i < length / 2; i++) {

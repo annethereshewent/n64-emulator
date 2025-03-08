@@ -138,7 +138,7 @@ public:
     void memWrite16(uint64_t address, uint16_t value);
     void memWrite8(uint64_t address, uint8_t value);
 
-    void pushSamples(uint64_t length, uint32_t dramAddress);
+    void pushSamples(uint64_t length, uint64_t dramAddress);
 
     void setInterrupt(uint32_t flag);
     void clearInterrupt(uint32_t flag);

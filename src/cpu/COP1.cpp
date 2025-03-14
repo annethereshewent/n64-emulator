@@ -4,38 +4,38 @@
 
 COP1::COP1(CPU& cpu): cpu(cpu) {
     instructions = {
-        COP1::mfc1,           // 0
-        COP1::dmfc1,          // 1
-        COP1::cfc1,           // 2
-        COP1::dcfc1,          // 3
-        COP1::mtc1,           // 4
-        COP1::dmtc1,          // 5
-        COP1::ctc1,           // 6
-        COP1::dctc1,          // 7
-        COP1::cop1_b_instrs,  // 8
-        COP1::reserved,       // 9
-        COP1::reserved,       // 10
-        COP1::reserved,       // 11
-        COP1::reserved,       // 12
-        COP1::reserved,       // 13
-        COP1::reserved,       // 14
-        COP1::reserved,       // 15
-        COP1::cop1_s_instrs,  // 16
-        COP1::cop1_d_instrs,  // 17
-        COP1::reserved,       // 18
-        COP1::reserved,       // 19
-        COP1::cop1_w_instrs,  // 20
-        COP1::cop1_l_instrs,  // 21
-        COP1::reserved,       // 22
-        COP1::reserved,       // 23
-        COP1::reserved,       // 24
-        COP1::reserved,       // 25
-        COP1::reserved,       // 26
-        COP1::reserved,       // 27
-        COP1::reserved,       // 28
-        COP1::reserved,       // 29
-        COP1::reserved,       // 30
-        COP1::reserved,       // 31
+        COP1::mfc1,
+        COP1::dmfc1,
+        COP1::cfc1,
+        COP1::dcfc1,
+        COP1::mtc1,
+        COP1::dmtc1,
+        COP1::ctc1,
+        COP1::dctc1,
+        COP1::cop1_b_instrs,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::cop1_s_instrs,
+        COP1::cop1_d_instrs,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::cop1_w_instrs,
+        COP1::cop1_l_instrs,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
+        COP1::reserved,
     };
 
     sInstructions = {

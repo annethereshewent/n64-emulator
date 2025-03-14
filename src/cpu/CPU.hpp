@@ -24,6 +24,8 @@ public:
     uint64_t pc;
     uint64_t nextPc;
 
+    uint64_t debugPc;
+
     Scheduler scheduler;
 
     Bus bus;

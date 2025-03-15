@@ -54,7 +54,7 @@ public:
     void step();
 
     void checkIrqs(bool usePreviousPc = true);
-    void enterException(bool usePreviousPc = false);
+    void enterException(bool usePreviousPc = false, uint64_t offset = 0x180);
 
     void fastForwardRelativeLoop(int16_t amount);
     void fastForwardAbsoluteLoop(uint64_t target);

@@ -208,7 +208,7 @@ void CPU::checkIrqs(bool usePreviousPc) {
 }
 
 // TODO: fix this hack with usePreviousPc because it kind of sucks
-void CPU::enterException(bool usePreviousPc) {
+void CPU::enterException(bool usePreviousPc, uint64_t offset) {
     if (!cop0.status.exl) {
         if (inDelaySlot) {
             cop0.epc = pc - 4;
@@ -224,11 +224,11 @@ void CPU::enterException(bool usePreviousPc) {
     discarded = false;
 
     if (!cop0.status.bev) {
-        pc = 0x80000180;
-        nextPc = 0x80000184;
+        pc = 0x80000000 + offset;
+        nextPc = 0x80000000 + offset + 4;
     } else {
-        pc = 0xbfc00200 + 0x180;
-        nextPc = 0xbfc00200 + 0x184;
+        pc = 0xbfc00200 + offset;
+        nextPc = 0xbfc00200 + offset + 4;
     }
 
     cop0.addCycles(2);
@@ -240,7 +240,6 @@ void CPU::step() {
     auto [physicalPc, error, cached] = bus.translateAddress(pc);
 
     if (error) {
-        std::println("stuck here :[[[[[[[[[");
         return;
     }
 

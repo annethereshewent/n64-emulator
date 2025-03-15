@@ -16,6 +16,9 @@
 #include "video_interface/VideoInterface.cpp"
 #include "../interface.cpp"
 
+const uint32_t TLBS = 12;
+const uint32_t TLBL = 8;
+
 uint8_t Bus::memRead8(uint64_t actualAddress, bool cached) {
     if (cached) {
         uint32_t value = readDataCache(actualAddress & ~0x3);
@@ -1141,7 +1144,60 @@ std::tuple<uint64_t, bool, bool> Bus::getTlbAddress(uint64_t address, bool isWri
         return std::tuple(tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, false);
     }
 
+    tlbException(address, isWrite);
+
     return std::tuple(0x0, true, false);
+}
+
+void Bus::tlbException(uint64_t address, bool isWrite) {
+    if (isWrite) {
+        cpu.cop0.cause = TLBS;
+    } else {
+        cpu.cop0.cause = TLBL;
+    }
+
+    cpu.cop0.badVAddress = address;
+
+    // 0x7FFFF0
+    // 0x180000000
+
+    cpu.cop0.xContext = (cpu.cop0.xContext & ~0x7ffff0) | ((address >> 9) & 0x7ffff0);
+    cpu.cop0.context = (cpu.cop0.xContext & ~0x7ffff0) | ((address >> 9) & 0x7ffff0);
+    cpu.cop0.xContext = (cpu.cop0.xContext & ~0x180000000) | ((address >> 31) & 0x180000000);
+
+    cpu.cop0.entryHi = (cpu.cop0.entryHi & ~0xffffe000) | address & 0xffffe000;
+
+    bool isValid = true;
+
+    uint64_t offset = 0x180;
+
+    for (TlbEntry entry: tlbEntries) {
+        if ((address & ~0x3) >= entry.startEven && (address & 0x3) <= entry.endEven) {
+            isValid = entry.vEven != 0;
+
+            if (isValid && isWrite && entry.dEven == 0) {
+                cpu.cop0.cause = 1 << 2;
+                isValid = false;
+            }
+            break;
+        }
+
+        if ((address & ~0x3) >= entry.startOdd && (address & 0x3) <= entry.endOdd) {
+            isValid = entry.vOdd != 0;
+
+            if (isValid && isWrite && entry.dOdd == 0) {
+                cpu.cop0.cause = 1 << 2;
+                isValid = false;
+            }
+            break;
+        }
+    }
+
+    if (isValid && cpu.cop0.status.exl == 0) {
+        offset = 0;
+    }
+
+    cpu.enterException(false, offset);
 }
 
 void Bus::tlbWrite(uint32_t index) {

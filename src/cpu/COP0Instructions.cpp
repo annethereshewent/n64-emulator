@@ -66,7 +66,16 @@ void COP0::tlbwi(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
-    throw std::runtime_error("TODO: tlbwr");
+    uint64_t maxValue = 0xffffffffffffffff;
+    uint64_t index;
+    if (cpu->cop0.wired > 31) {
+        index = (maxValue - cpu->cop0.count) & 0x3F;
+    }
+    index = (maxValue - cpu->cop0.count)
+        % (32 - cpu->cop0.wired)
+        + cpu->cop0.wired;
+
+    cpu->bus.tlbWrite(index);
 }
 
 void COP0::eret(CPU* cpu, uint32_t instruction) {

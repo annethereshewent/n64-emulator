@@ -1171,8 +1171,10 @@ void Bus::tlbException(uint64_t address, bool isWrite) {
 
     uint64_t offset = 0x180;
 
+    uint64_t maskedAddress = address & ~0x3;
+
     for (TlbEntry entry: tlbEntries) {
-        if ((address & ~0x3) >= entry.startEven && (address & 0x3) <= entry.endEven) {
+        if (maskedAddress >= entry.startEven && maskedAddress <= entry.endEven) {
             isValid = entry.vEven != 0;
 
             if (isValid && isWrite && entry.dEven == 0) {
@@ -1182,7 +1184,7 @@ void Bus::tlbException(uint64_t address, bool isWrite) {
             break;
         }
 
-        if ((address & ~0x3) >= entry.startOdd && (address & 0x3) <= entry.endOdd) {
+        if (maskedAddress >= entry.startOdd && maskedAddress <= entry.endOdd) {
             isValid = entry.vOdd != 0;
 
             if (isValid && isWrite && entry.dOdd == 0) {

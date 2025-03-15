@@ -236,11 +236,19 @@ void CPU::enterException(bool usePreviousPc) {
 
 void CPU::step() {
     r[0] = 0;
-    uint32_t opcode = (pc & 0x20000000) != 0 ? bus.memRead32(pc) : bus.readInstructionCache(pc);
+
+    auto [physicalPc, error, cached] = bus.translateAddress(pc);
+
+    if (error) {
+        std::println("stuck here :[[[[[[[[[");
+        return;
+    }
+
+    uint32_t opcode = !cached ? bus.memRead32(physicalPc, cached) : bus.readInstructionCache(pc);
     uint32_t command = opcode >> 26;
 
     previousPc = pc;
-    debugPc = bus.translateAddress(pc);
+    debugPc = physicalPc;
 
     if (!discarded) {
         pc = nextPc;
@@ -254,25 +262,26 @@ void CPU::step() {
 
     bool oldDelaySlot = inDelaySlot;
 
-    if (!visited.contains(previousPc) && debugOn) {
-        uint32_t actualCommand = command;
-        if (command == 0) {
-            std::cout << "command is secondary\n";
-            actualCommand = opcode & 0x3f;
-        } else if (command == 16) {
-            std::cout << "command is cop0\n";
-            actualCommand = (opcode >> 21) & 0x1f;
-        } else if (command == 17) {
-            std::cout << "command is cop1\n";
-            actualCommand = (opcode >> 21) & 0x1f;
-        } else if (command == 1) {
-            std::cout << "command is regImm\n";
-            actualCommand = (opcode >> 16) & 0x1f;
-        }
-        std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
-        // std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << "\n";
-        visited.insert(previousPc);
-    }
+    // if (!visited.contains(previousPc) && debugOn) {
+    //     uint32_t actualCommand = command;
+    //     if (command == 0) {
+    //         std::cout << "command is secondary\n";
+    //         actualCommand = opcode & 0x3f;
+    //     } else if (command == 16) {
+    //         std::cout << "command is cop0\n";
+    //         actualCommand = (opcode >> 21) & 0x1f;
+    //     } else if (command == 17) {
+    //         std::cout << "command is cop1\n";
+    //         actualCommand = (opcode >> 21) & 0x1f;
+    //     } else if (command == 1) {
+    //         std::cout << "command is regImm\n";
+    //         actualCommand = (opcode >> 16) & 0x1f;
+    //     }
+    //     std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
+    //     // std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << "\n";
+    //     visited.insert(previousPc);
+    // }
+
 
     if (!visited.contains(previousPc)) {
         std::string disassembled = disassemble(this, opcode);
@@ -385,13 +394,15 @@ void CPU::step() {
 }
 
 void CPU::fastForwardAbsoluteLoop(uint64_t target) {
-    if (pc == target && bus.memRead32(pc, false, true) == 0) {
+    auto [physicalPc, error, cached] = bus.translateAddress(pc);
+    if (pc == target && bus.memRead32(physicalPc, cached, false, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
 }
 
 void CPU::fastForwardRelativeLoop(int16_t amount) {
-    if (amount == -4 && bus.memRead32(pc, false, true) == 0) {
+    auto [physicalPc, error, cached] = bus.translateAddress(pc);
+    if (amount == -4 && bus.memRead32(physicalPc, cached, false, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
 }

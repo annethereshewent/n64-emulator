@@ -181,7 +181,11 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[base] + offset;
 
-    uint64_t actualAddress = cpu->bus.translateAddress(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
 
     switch (cacheOp) {
         case 0x0: {
@@ -312,7 +316,13 @@ void CPU::lb(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[base] + offset;
 
-    uint64_t value = (int8_t)(int64_t)(uint64_t)cpu->bus.memRead8(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = (int8_t)(int64_t)(uint64_t)cpu->bus.memRead8(actualAddress, cached);
 
     cpu->r[rt] = value;
 }
@@ -323,7 +333,13 @@ void CPU::lbu(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    cpu->r[rt] = (uint64_t)cpu->bus.memRead8(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    cpu->r[rt] = (uint64_t)cpu->bus.memRead8(actualAddress, cached);
 }
 void CPU::ld(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -332,7 +348,13 @@ void CPU::ld(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    cpu->r[rt] = cpu->bus.memRead64(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    cpu->r[rt] = cpu->bus.memRead64(actualAddress, cached);
 }
 void CPU::ldl(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -345,7 +367,13 @@ void CPU::ldl(CPU* cpu, uint32_t instruction) {
 
     uint64_t mask = (((uint64_t)1 << shift) - 1);
 
-    uint64_t value = cpu->bus.memRead64(address & ~0x7);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = cpu->bus.memRead64(actualAddress & ~0x7, cached);
 
     cpu->r[rt] = (cpu->r[rt] & mask) | (value << shift);
 }
@@ -356,12 +384,18 @@ void CPU::ldr(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t shift = 8 * (7 - (address & 0x7));
-    uint32_t maskShift = 8 * ((address & 0x7) + 1);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
 
-    uint64_t mask = (address & 0x7) == 7 ? 0 : ~(((uint64_t)1 << maskShift) - 1);
+    if (error) {
+        return;
+    }
 
-    uint64_t value = cpu->bus.memRead64(address & ~0x7);
+    uint32_t shift = 8 * (7 - (actualAddress & 0x7));
+    uint32_t maskShift = 8 * ((actualAddress & 0x7) + 1);
+
+    uint64_t mask = (actualAddress & 0x7) == 7 ? 0 : ~(((uint64_t)1 << maskShift) - 1);
+
+    uint64_t value = cpu->bus.memRead64(actualAddress & ~0x7, cached);
 
     cpu->r[rt] = (cpu->r[rt] & mask) | (value >> shift);
 }
@@ -372,7 +406,13 @@ void CPU::lh(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = cpu->r[base] + offset;
 
-    uint64_t value = (int16_t)(int64_t)(uint64_t)cpu->bus.memRead16(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = (int16_t)(int64_t)(uint64_t)cpu->bus.memRead16(actualAddress, cached);
 
     cpu->r[rt] = value;
 }
@@ -383,7 +423,13 @@ void CPU::lhu(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = cpu->r[base] + offset;
 
-    uint64_t value = (uint64_t)cpu->bus.memRead16(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = (uint64_t)cpu->bus.memRead16(actualAddress, cached);
 
     cpu->r[rt] = value;
 }
@@ -395,11 +441,18 @@ void CPU::ll(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
 
     uint64_t address = cpu->r[baseReg] + immediate;
-    uint32_t value = cpu->bus.memRead32(address);
+
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t value = cpu->bus.memRead32(actualAddress, cached);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
 
-    cpu->cop0.llAddress = cpu->bus.translateAddress(address) >> 4;
+    cpu->cop0.llAddress = actualAddress >> 4;
 }
 void CPU::lld(CPU* cpu, uint32_t instruction) {
     throw std::runtime_error("TODO: lld\n");
@@ -411,7 +464,13 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t value = cpu->bus.memRead32(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t value = cpu->bus.memRead32(actualAddress, cached);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
  }
@@ -422,11 +481,17 @@ void CPU::lwl(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t shift = 8 * (address & 0x3);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t shift = 8 * (actualAddress & 0x3);
 
     uint32_t mask = ((1 << shift) - 1);
 
-    uint32_t value = cpu->bus.memRead32(address & ~0x3);
+    uint32_t value = cpu->bus.memRead32(actualAddress & ~0x3, cached);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value << shift));
 }
@@ -437,12 +502,18 @@ void CPU::lwr(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t shift = 8 * (3 - (address & 0x3));
-    uint32_t maskShift = 8 * ((address & 0x3) + 1);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
 
-    uint32_t mask = (address & 0x3) == 3 ? 0 : ~((1 << maskShift) - 1);
+    if (error) {
+        return;
+    }
 
-    uint32_t value = cpu->bus.memRead32(address & ~0x3);
+    uint32_t shift = 8 * (3 - (actualAddress & 0x3));
+    uint32_t maskShift = 8 * ((actualAddress & 0x3) + 1);
+
+    uint32_t mask = (actualAddress & 0x3) == 3 ? 0 : ~((1 << maskShift) - 1);
+
+    uint32_t value = cpu->bus.memRead32(actualAddress & ~0x3, cached);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value >> shift));
 }
@@ -469,7 +540,13 @@ void CPU::sb(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite8(address, byte);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite8(actualAddress, byte, cached);
 }
 void CPU::sc(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
@@ -481,7 +558,13 @@ void CPU::sc(CPU* cpu, uint32_t instruction) {
 
         uint64_t address = cpu->r[baseReg] + immediate;
 
-        cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
+        auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+        if (error) {
+            return;
+        }
+
+        cpu->bus.memWrite32(actualAddress, (uint32_t)cpu->r[rt], cached);
 
         cpu->r[rt] = 1;
     } else {
@@ -497,7 +580,13 @@ void CPU::sd(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite64(address, cpu->r[getRt(instruction)]);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite64(actualAddress, cpu->r[getRt(instruction)], cached);
 }
 void CPU::sdl(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -507,15 +596,21 @@ void CPU::sdl(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
-    uint32_t shift = (address & 0x7) * 8;
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
 
-    uint32_t maskShift = 8 * (8 - (address & 0x7));
+    if (error) {
+        return;
+    }
 
-    uint64_t mask = (address & 0x7) == 0 ? 0xffffffffffffffff : ((uint64_t)1 << maskShift) - 1;
+    uint32_t shift = (actualAddress & 0x7) * 8;
+
+    uint32_t maskShift = 8 * (8 - (actualAddress & 0x7));
+
+    uint64_t mask = (actualAddress & 0x7) == 0 ? 0xffffffffffffffff : ((uint64_t)1 << maskShift) - 1;
 
     uint64_t value = (cpu->r[rt] >> shift);
 
-    cpu->bus.memWrite64(address & ~0x7, value, mask);
+    cpu->bus.memWrite64(actualAddress & ~0x7, value, cached, mask);
 }
 void CPU::sdr(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -525,13 +620,19 @@ void CPU::sdr(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
-    uint32_t shift = 8 * (7 - (address & 0x7));
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t shift = 8 * (7 - (actualAddress & 0x7));
 
     uint64_t mask = ~(((uint64_t)1 << shift) - 1);
 
     uint32_t value = cpu->r[rt] << shift;
 
-    cpu->bus.memWrite64(address & ~0x7, value, mask);
+    cpu->bus.memWrite64(actualAddress & ~0x7, value, cached, mask);
 }
 void CPU::sh(CPU* cpu, uint32_t instruction) {
     uint16_t half = (uint16_t)cpu->r[getRt(instruction)];
@@ -541,7 +642,13 @@ void CPU::sh(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite16(address, half);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite16(actualAddress, half, cached);
 }
 void CPU::slti(CPU* cpu, uint32_t instruction) {
     int64_t immediate = (int16_t)(int64_t)getImmediate(instruction);
@@ -570,7 +677,13 @@ void CPU::sw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite32(actualAddress, (uint32_t)cpu->r[rt], cached);
 }
 void CPU::swl(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -580,6 +693,12 @@ void CPU::swl(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
     uint32_t shift = (address & 0x3) * 8;
 
     uint32_t maskShift = 8 * (4 - (address & 0x3));
@@ -588,7 +707,7 @@ void CPU::swl(CPU* cpu, uint32_t instruction) {
 
     uint32_t value = (uint32_t)(cpu->r[rt] >> shift);
 
-    cpu->bus.memWrite32(address & ~0x3, value, false, mask);
+    cpu->bus.memWrite32(address & ~0x3, value, cached, false, mask);
 }
 void CPU::swr(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -598,13 +717,19 @@ void CPU::swr(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
     uint32_t shift = 8 * (3 - (address & 0x3));
 
     uint32_t mask = ~((1 << shift) - 1);
 
     uint32_t value = (uint32_t)(cpu->r[rt] << shift);
 
-    cpu->bus.memWrite32(address & ~3, value, false, mask);
+    cpu->bus.memWrite32(address & ~3, value, cached, false, mask);
 }
 void CPU::xori(CPU* cpu, uint32_t instruction) {
     cpu->r[getRt(instruction)] = cpu->r[getRs(instruction)] ^ (uint64_t)getImmediate(instruction);

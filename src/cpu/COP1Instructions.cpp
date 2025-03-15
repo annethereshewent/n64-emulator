@@ -19,7 +19,13 @@ void COP1::ldc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint64_t doubleWord = cpu->bus.memRead64(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t doubleWord = cpu->bus.memRead64(address, cached);
 
     uint32_t index = CPU::getRt(instruction);
 
@@ -43,7 +49,13 @@ void COP1::lwc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t word = cpu->bus.memRead32(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t word = cpu->bus.memRead32(actualAddress, cached);
 
     uint32_t index = CPU::getRt(instruction);
 
@@ -72,9 +84,16 @@ void COP1::sdc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+
     uint64_t doubleWord = !cpu->cop0.status.fr ? (uint64_t)cpu->cop1.fgr32[rt] | ((uint64_t)cpu->cop1.fgr32[rt + 1] << 32) : cpu->cop1.fgr64[rt];
 
-    cpu->bus.memWrite64(address, doubleWord);
+    cpu->bus.memWrite64(actualAddress, doubleWord, cached);
 }
 void COP1::swc1(CPU* cpu, uint32_t instruction) {
     if (!cpu->cop0.status.cu1) {
@@ -90,9 +109,15 @@ void COP1::swc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
     uint32_t word = !cpu->cop0.status.fr ? cpu->cop1.fgr32[rt] : (uint32_t)cpu->cop1.fgr64[rt];
 
-    cpu->bus.memWrite32(address, word);
+    cpu->bus.memWrite32(address, word, cached);
 }
 
 void COP1::cfc1(CPU* cpu, uint32_t instruction) {

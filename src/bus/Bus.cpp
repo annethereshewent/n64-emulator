@@ -16,10 +16,7 @@
 #include "video_interface/VideoInterface.cpp"
 #include "../interface.cpp"
 
-uint8_t Bus::memRead8(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-    bool cached = (address & 0x20000000) == 0;
-
+uint8_t Bus::memRead8(uint64_t actualAddress, bool cached) {
     if (cached) {
         uint32_t value = readDataCache(actualAddress & ~0x3);
 
@@ -66,7 +63,7 @@ uint8_t Bus::memRead8(uint64_t address) {
     }
 
     if (actualAddress >= 0x4000000 && actualAddress <= 0x4ffffff) {
-        uint32_t value = memRead32(actualAddress);
+        uint32_t value = memRead32(actualAddress, cached);
 
         switch (actualAddress & 0x3) {
             case 0:
@@ -89,10 +86,7 @@ uint8_t Bus::memRead8(uint64_t address) {
 
 }
 
-uint16_t Bus::memRead16(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-    bool cached = (address & 0x20000000) == 0;
-
+uint16_t Bus::memRead16(uint64_t actualAddress, bool cached) {
     if (cached) {
         uint32_t value = readDataCache(actualAddress & ~0x3);
 
@@ -115,11 +109,7 @@ uint16_t Bus::memRead16(uint64_t address) {
 
 }
 
-void Bus::memWrite8(uint64_t address, uint8_t value) {
-    uint64_t actualAddress = translateAddress(address, true);
-
-    bool cached = (address & 0x20000000) == 0;
-
+void Bus::memWrite8(uint64_t actualAddress, uint8_t value, bool cached) {
     if (cached) {
         switch (actualAddress & 0x3) {
             case 0:
@@ -160,17 +150,13 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
                 return;
             }
 
-            std::cout << "(memWrite8) unsupported address given: " << std::hex << address << "\n";
+            std::cout << "(memWrite8) unsupported address given: " << std::hex << actualAddress << "\n";
             throw std::runtime_error("");
             break;
     }
 }
 
-void Bus::memWrite16(uint64_t address, uint16_t value) {
-    uint64_t actualAddress = translateAddress(address, true);
-
-    bool cached = (address & 0x20000000) == 0;
-
+void Bus::memWrite16(uint64_t actualAddress, uint16_t value, bool cached) {
     if (cached) {
         if ((actualAddress & 0x3) == 0) {
             writeDataCache(actualAddress & ~0x3, (uint32_t)value << 16, 0xffff0000);
@@ -194,16 +180,13 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
                 return;
             }
 
-            std::cout << "(memWrite16) unsupported address given: " << std::hex << address << "\n";
+            std::cout << "(memWrite16) unsupported address given: " << std::hex << actualAddress << "\n";
             throw std::runtime_error("");
             break;
     }
 }
 
-void Bus::memWrite64(uint64_t address, uint64_t value, uint64_t mask) {
-    uint64_t actualAddress = translateAddress(address, true);
-
-    bool cached = (address & 0x20000000) == 0;
+void Bus::memWrite64(uint64_t actualAddress, uint64_t value, bool cached, uint64_t mask) {
 
     if (cached) {
         writeDataCache(actualAddress + 4, (uint32_t)value, (uint32_t)(int64_t)mask);
@@ -217,10 +200,7 @@ void Bus::memWrite64(uint64_t address, uint64_t value, uint64_t mask) {
     }
 }
 
-uint64_t Bus::memRead64(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-    bool cached = (address & 0x20000000) == 0;
-
+uint64_t Bus::memRead64(uint64_t actualAddress, bool cached) {
     if (cached) {
         return ((uint64_t)readDataCache(actualAddress) << 32) | (uint64_t)readDataCache(actualAddress + 4);
     }
@@ -229,15 +209,11 @@ uint64_t Bus::memRead64(uint64_t address) {
         return *(uint64_t*)&rdram[actualAddress];
     }
 
-    std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
+    std::cout << "(memRead64) unsupported address given: " << std::hex << actualAddress << "\n";
     throw std::runtime_error("");
 
 }
-uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
-    uint64_t actualAddress = ignoreCache ? address : translateAddress(address);
-
-    bool cached = (address & 0x20000000) == 0;
-
+uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, bool ignoreCycles) {
     if (cached && !ignoreCache) {
         return readDataCache(actualAddress, ignoreCycles);
     }
@@ -419,10 +395,8 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
     }
 }
 
-void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t mask) {
-    uint64_t actualAddress = ignoreCache ? address : translateAddress(address, true);
+void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool ignoreCache, int64_t mask) {
 
-    bool cached = (address & 0x20000000) == 0;
 
     if (cached && !ignoreCache) {
         writeDataCache(actualAddress, value, mask);
@@ -1022,9 +996,7 @@ void Bus::loadRom(std::string filename) {
     file.close();
 }
 
-uint32_t Bus::readInstructionCache(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-
+uint32_t Bus::readInstructionCache(uint64_t actualAddress) {
     uint32_t lineIndex = ((actualAddress >> 5) & 0x1FF);
 
     if (!icacheHit(lineIndex, actualAddress)) {
@@ -1047,7 +1019,7 @@ void Bus::fillInstructionCache(uint32_t lineIndex, uint64_t address) {
     uint64_t cacheAddress = (uint64_t)((uint32_t)((icache[lineIndex].tag) | (icache[lineIndex].index)) & 0x1ffffffc);
 
     for (int i = 0; i < 8; i++) {
-        icache[lineIndex].words[i] = memRead32(cacheAddress + i * 4, true);
+        icache[lineIndex].words[i] = memRead32(cacheAddress + i * 4, true, true);
     }
 }
 
@@ -1103,10 +1075,10 @@ void Bus::fillDataCache(uint32_t lineIndex, uint64_t address, bool ignoreCycles)
 
     uint64_t cacheAddress = (uint64_t)((uint32_t)((dcache[lineIndex].tag) | (dcache[lineIndex].index)) & 0x1ffffffc);
 
-    dcache[lineIndex].words[0] = memRead32(cacheAddress, true);
-    dcache[lineIndex].words[1] = memRead32(cacheAddress + 4, true);
-    dcache[lineIndex].words[2] = memRead32(cacheAddress + 8, true);
-    dcache[lineIndex].words[3] = memRead32(cacheAddress + 12, true);
+    dcache[lineIndex].words[0] = memRead32(cacheAddress, true, true);
+    dcache[lineIndex].words[1] = memRead32(cacheAddress + 4, true, true);
+    dcache[lineIndex].words[2] = memRead32(cacheAddress + 8, true, true);
+    dcache[lineIndex].words[3] = memRead32(cacheAddress + 12, true, true);
 }
 
 bool Bus::dcacheHit(uint32_t lineIndex, uint64_t address) {
@@ -1147,30 +1119,29 @@ void Bus::dcacheWriteback(uint64_t line, bool ignoreCycles) {
 
     for (int i = 0; i < 4; i++) {
         uint64_t currAddress = cacheAddress | (i * 4);
-        memWrite32(currAddress, dcache[line].words[i], true);
+        memWrite32(currAddress, dcache[line].words[i], true, true);
     }
 }
 
-uint64_t Bus::translateAddress(uint64_t address, bool isWrite) {
+std::tuple<uint64_t, bool, bool> Bus::translateAddress(uint64_t address, bool isWrite) {
     if ((address & 0xc0000000) != 0x80000000) {
         return getTlbAddress(address, isWrite);
     }
-    return address & 0x1FFFFFFF;
+    return std::tuple(address & 0x1fffffff, false, (address & 0x20000000) == 0);
 }
 
-uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
+std::tuple<uint64_t, bool, bool> Bus::getTlbAddress(uint64_t address, bool isWrite) {
     uint64_t actualAddress = address & 0xffffffff;
 
     if (isWrite) {
         if (tlbWriteLut[actualAddress >> 12].address != 0) {
-            return tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+            return std::tuple(tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, false);
         }
     } else if (tlbReadLut[actualAddress >> 12].address != 0) {
-        return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+        return std::tuple(tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, false);
     }
 
-    std::println("invalid TLB address given: {:x}", actualAddress);
-    throw std::runtime_error("");
+    return std::tuple(0x0, true, false);
 }
 
 void Bus::tlbWrite(uint32_t index) {

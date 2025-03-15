@@ -310,7 +310,7 @@ void CPU::lb(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t base = getRs(instruction);
 
-    uint32_t address = cpu->r[base] + offset;
+    uint64_t address = cpu->r[base] + offset;
 
     uint64_t value = (int8_t)(int64_t)(uint64_t)cpu->bus.memRead8(address);
 
@@ -554,7 +554,7 @@ void CPU::slti(CPU* cpu, uint32_t instruction) {
     cpu->r[getRt(instruction)] = val;
 }
 void CPU::sltiu(CPU* cpu, uint32_t instruction) {
-    uint64_t immediate = getSignedImmediate(instruction);
+    uint64_t immediate = getImmediate(instruction);
     uint64_t val = 0;
 
     if (cpu->r[getRs(instruction)] < immediate) {

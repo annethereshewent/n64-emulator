@@ -168,7 +168,8 @@ std::string slti(CPU* cpu, uint32_t instruction) {
     std::string isTrue = "No";
 
     uint64_t rs = CPU::getRs(instruction);
-    int64_t immediate = (int16_t)(int64_t)CPU::getImmediate(immediate);
+    uint64_t rt = CPU::getRt(instruction);
+    int64_t immediate = (int16_t)(int64_t)CPU::getImmediate(instruction);
 
     int64_t value = (int64_t)cpu->r[rs];
 
@@ -176,19 +177,20 @@ std::string slti(CPU* cpu, uint32_t instruction) {
         isTrue = "Yes";
     }
 
-    return std::format("SLTI r{}, 0x{:x} ; r{} = 0x{:x} (True: {})", rs, immediate, rs, value, isTrue);
+    return std::format("SLTI r{}, r{}, 0x{:x} ; r{} = 0x{:x} (True: {})", rt, rs, immediate, rs, value, isTrue);
 }
 std::string sltiu(CPU* cpu, uint32_t instruction) {
     std::string isTrue = "No";
 
     uint64_t rs = CPU::getRs(instruction);
-    int64_t immediate = CPU::getSignedImmediate(immediate);
+    uint64_t rt = CPU::getRt(instruction);
+    uint64_t immediate = CPU::getImmediate(instruction);
 
     if (cpu->r[rs] < immediate) {
         isTrue = "Yes";
     }
 
-    return std::format("SLTI r{}, 0x{:x} ; r{} = 0x{:x} (True: {})", rs, immediate, rs, cpu->r[rs], isTrue);
+    return std::format("SLTIU r{}, r{}, 0x{:x} ; r{} = 0x{:x} (True: {})", rt, rs, immediate, rs, cpu->r[rs], isTrue);
 }
 std::string andi(CPU* cpu, uint32_t instruction) {
     uint32_t immediate = CPU::getImmediate(instruction);
@@ -361,7 +363,9 @@ std::string lw(CPU* cpu, uint32_t instruction) {
     uint32_t rt = CPU::getRt(instruction);
     uint32_t rs = CPU::getRs(instruction);
 
-    return std::format("LW r{}, 0x{:x}(r{}) ; r{} = 0x{:x}", rt, offset, rs, rs, cpu->r[rs]);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(cpu->r[rs] + offset);
+
+    return std::format("LW r{}, 0x{:x}(r{}) ; r{} = 0x{:x} ; addr = 0x{:x}", rt, offset, rs, rs, cpu->r[rs], actualAddress);
 }
 std::string lbu(CPU* cpu, uint32_t instruction) {
     uint64_t offset = CPU::getSignedImmediate(instruction);
@@ -375,7 +379,9 @@ std::string lhu(CPU* cpu, uint32_t instruction) {
     uint32_t rt = CPU::getRt(instruction);
     uint32_t rs = CPU::getRs(instruction);
 
-    return std::format("LHU r{}, 0x{:x}(r{}) ; r{} = 0x{:x}", rt, offset, rs, rs, cpu->r[rs]);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(offset + cpu->r[rs]);
+
+    return std::format("LHU r{}, 0x{:x}(r{}) ; r{} = 0x{:x}, addr = 0x{:x}", rt, offset, rs, rs, cpu->r[rs], actualAddress);
 }
 std::string lwr(CPU* cpu, uint32_t instruction) {
     uint64_t offset = CPU::getSignedImmediate(instruction);
@@ -849,7 +855,7 @@ std::string slt(CPU* cpu, uint32_t instruction) {
         isTrue = "Yes";
     }
 
-    return std::format("ADD r{}, r{}, r{} ; r{} = 0x{:x}, r{} = 0x{:x} (True: {})", rd, rs, rt, rs, rsVal, rt, rtVal, isTrue);
+    return std::format("SLT r{}, r{}, r{} ; r{} = 0x{:x}, r{} = 0x{:x} (True: {})", rd, rs, rt, rs, rsVal, rt, rtVal, isTrue);
 }
 std::string sltu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = CPU::getRs(instruction);
@@ -862,7 +868,7 @@ std::string sltu(CPU* cpu, uint32_t instruction) {
         isTrue = "Yes";
     }
 
-    return std::format("ADD r{}, r{}, r{} ; r{} = 0x{:x}, r{} = 0x{:x} (True: {})", rd, rs, rt, rs, cpu->r[rs], rt, cpu->r[rt], isTrue);
+    return std::format("SLTU r{}, r{}, r{} ; r{} = 0x{:x}, r{} = 0x{:x} (True: {})", rd, rs, rt, rs, cpu->r[rs], rt, cpu->r[rt], isTrue);
 }
 std::string dadd(CPU* cpu, uint32_t instruction) {
     uint32_t rs = CPU::getRs(instruction);

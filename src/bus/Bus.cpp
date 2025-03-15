@@ -45,13 +45,13 @@ uint8_t Bus::memRead8(uint64_t address) {
                 return rdram[actualAddress + 3];
                 break;
             case 1:
-                return rdram[actualAddress + 2];
+                return rdram[(actualAddress & ~0x3) + 2];
                 break;
             case 2:
-                return rdram[actualAddress + 1];
+                return rdram[(actualAddress & ~0x3) + 1];
                 break;
             case 3:
-                return rdram[actualAddress];
+                return rdram[actualAddress & ~0x3];
                 break;
         }
     }
@@ -105,9 +105,9 @@ uint16_t Bus::memRead16(uint64_t address) {
 
     if (actualAddress <= 0x03EFFFFF) {
         if ((actualAddress & 0x3) == 0) {
-            return *(uint16_t*)&rdram[actualAddress + 1];
+            return *(uint16_t*)&rdram[actualAddress + 2];
         } else {
-            return *(uint16_t*)&rdram[actualAddress];
+            return *(uint16_t*)&rdram[actualAddress & ~0x3];
         }
     }
     std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
@@ -147,13 +147,13 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
                         rdram[actualAddress + 3] = value;
                         break;
                     case 1:
-                        rdram[actualAddress + 2] = value;
+                        rdram[(actualAddress & ~0x3) + 2] = value;
                         break;
                     case 2:
-                        rdram[actualAddress + 1] = value;
+                        rdram[(actualAddress & ~0x3) + 1] = value;
                         break;
                     case 3:
-                        rdram[actualAddress] = value;
+                        rdram[actualAddress & ~0x3] = value;
                         break;
                 }
 

@@ -519,16 +519,28 @@ std::string cache(CPU* cpu, uint32_t instruction) {
     );
 }
 std::string ll(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t rs = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    return std::format("LL r{}, 0x{:x}(r{}) ; r{} = 0x{:x}", rt, immediate, rs, rs, cpu->r[rs]);
 }
 std::string lwc1(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t rs = CPU::getRs(instruction);
+    uint32_t rd = CPU::getRt(instruction);
+
+    return std::format("LWC1 r{}, 0x{:x}(r{}) ; r{} = 0x{:x}", rd, immediate, rs, rs, cpu->r[rs]);
 }
 std::string lld(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: LLD";
 }
 std::string ldc1(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t rs = CPU::getRs(instruction);
+    uint32_t rd = CPU::getRt(instruction);
+
+    return std::format("LDC1 r{}, 0x{:x}(r{}) ; r{} = 0x{:x}", rd, immediate, rs, rs, cpu->r[rs]);
 }
 std::string ld(CPU* cpu, uint32_t instruction) {
     uint64_t offset = CPU::getSignedImmediate(instruction);
@@ -554,13 +566,21 @@ std::string sc(CPU* cpu, uint32_t instruction) {
     );
 }
 std::string swc1(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t baseReg = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    return std::format("SWC1 r{}, 0x{:x}(r{})", rt, immediate, baseReg);
 }
 std::string scd(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: SCD";
 }
 std::string sdc1(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    uint64_t immediate = CPU::getSignedImmediate(instruction);
+    uint32_t baseReg = CPU::getRs(instruction);
+    uint32_t rt = CPU::getRt(instruction);
+
+    return std::format("SDC1 r{}, 0x{:x}(r{})", rt, immediate, baseReg);
 }
 std::string sd(CPU* cpu, uint32_t instruction) {
     uint64_t rs = CPU::getRs(instruction);
@@ -873,22 +893,22 @@ std::string dsubu(CPU* cpu, uint32_t instruction) {
     return std::format("DSUBU r{}, r{}, r{} ; r{} = 0x{:x}, r{} = 0x{:x}", rd, rs, rt, rs, cpu->r[rs], rt, cpu->r[rt]);
 }
 std::string tge(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TGE";
 }
 std::string tgeu(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TGEU";
 }
 std::string tlt(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TLT";
 }
 std::string tltu(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TLTU";
 }
 std::string teq(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TEQ";
 }
 std::string tne(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TNE";
 }
 std::string dsll(CPU* cpu, uint32_t instruction) {
     uint32_t rt = CPU::getRt(instruction);
@@ -988,19 +1008,19 @@ std::string tgei(CPU* cpu, uint32_t instruction) {
     return std::format("TGEI, r{}, 0x{:x} ; r{} = 0x{:x}", rs, immediate, rs, cpu->r[rs]);
 }
 std::string tgeiu(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TGEUI";
 }
 std::string tlti(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TLTI";
 }
 std::string tltiu(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TLTIU";
 }
 std::string teqi(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TEQI";
 }
 std::string tnei(CPU* cpu, uint32_t instruction) {
-    return "TODO";
+    return "TODO: TNEI";
 }
 std::string bltzal(CPU* cpu, uint32_t instruction) {
     uint64_t rs = CPU::getRs(instruction);

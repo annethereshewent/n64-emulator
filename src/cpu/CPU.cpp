@@ -243,7 +243,7 @@ void CPU::step() {
         return;
     }
 
-    uint32_t opcode = !cached ? bus.memRead32(physicalPc, cached) : bus.readInstructionCache(pc);
+    uint32_t opcode = !cached ? bus.memRead32(physicalPc, cached) : bus.readInstructionCache(physicalPc);
     uint32_t command = opcode >> 26;
 
     previousPc = pc;
@@ -282,13 +282,13 @@ void CPU::step() {
     // }
 
 
-    if (!visited.contains(previousPc)) {
-        std::string disassembled = disassemble(this, opcode);
+    // if (!visited.contains(previousPc)) {
+    //     std::string disassembled = disassemble(this, opcode);
 
-        std::println("[CPU] [PC: 0x{:x}] [Opcode: 0x{:08x}] {}", debugPc, opcode, disassembled);
+    //     std::println("[CPU] [PC: 0x{:x}] [Opcode: 0x{:08x}] {}", debugPc, opcode, disassembled);
 
-        visited.insert(previousPc);
-    }
+    //     visited.insert(previousPc);
+    // }
 
     switch(command) {
         case 0:

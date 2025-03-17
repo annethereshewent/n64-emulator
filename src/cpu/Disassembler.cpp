@@ -218,7 +218,7 @@ std::string xori(CPU* cpu, uint32_t instruction) {
 }
 std::string lui(CPU* cpu, uint32_t instruction) {
     uint32_t immediate = CPU::getImmediate(instruction);
-    int rt = CPU::getRt(instruction);
+    uint32_t rt = CPU::getRt(instruction);
 
     return std::format("LUI r{}, 0x{:x} ; r{} = 0x{:x}", rt, immediate, rt, cpu->r[rt]);
 }

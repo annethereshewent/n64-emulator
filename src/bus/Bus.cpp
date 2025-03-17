@@ -1138,10 +1138,10 @@ std::tuple<uint64_t, bool, bool> Bus::getTlbAddress(uint64_t address, bool isWri
 
     if (isWrite) {
         if (tlbWriteLut[actualAddress >> 12].address != 0) {
-            return std::tuple(tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, true);
+            return std::tuple(tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, tlbWriteLut[actualAddress >> 12].cached);
         }
     } else if (tlbReadLut[actualAddress >> 12].address != 0) {
-        return std::tuple(tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, true);
+        return std::tuple(tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, tlbReadLut[actualAddress >> 12].cached);
     }
 
     tlbException(address, isWrite);

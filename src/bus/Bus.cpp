@@ -1138,10 +1138,10 @@ std::tuple<uint64_t, bool, bool> Bus::getTlbAddress(uint64_t address, bool isWri
 
     if (isWrite) {
         if (tlbWriteLut[actualAddress >> 12].address != 0) {
-            return std::tuple(tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, false);
+            return std::tuple(tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, true);
         }
     } else if (tlbReadLut[actualAddress >> 12].address != 0) {
-        return std::tuple(tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, false);
+        return std::tuple(tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, true);
     }
 
     tlbException(address, isWrite);
@@ -1319,14 +1319,14 @@ void Bus::tlbMap(uint32_t index) {
         entry.physOdd < 0x20000000
     ) {
         for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
-            tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
-            tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
+            tlbReadLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
+            tlbReadLut[i >> 12].cached = entry.cOdd != 2;
         }
 
         if (entry.dOdd != 0) {
             for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
-                tlbReadLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
-                tlbReadLut[i >> 12].cached = entry.cOdd != 2;
+                tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
+                tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
             }
         }
     }

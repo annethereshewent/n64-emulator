@@ -242,6 +242,19 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, b
             cpu.cop0.addCycles(20);
             return rdp.status.value;
             break;
+        case 0x4100010:
+            return 0xFFFFFF;
+            break;
+        case 0x4100014:
+            // TODO
+            return 0;
+            break;
+        case 0x4100018:
+            return rdp.pipeBusy;
+            break;
+        case 0x410001c:
+            return 0;
+            break;
         case 0x4300004:
             cpu.cop0.addCycles(20);
             return mips.mipsVersion;

@@ -385,15 +385,15 @@ uint64_t RSP::runRsp() {
                 break;
         }
 
-        if (!found.contains(previousPc) || !contains(found[previousPc], instruction)) {
-            if (found.contains(previousPc)) {
-                found[previousPc].push_back(instruction);
-            } else {
-                std::vector<uint32_t> instructions = {instruction};
-                found[previousPc] = instructions;
-            }
-            std::println("[RSP] [PC: {:x}] [Opcode: 0x{:x}] {}", previousPc, instruction, rspDisassemble(this, instruction));
-        }
+        // if (!found.contains(previousPc) || !contains(found[previousPc], instruction)) {
+        //     if (found.contains(previousPc)) {
+        //         found[previousPc].push_back(instruction);
+        //     } else {
+        //         std::vector<uint32_t> instructions = {instruction};
+        //         found[previousPc] = instructions;
+        //     }
+        //     std::println("[RSP] [PC: {:x}] [Opcode: 0x{:x}] {}", previousPc, instruction, rspDisassemble(this, instruction));
+        // }
 
         if (previousDelaySlot && inDelaySlot) {
             inDelaySlot = false;

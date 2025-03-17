@@ -25,17 +25,13 @@ void PIF::executeCommand() {
     }
     if (commandByte & 0x8) {
         mask |= 0x8;
-        std::cout << "received command 0x8\n";
     }
     if (commandByte & 0x10) {
         for (uint8_t& byte: rom) {
             byte = 0;
         }
-
-        std::cout << "received command 0x10\n";
     }
     if (commandByte & 0x20) {
-        std::cout << "received command 0x20\n";
         ram[0x3f] = 0x80;
     }
 

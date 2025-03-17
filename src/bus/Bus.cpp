@@ -1341,12 +1341,26 @@ void Bus::tlbUnmap(uint32_t index) {
             tlbReadLut[i >> 12].address = 0;
             tlbReadLut[i >> 12].cached = false;
         }
+
+        if (entry.dEven != 0) {
+            for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+                tlbWriteLut[i >> 12].address = 0;
+                tlbWriteLut[i >> 12].cached = false;
+            }
+        }
     }
 
     if (entry.vOdd != 0) {
         for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
-            tlbWriteLut[i >> 12].address = 0;
-            tlbWriteLut[i >> 12].cached = false;
+            tlbReadLut[i >> 12].address = 0;
+            tlbReadLut[i >> 12].cached = false;
+        }
+
+        if (entry.dOdd != 0) {
+            for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+                tlbWriteLut[i >> 12].address = 0;
+                tlbWriteLut[i >> 12].cached = false;
+            }
         }
     }
 }

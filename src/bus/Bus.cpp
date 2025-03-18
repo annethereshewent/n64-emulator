@@ -412,8 +412,6 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, b
 }
 
 void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool ignoreCache, int64_t mask) {
-
-
     if (cached && !ignoreCache) {
         writeDataCache(actualAddress, value, mask);
         return;
@@ -1399,7 +1397,7 @@ void Bus::clearInterrupt(uint32_t flag) {
 
 void Bus::dmaCartWrite() {
     uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
-    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xfffffe;
+    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xfffffff;
 
     uint32_t length = peripheralInterface.wrLen + 1;
 

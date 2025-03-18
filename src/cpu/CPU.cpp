@@ -281,14 +281,13 @@ void CPU::step() {
     //     visited.insert(previousPc);
     // }
 
+    if (!visited.contains(previousPc) && debugOn) {
+        std::string disassembled = disassemble(this, opcode);
 
-    // if (!visited.contains(previousPc)) {
-    //     std::string disassembled = disassemble(this, opcode);
+        std::println("[CPU] [PC: 0x{:x}] [Opcode: 0x{:08x}] {}", debugPc, opcode, disassembled);
 
-    //     std::println("[CPU] [PC: 0x{:x}] [Opcode: 0x{:08x}] {}", debugPc, opcode, disassembled);
-
-    //     visited.insert(previousPc);
-    // }
+        visited.insert(previousPc);
+    }
 
     switch(command) {
         case 0:

@@ -28,6 +28,7 @@ public:
     uint64_t nextPc;
 
     uint64_t debugPc;
+    bool debugFinished = false;
 
     uint64_t instructionCount = 0;
 

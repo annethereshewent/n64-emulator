@@ -729,21 +729,6 @@ std::string vsubc(RSP* rsp, uint32_t instruction) {
     return std::format("VSUBC v{}, v{}, v{}[{}]", vd, vs, vt, vte);
 }
 std::string vsar(RSP* rsp, uint32_t instruction) {
-    // switch (getVte(instruction)) {
-    //     case 8:
-    //         memcpy(&rsp->vpr[getVd(instruction)], &rsp->accHi, sizeof(rsp->accHi));
-    //         break;
-    //     case 9:
-    //         memcpy(&rsp->vpr[getVd(instruction)], &rsp->accMid, sizeof(rsp->accMid));
-    //         break;
-    //     case 10:
-    //         memcpy(&rsp->vpr[getVd(instruction)], &rsp->accLo, sizeof(rsp->accLo));
-    //         break;
-    //     default:
-    //         std::println("invalid option for vsar given: {}", getVte(instruction));
-    //         throw std::runtime_error("");
-    //         break;
-    // }
     return std::format("VSAR v{}, [{}]", RSP::getVd(instruction), RSP::getVte(instruction));
 }
 std::string vlt(RSP* rsp, uint32_t instruction) {

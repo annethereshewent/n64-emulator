@@ -1,8 +1,17 @@
 cmake_minimum_required(VERSION 3.30)
 project(n64-plus)
 
+option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+
 set (CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "-O3")
+
+if (ENABLE_ASAN)
+    set(CMAKE_CXX_FLAGS "-fsanitize=address -fno-omit-frame-pointer -g")
+    set(CMAKE_CXX_FLAGS "-fsanitize=address -fsanitize-address-use-after-scope -g")
+    set(CMAKE_C_FLAGS "-fsanitize=address -fno-omit-frame-pointer -g")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+endif()
 
 find_package(PkgConfig REQUIRED)
 find_package(Vulkan REQUIRED)

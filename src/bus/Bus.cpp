@@ -243,7 +243,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, b
             return rdp.status.value;
             break;
         case 0x4100010:
-            return 0xFFFFFF;
+            return 0xffffff;
             break;
         case 0x4100014:
             // TODO

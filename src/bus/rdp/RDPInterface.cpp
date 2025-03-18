@@ -20,6 +20,9 @@ uint32_t RDPInterface::readRegisters(uint32_t offset) {
             status.dmaBusy = 0;
             return status.value;
             break;
+        case 4:
+            return 0xffffff;
+            break;
         default:
             std::cout << "(RDPInterface::readRegisters)offset not implemented: " << std::dec << offset << "\n";
             throw std::runtime_error("");

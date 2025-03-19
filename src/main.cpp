@@ -102,18 +102,9 @@ int main(int argc, char **argv) {
 
     cpu.bus.openSaves(saveNames);
 
-    const size_t alignment = 0x3fff;
-
-    uintptr_t raw_ptr = reinterpret_cast<uintptr_t>(cpu.bus.rdram.data());
-
-    // Align the pointer to the specified alignment boundary
-    uintptr_t aligned_ptr = (raw_ptr + alignment) & ~alignment;
-
-    uint8_t* alignedRdram = reinterpret_cast<uint8_t*>(aligned_ptr);
-
     GFX_INFO gfxInfo;
 
-    gfxInfo.RDRAM = alignedRdram;
+    gfxInfo.RDRAM = &cpu.bus.rdram[0];
     gfxInfo.DMEM = &cpu.bus.rsp.dmem[0];
     gfxInfo.RDRAM_SIZE = cpu.bus.rdram.size();
     gfxInfo.DPC_CURRENT_REG = &cpu.bus.rdp.current;

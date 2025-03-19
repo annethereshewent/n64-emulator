@@ -103,7 +103,7 @@ std::string bne(RSP* rsp, uint32_t instruction) {
     }
 
     return std::format(
-        "BEQ r{}, r{}, 0x{:x} ; r{} = 0x{:x}, r{} = 0x{:x} (Taken: {})",
+        "BNE r{}, r{}, 0x{:x} ; r{} = 0x{:x}, r{} = 0x{:x} (Taken: {})",
         rs,
         rt,
         amount,
@@ -596,7 +596,12 @@ std::string vmulf(RSP* rsp, uint32_t instruction) {
 }
 
 std::string vmulu(RSP* rsp, uint32_t instruction) {
-    throw std::runtime_error("TODO: vmulu");
+    uint8_t vte = RSP::getVte(instruction);
+    uint8_t vt = RSP::getVt(instruction);
+    uint8_t vs = RSP::getVs(instruction);
+    uint8_t vd = RSP::getVd(instruction);
+
+    return std::format("VMULU v{}, v{}, v{}[{}]", vd, vs, vt, vte);
 }
 std::string vrndp(RSP* rsp, uint32_t instruction) {
     throw std::runtime_error("TODO: vrndp");
@@ -645,7 +650,12 @@ std::string vmacf(RSP* rsp, uint32_t instruction) {
     return std::format("VMACF v{}, v{}, v{}[{}]", vd, vs, vt, vte);
 }
 std::string vmacu(RSP* rsp, uint32_t instruction) {
-    throw std::runtime_error("TODO: vmacu");
+    uint8_t vte = RSP::getVte(instruction);
+    uint8_t vt = RSP::getVt(instruction);
+    uint8_t vs = RSP::getVs(instruction);
+    uint8_t vd = RSP::getVd(instruction);
+
+    return std::format("VMACU v{}, v{}, v{}[{}]", vd, vs, vt, vte);
 }
 std::string vrndn(RSP* rsp, uint32_t instruction) {
     throw std::runtime_error("TODO: vrndn");

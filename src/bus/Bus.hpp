@@ -71,9 +71,11 @@ public:
     RSP rsp;
 
     Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this), pif(*this) {
+        // reserve is needed to ensure rdram is aligned for use with parallel-rdp
+        rdram.reserve(0x800000);
         rdram.resize(0x800000);
+        rdram9.reserve(0x800000);
         rdram9.resize(0x800000);
-        spdmem.resize(0x1000);
 
         tlbReadLut.resize(0x100000);
         tlbWriteLut.resize(0x100000);
@@ -89,8 +91,6 @@ public:
             dcache[i].index = (uint16_t)(i << 4) & 0xff0;
         }
     };
-
-    std::vector<uint8_t> spdmem;
 
     PIF pif;
 

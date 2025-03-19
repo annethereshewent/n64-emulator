@@ -558,7 +558,6 @@ void RSP::updateAccumulatorHigh32(int element, int32_t result, bool accumulate) 
     updateAccumulatorHiLo(element, result >> 16, result << 16, accumulate);
 }
 
-
 void RSP::writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo) {
     ptr[1] = (uint8_t)value;
     ptr[0] = (uint8_t)(value >> 8);
@@ -585,11 +584,23 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
     }
 }
 
+void RSP::setVecFromAccUnsignedMid(uint8_t vd) {
+    for (int i = 0; i < 8; i ++) {
+        int64_t value = (int64_t)getAccumulator16(&accLo[i * 2]) | (int64_t)getAccumulator16(&accMid[i * 2]) << 16 | (int64_t)getAccumulator16(&accHi[i * 2]) << 32;
+        value = (value << 16) >> 16;
+        if (value >= 0) {
+            if ((int32_t)value < 0) {
+                setVec16(vd, i, 0xffff);
+            } else {
+                setVec16(vd, i, (uint16_t)(value >> 16));
+            }
+        } else {
+            setVec16(vd, i, 0);
+        }
+    }
+}
+
 void RSP::setVecFromAccLow(uint8_t vd) {
-    // for (int i = 0; i < 8; i++) {
-    //     int16_t lo = getAccumulator16(&accLo[i * 2]);
-    //     setVec16(vd, i, lo);
-    // }
     memcpy(&vpr[vd], &accLo, sizeof(u128));
 }
 
@@ -612,10 +623,6 @@ void RSP::setVecFromAccSignedLow(uint8_t vd) {
 }
 
 void RSP::setVecFromAccMid(uint8_t vd) {
-    // for (int i = 0; i < 8; i++) {
-    //     int16_t mid = getAccumulator16(&accMid[i * 2]);
-    //     setVec16(vd, i, mid);
-    // }
     memcpy(&vpr[vd], &accMid, sizeof(u128));
 }
 

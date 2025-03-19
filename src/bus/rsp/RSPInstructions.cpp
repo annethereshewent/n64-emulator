@@ -702,7 +702,8 @@ void RSP::vectorSetAccumulatorFromRegister(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::vmulu(RSP* rsp, uint32_t instruction) {
-    throw std::runtime_error("TODO: vmulu");
+    vectorMultiplyFractions(rsp, instruction, false, 0x8000);
+    rsp->setVecFromAccUnsignedMid(getVd(instruction));
 }
 void RSP::vrndp(RSP* rsp, uint32_t instruction) {
     throw std::runtime_error("TODO: vrndp");
@@ -731,7 +732,8 @@ void RSP::vmacf(RSP* rsp, uint32_t instruction) {
     rsp->setVecFromAccSignedMid(getVd(instruction));
 }
 void RSP::vmacu(RSP* rsp, uint32_t instruction) {
-    throw std::runtime_error("TODO: vmacu");
+    vectorMultiplyFractions(rsp, instruction, true, 0);
+    rsp->setVecFromAccUnsignedMid(getVd(instruction));
 }
 void RSP::vrndn(RSP* rsp, uint32_t instruction) {
     throw std::runtime_error("TODO: vrndn");

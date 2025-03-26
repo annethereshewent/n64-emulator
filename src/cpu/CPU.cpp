@@ -393,14 +393,14 @@ void CPU::step() {
 
 void CPU::fastForwardAbsoluteLoop(uint64_t target) {
     auto [physicalPc, error, cached] = bus.translateAddress(pc);
-    if (pc == target && bus.memRead32(physicalPc, cached, false, true) == 0) {
+    if (pc == target && bus.memRead32(physicalPc, cached, Bit32, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
 }
 
 void CPU::fastForwardRelativeLoop(int16_t amount) {
     auto [physicalPc, error, cached] = bus.translateAddress(pc);
-    if (amount == -4 && bus.memRead32(physicalPc, cached, false, true) == 0) {
+    if (amount == -4 && bus.memRead32(physicalPc, cached, Bit32, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
 }

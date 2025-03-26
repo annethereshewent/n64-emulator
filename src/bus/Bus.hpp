@@ -41,6 +41,13 @@ enum SaveType {
     NoSave
 };
 
+enum Width {
+    WidthICache = 16,
+    WidthDCache = 32,
+    Bit64 = 8,
+    Bit32 = 4
+};
+
 class Bus {
 public:
     std::vector<uint8_t> rdram = {};
@@ -113,7 +120,7 @@ public:
     SDL_AudioStream* stream;
 
     uint64_t memRead64(uint64_t address, bool cached);
-    uint32_t memRead32(uint64_t address, bool cached, bool ignoreCache = false, bool ignoreCycles = false);
+    uint32_t memRead32(uint64_t address, bool cached, Width bitWidth = Bit32, bool ignoreCycles = false);
     uint16_t memRead16(uint64_t address, bool cached);
     uint8_t memRead8(uint64_t address, bool cached);
 

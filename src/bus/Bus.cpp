@@ -209,6 +209,7 @@ uint64_t Bus::memRead64(uint64_t actualAddress, bool cached) {
     }
 
     if (actualAddress <= 0x03EFFFFF) {
+        throw std::runtime_error("TODO: memRead64");
         return *(uint64_t*)&rdram[actualAddress];
     }
 
@@ -216,8 +217,8 @@ uint64_t Bus::memRead64(uint64_t actualAddress, bool cached) {
     throw std::runtime_error("");
 
 }
-uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, bool ignoreCycles) {
-    if (cached && !ignoreCache) {
+uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, bool ignoreCycles) {
+    if (cached && bitWidth != WidthDCache && bitWidth != WidthICache) {
         return readDataCache(actualAddress, ignoreCycles);
     }
 
@@ -338,7 +339,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, b
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                uint32_t cycles = ignoreCache ? 9 : 32;
+                uint32_t cycles = calculateRdRamCycles(bitWidth) / (bitWidth / 4);
 
                 if (!ignoreCycles) {
                     cpu.cop0.addCycles(cycles);
@@ -357,7 +358,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, b
                 uint64_t offset = actualAddress - 0x4000000;
 
                 if (!ignoreCycles) {
-                    cpu.cop0.addCycles(1);
+                    cpu.cop0.addCycles(bitWidth / 4);
                 }
 
                 return std::byteswap(*(uint32_t*)&rsp.dmem[offset]);
@@ -366,7 +367,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, bool ignoreCache, b
                 uint64_t offset = actualAddress - 0x4001000;
 
                 if (!ignoreCycles) {
-                    cpu.cop0.addCycles(1);
+                    cpu.cop0.addCycles(bitWidth / 4);
                 }
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
@@ -1033,7 +1034,7 @@ void Bus::fillInstructionCache(uint32_t lineIndex, uint64_t address) {
     uint64_t cacheAddress = (uint64_t)((uint32_t)((icache[lineIndex].tag) | (icache[lineIndex].index)) & 0x1ffffffc);
 
     for (int i = 0; i < 8; i++) {
-        icache[lineIndex].words[i] = memRead32(cacheAddress + i * 4, true, true);
+        icache[lineIndex].words[i] = memRead32(cacheAddress + i * 4, true, WidthICache);
     }
 }
 
@@ -1089,10 +1090,10 @@ void Bus::fillDataCache(uint32_t lineIndex, uint64_t address, bool ignoreCycles)
 
     uint64_t cacheAddress = (uint64_t)((uint32_t)((dcache[lineIndex].tag) | (dcache[lineIndex].index)) & 0x1ffffffc);
 
-    dcache[lineIndex].words[0] = memRead32(cacheAddress, true, true);
-    dcache[lineIndex].words[1] = memRead32(cacheAddress + 4, true, true);
-    dcache[lineIndex].words[2] = memRead32(cacheAddress + 8, true, true);
-    dcache[lineIndex].words[3] = memRead32(cacheAddress + 12, true, true);
+    dcache[lineIndex].words[0] = memRead32(cacheAddress, true, WidthDCache);
+    dcache[lineIndex].words[1] = memRead32(cacheAddress + 4, true, WidthDCache);
+    dcache[lineIndex].words[2] = memRead32(cacheAddress + 8, true, WidthDCache);
+    dcache[lineIndex].words[3] = memRead32(cacheAddress + 12, true, WidthDCache);
 }
 
 bool Bus::dcacheHit(uint32_t lineIndex, uint64_t address) {

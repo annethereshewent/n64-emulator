@@ -295,10 +295,6 @@ void CPU::j(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = address;
 }
 void CPU::jal(CPU* cpu, uint32_t instruction) {
-    // TODO: check if this is correct. some other emulators
-    // do some stuff like check if delay slot is taken and
-    // only branch if thats not the case but idk if i need
-    // to do that with my code?
     cpu->r[31] = cpu->nextPc;
 
     uint64_t offset = ((uint64_t)instruction & 0x3ffffff) << 2;
@@ -790,7 +786,6 @@ void CPU::jr(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = cpu->r[rs];
 }
 void CPU::jalr(CPU* cpu, uint32_t instruction) {
-    // TODO: see jal comments
     cpu->r[getRd(instruction)] = cpu->nextPc;
 
     cpu->inDelaySlot = true;

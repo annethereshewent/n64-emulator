@@ -244,16 +244,20 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             return rdp.status.value;
             break;
         case 0x4100010:
+            cpu.cop0.addCycles(20);
             return 0xffffff;
             break;
         case 0x4100014:
+            cpu.cop0.addCycles(20);
             // TODO
             return 0;
             break;
         case 0x4100018:
+            cpu.cop0.addCycles(20);
             return rdp.pipeBusy;
             break;
         case 0x410001c:
+            cpu.cop0.addCycles(20);
             return 0;
             break;
         case 0x4300004:
@@ -378,6 +382,12 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             }
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint32_t offset = actualAddress & 0xfffffff;
+
+                uint32_t cycles = peripheralInterface.calculateCycles(1, 4);
+
+                if (!ignoreCycles) {
+                    cpu.cop0.addCycles(cycles);
+                }
 
                 if (offset < cartridge.size()) {
                     return std::byteswap(*(uint32_t*)&cartridge[offset]);

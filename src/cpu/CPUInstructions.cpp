@@ -695,15 +695,15 @@ void CPU::swl(CPU* cpu, uint32_t instruction) {
         return;
     }
 
-    uint32_t shift = (address & 0x3) * 8;
+    uint32_t shift = (actualAddress & 0x3) * 8;
 
-    uint32_t maskShift = 8 * (4 - (address & 0x3));
+    uint32_t maskShift = 8 * (4 - (actualAddress & 0x3));
 
-    uint32_t mask = (address & 0x3) == 0 ? -1 : (1 << maskShift) - 1;
+    uint32_t mask = (actualAddress & 0x3) == 0 ? -1 : (1 << maskShift) - 1;
 
     uint32_t value = (uint32_t)(cpu->r[rt] >> shift);
 
-    cpu->bus.memWrite32(address & ~0x3, value, cached, false, mask);
+    cpu->bus.memWrite32(actualAddress & ~0x3, value, cached, false, mask);
 }
 void CPU::swr(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -719,13 +719,13 @@ void CPU::swr(CPU* cpu, uint32_t instruction) {
         return;
     }
 
-    uint32_t shift = 8 * (3 - (address & 0x3));
+    uint32_t shift = 8 * (3 - (actualAddress & 0x3));
 
     uint32_t mask = ~((1 << shift) - 1);
 
     uint32_t value = (uint32_t)(cpu->r[rt] << shift);
 
-    cpu->bus.memWrite32(address & ~3, value, cached, false, mask);
+    cpu->bus.memWrite32(actualAddress & ~0x3, value, cached, false, mask);
 }
 void CPU::xori(CPU* cpu, uint32_t instruction) {
     cpu->r[getRt(instruction)] = cpu->r[getRs(instruction)] ^ (uint64_t)getImmediate(instruction);

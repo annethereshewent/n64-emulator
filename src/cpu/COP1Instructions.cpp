@@ -117,7 +117,7 @@ void COP1::swc1(CPU* cpu, uint32_t instruction) {
 
     uint32_t word = !cpu->cop0.status.fr ? cpu->cop1.fgr32[rt] : (uint32_t)cpu->cop1.fgr64[rt];
 
-    cpu->bus.memWrite32(address, word, cached);
+    cpu->bus.memWrite32(actualAddress, word, cached);
 }
 
 void COP1::cfc1(CPU* cpu, uint32_t instruction) {

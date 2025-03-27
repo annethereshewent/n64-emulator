@@ -1200,9 +1200,6 @@ void Bus::tlbException(uint64_t address, bool isWrite) {
 
     cpu.cop0.badVAddress = address;
 
-    // 0x7FFFF0
-    // 0x180000000
-
     cpu.cop0.xContext = (cpu.cop0.xContext & ~0x7ffff0) | ((address >> 9) & 0x7ffff0);
     cpu.cop0.context = (cpu.cop0.xContext & ~0x7ffff0) | ((address >> 9) & 0x7ffff0);
     cpu.cop0.xContext = (cpu.cop0.xContext & ~0x180000000) | ((address >> 31) & 0x180000000);

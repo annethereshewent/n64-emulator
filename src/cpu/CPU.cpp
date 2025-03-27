@@ -281,7 +281,7 @@ void CPU::step() {
     //     visited.insert(previousPc);
     // }
 
-    if (!visited.contains(previousPc) && debugOn) {
+    if (!visited.contains(debugPc) && debugOn) {
         std::string disassembled = disassemble(this, opcode);
 
         std::println("[CPU] [PC: 0x{:x}] [PhysPC: 0x{:x}] [Opcode: 0x{:08x}] {}", previousPc, debugPc, opcode, disassembled);

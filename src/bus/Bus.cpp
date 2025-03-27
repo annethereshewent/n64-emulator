@@ -321,7 +321,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             cpu.cop0.addCycles(20);
             return peripheralInterface.dom2Rls;
             break;
-        case 0x470000C:
+        case 0x470000c:
             // just return 0x14 to skip the initialization process
             // TODO: actually implement rdInterface related stuff
             cpu.cop0.addCycles(20);

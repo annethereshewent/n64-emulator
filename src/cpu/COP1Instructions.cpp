@@ -728,7 +728,17 @@ void COP1::divD(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(57);
 }
 void COP1::sqrtD(CPU* cpu, uint32_t instruction) {
-    throw std::runtime_error("TODO: sqrtD");
+    uint32_t rd = CPU::getRd(instruction);
+
+    double value = cpu->cop1.getDouble(rd);
+
+    double result = sqrt(value);
+
+    uint32_t dest = CPU::getFd(instruction);
+
+    cpu->cop1.setDouble(dest, result);
+
+    cpu->cop0.addCycles(57);
 }
 void COP1::absD(CPU* cpu, uint32_t instruction) {
     double value = cpu->cop1.getDouble(CPU::getRd(instruction));

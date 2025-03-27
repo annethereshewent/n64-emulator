@@ -381,7 +381,12 @@ std::string mfc0(RSP* rsp, uint32_t instruction) {
 }
 
 std::string lbv(RSP* rsp, uint32_t instruction) {
-    throw std::runtime_error("TODO: lbv");
+    uint32_t offset = (uint32_t)(RSP::getVOffset(instruction) << 1);
+    uint32_t rs = CPU::getRs(instruction);
+    uint8_t velement = RSP::getVElement(instruction);
+    uint8_t vt = RSP::getVt(instruction);
+
+    return std::format("LSV v{}[{}], 0x{:x}(r{}) ; r{} = 0x{:x}", vt, velement, offset, rs, rs, rsp->r[rs]);
 }
 std::string lsv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (uint32_t)(RSP::getVOffset(instruction) << 1);

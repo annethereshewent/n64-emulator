@@ -248,7 +248,11 @@ void RSP::mfc0(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::lbv(RSP* rsp, uint32_t instruction) {
-    throw std::runtime_error("TODO: lbv");
+    uint32_t offset = (uint32_t)(getVOffset(instruction) << 1);
+
+    uint32_t address = rsp->r[CPU::getRs(instruction)] + offset;
+
+    rsp->setVec8(getVt(instruction), getVElement(instruction), rsp->memRead8(address));
 }
 void RSP::lsv(RSP* rsp, uint32_t instruction) {
     uint32_t offset = (uint32_t)(getVOffset(instruction) << 1);

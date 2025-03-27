@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.30)
 project(n64-plus)
 
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 
 set (CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "-O3")
@@ -11,6 +12,12 @@ if (ENABLE_ASAN)
     set(CMAKE_CXX_FLAGS "-fsanitize=address -fsanitize-address-use-after-scope -g")
     set(CMAKE_C_FLAGS "-fsanitize=address -fno-omit-frame-pointer -g")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+endif()
+
+if(ENABLE_UBSAN)
+    message(STATUS "UndefinedBehaviorSanitizer enabled!")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")
 endif()
 
 find_package(PkgConfig REQUIRED)

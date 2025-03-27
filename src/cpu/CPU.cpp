@@ -284,9 +284,9 @@ void CPU::step() {
     if (!visited.contains(previousPc) && debugOn) {
         std::string disassembled = disassemble(this, opcode);
 
-        std::println("[CPU] [PC: 0x{:x}] [Opcode: 0x{:08x}] {}", debugPc, opcode, disassembled);
+        std::println("[CPU] [PC: 0x{:x}] [PhysPC: 0x{:x}] [Opcode: 0x{:08x}] {}", previousPc, debugPc, opcode, disassembled);
 
-        visited.insert(previousPc);
+        visited.insert(debugPc);
     }
 
     switch(command) {
@@ -392,15 +392,13 @@ void CPU::step() {
 }
 
 void CPU::fastForwardAbsoluteLoop(uint64_t target) {
-    auto [physicalPc, error, cached] = bus.translateAddress(pc);
-    if (pc == target && bus.memRead32(physicalPc, cached, Bit32, true) == 0) {
+    if (pc == target && bus.memRead32(debugPc, false, Bit32, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
 }
 
 void CPU::fastForwardRelativeLoop(int16_t amount) {
-    auto [physicalPc, error, cached] = bus.translateAddress(pc);
-    if (amount == -4 && bus.memRead32(physicalPc, cached, Bit32, true) == 0) {
+    if (amount == -4 && bus.memRead32(debugPc, false, Bit32, true) == 0) {
         cop0.count = scheduler.getTimeToNext();
     }
 }

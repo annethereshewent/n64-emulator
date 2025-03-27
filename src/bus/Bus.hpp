@@ -31,6 +31,10 @@ const uint32_t EEPROM_16K = 0xc000;
 
 const uint32_t SRAM_SIZE = 0x8000;
 const uint32_t FLASH_SIZE = 0x20000;
+const uint32_t SECTOR_SIZE = 0x4000;
+
+const uint32_t FLASH_ID = 0x11118001;
+const uint32_t SILICON_ID = 0xc2001e;
 
 enum SaveType {
     Sram,
@@ -46,6 +50,15 @@ enum Width {
     WidthDCache = 32,
     Bit64 = 8,
     Bit32 = 4
+};
+
+enum FlashMode {
+    EraseSector,
+    EraseChip,
+    Status,
+    PageProgram,
+    ReadSilliconId,
+    ReadArray
 };
 
 class Bus {
@@ -76,6 +89,10 @@ public:
 
     CPU& cpu;
     RSP rsp;
+
+    FlashMode flashMode = ReadArray;
+    uint32_t flashStatus = 0;
+    uint16_t flashSector = 0;
 
     Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this), pif(*this) {
         // reserve is needed to ensure rdram is aligned for use with parallel-rdp
@@ -150,6 +167,7 @@ public:
     void setInterrupt(uint32_t flag);
     void clearInterrupt(uint32_t flag);
 
+    void dmaFlashWrite();
     void dmaSramWrite();
     void dmaSramRead();
     void dmaCartWrite();
@@ -179,6 +197,8 @@ public:
     void setCic();
 
     void formatSram();
+    void formatFlash();
+    void executeFlashCommand(uint32_t command);
 
     void tlbException(uint64_t address, bool isWrite);
 

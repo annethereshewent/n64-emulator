@@ -351,12 +351,26 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
 
                 return *(uint32_t*)&rdram[actualAddress];
             }
-            if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
+            if (actualAddress >= 0x08000000 && actualAddress <= 0x0801ffff) {
                 // cartridge sram
                 // TODO: implement saves
-                throw std::runtime_error("todo: sram read");
+                if (actualAddress >= 0x8000000 && actualAddress <= 0x801ffff) {
+                    if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                        uint32_t offset = actualAddress - 0x8000000;
 
-                return 0xff;
+                        formatSram();
+
+                        return std::byteswap(*(uint32_t*)&sram[offset]);
+                    } else {
+                        if ((actualAddress & 0x1ffff) == 0 && flashMode == Status) {
+                            return flashStatus;
+                        }
+                        if ((actualAddress & 0x1ffff) == 0 && flashMode == ReadArray) {
+                            return 0;
+                        }
+                        throw std::runtime_error("invalid option given to flash read");
+                    }
+                }
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;
@@ -597,7 +611,7 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
                 if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
                     dmaSramRead();
                 } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
-                    throw std::runtime_error("TODO: dmaFlashWrite");
+                    throw std::runtime_error("TODO: dmaFlashRead");
                     // dmaFlashRead();
                 } else {
                     std::println("invalid address given for PI dma write: {:x}", cartAddress);
@@ -622,8 +636,7 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
                 if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
                     dmaSramWrite();
                 } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
-                    throw std::runtime_error("TODO: dmaFlashWrite");
-                    // dmaFlashWrite();
+                    dmaFlashWrite();
                 } else {
                     std::println("invalid address given for PI dma write: {:x}", cartAddress);
                     throw std::runtime_error("");
@@ -788,6 +801,33 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
                 // N64 DD registers, ignore
                 return;
             }
+            if (actualAddress >= 0x8000000 && actualAddress <= 0x801ffff) {
+                if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                    uint32_t offset = actualAddress - 0x8000000;
+
+                    formatSram();
+
+                    uint32_t returnVal = std::byteswap(*(uint32_t*)&sram[offset]);
+
+                    Bus::writeWithMask32(&returnVal, value, mask);
+
+                    returnVal = std::byteswap(returnVal);
+
+                    memcpy(&sram[offset], &returnVal, sizeof(uint32_t));
+                } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
+                    if ((actualAddress & 0x1ffff) == 0x10000) {
+                        formatFlash();
+                        executeFlashCommand(value & mask);
+                    } else if ((actualAddress & 0x1ffff) == 0 && flashMode == Status) {
+                        flashStatus = (value & mask) & 0xff;
+                    } else {
+                        throw std::runtime_error("invalid flash command given");
+                    }
+
+                }
+
+                return;
+            }
 
             std::cout << "(memWrite32) unsupported address received: " << std::hex << actualAddress << "\n";
             throw std::runtime_error("");
@@ -904,6 +944,64 @@ void Bus::formatEeprom() {
     if (eeprom.size() < 0x800) {
         eeprom.resize(0x800);
         std::fill(eeprom.begin(), eeprom.end(), 0xff);
+    }
+}
+
+void Bus::formatFlash() {
+    if (flash.size() < FLASH_SIZE) {
+        flash.resize(FLASH_SIZE);
+        std::fill(flash.begin(), flash.end(), 0xff);
+    }
+}
+
+void Bus::executeFlashCommand(uint32_t command) {
+    switch (command >> 24) {
+        case 0xf0:
+            flashMode = ReadArray;
+            break;
+        case 0xe1:
+            flashMode = ReadSilliconId;
+            flashStatus |= 0x1;
+            break;
+        case 0xd2:
+            flashMode = Status;
+            break;
+        case 0x3c:
+            flashMode = EraseChip;
+            break;
+        case 0x4b:
+            flashMode = EraseSector;
+            flashSector = command & 0xffff;
+            break;
+        case 0x78:
+            flashStatus |= 0x2;
+
+            if (flashMode == EraseChip) {
+                for (int i = 0; i < flash.size(); i++) {
+                    flash[i] = 0xff;
+                }
+                auto p1 = std::chrono::system_clock::now();
+                timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    p1.time_since_epoch()
+                ).count();
+            } else if (flashMode == EraseSector) {
+                uint32_t offset = (flashSector & 0xff80) * 128;
+
+                for (int i = 0; i < SECTOR_SIZE; i++) {
+                    flash[offset + i] = 0xff;
+                }
+                auto p1 = std::chrono::system_clock::now();
+                timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    p1.time_since_epoch()
+                ).count();
+            } else {
+                throw std::runtime_error("invalid erase flash command given");
+            }
+            break;
+        default:
+            std::println("todo: {:x}", command >> 24);
+            throw std::runtime_error("");
+            break;
     }
 }
 
@@ -1457,11 +1555,40 @@ void Bus::dmaCartWrite() {
     cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
 }
 
+void Bus::dmaFlashWrite() {
+    uint32_t length = peripheralInterface.wrLen + 1;
+    uint32_t dramAddress = peripheralInterface.dramAddress & 0xfffffe;
+
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= dramAddress & 0x7;
+    }
+    if ((peripheralInterface.cartAddress & 0x1ffff) == 0 && length == 8 && flashMode == ReadSilliconId) {
+        memcpy(&rdram[dramAddress], &FLASH_ID, sizeof(uint32_t));
+        memcpy(&rdram[dramAddress + 4], &SILICON_ID, sizeof(uint32_t));
+    } else {
+        throw std::runtime_error("TODO: unknown dmaFlashWrite mode specified");
+    }
+
+    uint64_t cycles = peripheralInterface.calculateCycles(1, length);
+
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
 void Bus::dmaSramWrite() {
     uint32_t currCartAddr = peripheralInterface.cartAddress & 0xffff;
     uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
 
     uint32_t length = peripheralInterface.wrLen + 1;
+
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= currDramAddr & 0x7;
+    }
 
     formatSram();
 
@@ -1483,6 +1610,13 @@ void Bus::dmaSramRead() {
 
     uint32_t length = peripheralInterface.rdLen + 1;
 
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= currDramAddr & 0x7;
+    }
+
     formatSram();
 
     for (int i = 0; i < length; i++) {
@@ -1493,14 +1627,19 @@ void Bus::dmaSramRead() {
         sram[currCartAddr + i] = rdram[(currDramAddr + i) ^ 3];
     }
 
+    auto p1 = std::chrono::system_clock::now();
+    timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+        p1.time_since_epoch()
+    ).count();
+
     uint64_t cycles = peripheralInterface.calculateCycles(2, length);
     cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
 }
 
 
 void Bus::formatSram() {
-    if (sram.size() < 0x8000) {
-        sram.resize(0x8000);
+    if (sram.size() < SRAM_SIZE) {
+        sram.resize(SRAM_SIZE);
         std::fill(sram.begin(), sram.end(), 0xff);
     }
 }

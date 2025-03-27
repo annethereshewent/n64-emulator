@@ -1484,7 +1484,7 @@ void Bus::dmaSramRead() {
     uint32_t currCartAddr = peripheralInterface.cartAddress & 0xffff;
     uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
 
-    uint32_t length = peripheralInterface.wrLen + 1;
+    uint32_t length = peripheralInterface.rdLen + 1;
 
     formatSram();
 

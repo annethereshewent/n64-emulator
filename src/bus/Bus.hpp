@@ -151,6 +151,7 @@ public:
     void clearInterrupt(uint32_t flag);
 
     void dmaSramWrite();
+    void dmaSramRead();
     void dmaCartWrite();
     void handleRspDma(SPDma dma);
 

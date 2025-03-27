@@ -584,12 +584,32 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
         case 0x4600004:
             Bus::writeWithMask32(&peripheralInterface.cartAddress, value, mask);
             break;
-        case 0x4600008:
+        case 0x4600008: {
             Bus::writeWithMask32(&peripheralInterface.rdLen, value & 0xffffff, mask);
+            uint32_t cartAddress = peripheralInterface.cartAddress;
 
-            // dmaRead();
-            throw std::runtime_error("todo: dmaRead");
+            if (cartAddress >= 0x1ffe0000 && cartAddress <= 0x1ffe1fff) {
+                throw std::runtime_error("todo: sc64 dma");
+            } else if (cartAddress >= 0x10000000 && cartAddress <= 0x1fbfffff) {
+                throw std::runtime_error("TODO: dmaCartRead");
+                // dmaCartRead();
+            } else if (cartAddress >= 0x8000000 && cartAddress <= 0xfffffff) {
+                if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                    dmaSramRead();
+                } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
+                    throw std::runtime_error("TODO: dmaFlashWrite");
+                    // dmaFlashRead();
+                } else {
+                    std::println("invalid address given for PI dma write: {:x}", cartAddress);
+                    throw std::runtime_error("");
+                }
+            } else {
+                std::println("unknown cartridge address received: {:x}", cartAddress);
+                throw std::runtime_error("");
+            }
+
             break;
+        }
         case 0x460000c: {
             Bus::writeWithMask32(&peripheralInterface.wrLen, value & 0xffffff, mask);
             uint32_t cartAddress = peripheralInterface.cartAddress;
@@ -1446,13 +1466,6 @@ void Bus::dmaSramWrite() {
 
     uint32_t length = peripheralInterface.wrLen + 1;
 
-    if (length > 0x7f & (length & 1) != 0) {
-        length += 1;
-    }
-    if (length <= 0x80) {
-        length -= (currDramAddr & 0x7);
-    }
-
     formatSram();
 
     for (int i = 0; i < length; i++) {
@@ -1461,6 +1474,26 @@ void Bus::dmaSramWrite() {
         }
 
         rdram[(currDramAddr + i) ^ 3] = sram[currCartAddr + i];
+    }
+
+    uint64_t cycles = peripheralInterface.calculateCycles(2, length);
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
+void Bus::dmaSramRead() {
+    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xffff;
+    uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
+
+    uint32_t length = peripheralInterface.wrLen + 1;
+
+    formatSram();
+
+    for (int i = 0; i < length; i++) {
+        if (currCartAddr + i == sram.size()) {
+            break;
+        }
+
+        sram[currCartAddr + i] = rdram[(currDramAddr + i) ^ 3];
     }
 
     uint64_t cycles = peripheralInterface.calculateCycles(2, length);

@@ -611,15 +611,15 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
                 if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
                     dmaSramRead();
                 } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
-                    throw std::runtime_error("TODO: dmaFlashRead");
-                    // dmaFlashRead();
+                    dmaFlashRead();
                 } else {
                     std::println("invalid address given for PI dma write: {:x}", cartAddress);
                     throw std::runtime_error("");
                 }
             } else {
-                std::println("unknown cartridge address received: {:x}", cartAddress);
-                throw std::runtime_error("");
+                uint64_t cycles = peripheralInterface.calculateCycles(1, peripheralInterface.rdLen + 1);
+
+                cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
             }
 
             break;
@@ -642,8 +642,16 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
                     throw std::runtime_error("");
                 }
             } else {
-                std::println("unknown cartridge address received: {:x}", cartAddress);
-                throw std::runtime_error("");
+                uint32_t length = peripheralInterface.wrLen + 1;
+                uint32_t dramAddr = peripheralInterface.dramAddress;
+
+                for (uint32_t i = 0; i < length; i++) {
+                    rdram[(dramAddr + i) ^ 3] = 0;
+                }
+
+                uint64_t cycles = peripheralInterface.calculateCycles(1, length);
+
+                cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
             }
             break;
         }
@@ -956,6 +964,28 @@ void Bus::formatFlash() {
 
 void Bus::executeFlashCommand(uint32_t command) {
     switch (command >> 24) {
+        case 0xa5: {
+            uint32_t offset = (command & 0xffff) * 128;
+
+            flashStatus |= 0x1;
+
+            for (int i = 0; i < FLASHBUF_SIZE; i++) {
+                flash[offset + i] = flashBuffer[i];
+            }
+
+            flashStatus &= ~0x1;
+            flashStatus |= 0x4;
+            flashMode = Status;
+
+            auto p1 = std::chrono::system_clock::now();
+            timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+                p1.time_since_epoch()
+            ).count();
+            break;
+        }
+        case 0xb4:
+            flashMode = PageProgram;
+            break;
         case 0xf0:
             flashMode = ReadArray;
             break;
@@ -997,6 +1027,12 @@ void Bus::executeFlashCommand(uint32_t command) {
             } else {
                 throw std::runtime_error("invalid erase flash command given");
             }
+
+
+            flashStatus &= ~0x2;
+            flashStatus |= 0x8;
+            flashMode = Status;
+
             break;
         default:
             std::println("todo: {:x}", command >> 24);
@@ -1437,13 +1473,14 @@ void Bus::tlbMap(uint32_t index) {
         !(entry.startEven >= 0x80000000 && entry.endEven < 0xc0000000) &&
         entry.physEven < 0x20000000
     ) {
-        for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+        for (uint32_t i = entry.startEven; i < entry.endEven; i += 0x1000) {
             tlbReadLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
             tlbReadLut[i >> 12].cached = entry.cEven != 2;
         }
 
+
         if (entry.dEven != 0) {
-            for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+            for (uint32_t i = entry.startEven; i < entry.endEven; i += 0x1000) {
                 tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
                 tlbWriteLut[i >> 12].cached = entry.cEven != 2;
             }
@@ -1455,13 +1492,13 @@ void Bus::tlbMap(uint32_t index) {
         !(entry.startOdd >= 0x80000000 && entry.endOdd < 0xc0000000) &&
         entry.physOdd < 0x20000000
     ) {
-        for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+        for (uint32_t i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
             tlbReadLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
             tlbReadLut[i >> 12].cached = entry.cOdd != 2;
         }
 
         if (entry.dOdd != 0) {
-            for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+            for (uint32_t i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
                 tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
                 tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
             }
@@ -1558,6 +1595,7 @@ void Bus::dmaCartWrite() {
 void Bus::dmaFlashWrite() {
     uint32_t length = peripheralInterface.wrLen + 1;
     uint32_t dramAddress = peripheralInterface.dramAddress & 0xfffffe;
+    uint32_t currCartAddr = peripheralInterface.cartAddress;
 
     if (length >= 0x7f && (length & 1) != 0) {
         length += 1;
@@ -1565,14 +1603,45 @@ void Bus::dmaFlashWrite() {
     if (length <= 0x80) {
         length -= dramAddress & 0x7;
     }
-    if ((peripheralInterface.cartAddress & 0x1ffff) == 0 && length == 8 && flashMode == ReadSilliconId) {
+
+    if ((currCartAddr & 0x1ffff) == 0 && length == 8 && flashMode == ReadSilliconId) {
         memcpy(&rdram[dramAddress], &FLASH_ID, sizeof(uint32_t));
         memcpy(&rdram[dramAddress + 4], &SILICON_ID, sizeof(uint32_t));
-    } else {
-        throw std::runtime_error("TODO: unknown dmaFlashWrite mode specified");
+    } else if ((currCartAddr & 0x1ffff) < 0x10000 && flashMode == ReadArray) {
+        formatFlash();
+        currCartAddr = (currCartAddr & 0xffff) * 2;
+
+        for (int i = 0; i < length; i++) {
+            rdram[(dramAddress + i) ^ 3] = flash[currCartAddr + i];
+        }
     }
 
-    uint64_t cycles = peripheralInterface.calculateCycles(1, length);
+    uint64_t cycles = peripheralInterface.calculateCycles(2, length);
+
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
+void Bus::dmaFlashRead() {
+    uint32_t length = peripheralInterface.rdLen + 1;
+    uint32_t dramAddress = peripheralInterface.dramAddress & 0xfffffe;
+    uint32_t currCartAddr = peripheralInterface.cartAddress;
+
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= dramAddress & 0x7;
+    }
+
+    if ((currCartAddr & 0x1ffff) == 0 && length == 128 && flashMode == PageProgram) {
+        for (int i = 0; i < length; i++) {
+            flashBuffer[i] = rdram[(dramAddress + i) ^ 3];
+        }
+    } else {
+        throw std::runtime_error("invalid dma flash read option given");
+    }
+
+    uint64_t cycles = peripheralInterface.calculateCycles(2, length);
 
     cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
 }

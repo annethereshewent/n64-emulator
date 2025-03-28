@@ -35,6 +35,7 @@ const uint32_t SECTOR_SIZE = 0x4000;
 
 const uint32_t FLASH_ID = 0x11118001;
 const uint32_t SILICON_ID = 0xc2001e;
+const uint32_t FLASHBUF_SIZE = 128;
 
 enum SaveType {
     Sram,
@@ -75,6 +76,8 @@ public:
     std::vector<uint8_t> eeprom = {};
     std::vector<uint8_t> sram = {};
     std::vector<uint8_t> flash = {};
+
+    std::array<uint8_t, 128> flashBuffer = {};
 
     std::fstream saveFile;
 
@@ -168,6 +171,7 @@ public:
     void clearInterrupt(uint32_t flag);
 
     void dmaFlashWrite();
+    void dmaFlashRead();
     void dmaSramWrite();
     void dmaSramRead();
     void dmaCartWrite();

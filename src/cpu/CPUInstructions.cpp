@@ -236,10 +236,9 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
         }
         case 0x10: {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
-            ICache* icachePtr = &cpu->bus.icache[line];
 
             if (cpu->bus.icacheHit(line, actualAddress)) {
-                icachePtr[0].valid = false;
+                cpu->bus.icache[line].valid = false;
             }
             break;
         }

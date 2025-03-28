@@ -769,7 +769,14 @@ void COP1::floorLD(CPU* cpu, uint32_t instruction) {
     throw std::runtime_error("TODO: floorLD");
 }
 void COP1::roundWD(CPU* cpu, uint32_t instruction) {
-    throw std::runtime_error("TODO: roundWD");
+    double value = cpu->cop1.getDouble(CPU::getRd(instruction));
+
+    int32_t valueI32 = (int32_t)(round(value / 2.0) * 2.0);
+
+    float returnValue = ((convi32){.i32 = valueI32}).f32;
+
+    cpu->cop1.setFloat(CPU::getFd(instruction), returnValue);
+    cpu->cop0.addCycles(4);
 }
 void COP1::truncWD(CPU* cpu, uint32_t instruction) {
     double double1 = cpu->cop1.getDouble(CPU::getRd(instruction));

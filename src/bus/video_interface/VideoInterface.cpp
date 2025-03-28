@@ -10,7 +10,7 @@ void VideoInterface::updateVCurrent(Scheduler& scheduler, uint64_t currentCount)
     Event viEvent = scheduler.getEvent(VideoInterrupt);
 
     if (viEvent.eventType != NoEvent) {
-        vcurrent.value = (delay - viEvent.cycles - currentCount) / countPerScanline;
+        vcurrent.value = (delay - (viEvent.cycles - currentCount)) / countPerScanline;
 
         if (vcurrent.value >= vTotal) {
             vcurrent.value -= vTotal;

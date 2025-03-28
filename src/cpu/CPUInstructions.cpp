@@ -1162,7 +1162,7 @@ void CPU::tnei(CPU* cpu, uint32_t instruction) {
 void CPU::bltzal(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
 
-    uint64_t nextPc = cpu->nextPc;
+    cpu->r[31] = cpu->nextPc;
     if ((int64_t)cpu->r[rs] < 0) {
         uint32_t immediate = getImmediate(instruction);
 
@@ -1172,8 +1172,6 @@ void CPU::bltzal(CPU* cpu, uint32_t instruction) {
 
         cpu->nextPc = cpu->pc + amount;
     }
-
-    cpu->r[31] = nextPc;
 
     cpu->inDelaySlot = true;
 }

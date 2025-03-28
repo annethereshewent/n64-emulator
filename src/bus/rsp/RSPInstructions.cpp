@@ -1319,13 +1319,18 @@ void RSP::bltz(RSP* rsp, uint32_t instruction) {
 }
 
 void RSP::bltzal(RSP* rsp, uint32_t instruction) {
-    throw std::runtime_error("TODO: bltzal");
+    rsp->r[31] = rsp->nextPc;
+    if ((int32_t)rsp->r[CPU::getRs(instruction)] < 0) {
+        rsp->nextPc = rsp->pc + ((int16_t)(int32_t)(uint32_t)CPU::getImmediate(instruction) << 2);
+    }
+
+    rsp->inDelaySlot = true;
 }
 
 void RSP::bgezal(RSP* rsp, uint32_t instruction) {
     uint32_t rs = CPU::getRs(instruction);
 
-    uint32_t nextPc = rsp->nextPc;
+    rsp->r[31] = rsp->nextPc;
     if ((int32_t)rsp->r[rs] >= 0) {
         uint32_t immediate = CPU::getImmediate(instruction);
 
@@ -1333,8 +1338,6 @@ void RSP::bgezal(RSP* rsp, uint32_t instruction) {
 
         rsp->nextPc = rsp->pc + amount;
     }
-
-    rsp->r[31] = nextPc;
 
     rsp->inDelaySlot = true;
 }

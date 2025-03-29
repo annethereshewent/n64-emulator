@@ -7,7 +7,7 @@
 #include "RSPDisassembler.cpp"
 
 void RSP::handleDma(SPDma dma) {
-    uint32_t length = dma.length.length + 1;
+    uint32_t length = ((dma.length.length & 0xfff) | 7) + 1;
     uint32_t count = dma.length.count + 1;
     uint32_t skip = dma.length.skip;
 

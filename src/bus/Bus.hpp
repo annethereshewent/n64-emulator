@@ -117,6 +117,12 @@ public:
         for (int i = 0; i < dcache.size(); i++) {
             dcache[i].index = (uint16_t)(i << 4) & 0xff0;
         }
+
+        // set rdram size in rdram itself as part of initialization
+        uint32_t rdramSize = (uint32_t)rdram.size();
+
+        memcpy(&rdram[0x318], &rdramSize, sizeof(uint32_t));
+        memcpy(&rdram[0x3f0], &rdramSize, sizeof(uint32_t));
     };
 
     PIF pif;

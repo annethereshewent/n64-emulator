@@ -452,7 +452,14 @@ void COP1::negS(CPU* cpu, uint32_t instruction) {
     cpu->cop1.setFloat(dest, -value);
 }
 void COP1::roundLS(CPU* cpu, uint32_t instruction) {
-    throw std::runtime_error("TODO: roundLS");
+    float value = cpu->cop1.getFloat(CPU::getRd(instruction));
+
+    int64_t valueI64 = (int64_t)(round(value / 2.0) * 2.0);
+
+    double returnValue = ((convi64){.i64 = valueI64 }).f64;
+
+    cpu->cop1.setDouble(CPU::getFd(instruction), returnValue);
+    cpu->cop0.addCycles(4);
 }
 void COP1::truncLS(CPU* cpu, uint32_t instruction) {
     float value = cpu->cop1.getFloat(CPU::getRd(instruction));
@@ -543,7 +550,20 @@ void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cvtLS(CPU* cpu, uint32_t instruction) {
-    throw std::runtime_error("TODO: cvtLS");
+    switch (cpu->cop1.fcsr.roundingMode) {
+        case 0:
+            roundLS(cpu, instruction);
+            break;
+        case 1:
+            truncLS(cpu, instruction);
+            break;
+        case 2:
+            ceilLS(cpu, instruction);
+            break;
+        case 3:
+            floorLS(cpu, instruction);
+            break;
+    }
 }
 void COP1::CFS(CPU* cpu, uint32_t instruction) {
     throw std::runtime_error("TODO: CFS");
@@ -632,7 +652,7 @@ void COP1::cLeS(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
-    throw std::runtime_error("TODO: cNgtS");
+    cLeS(cpu, instruction);
 }
 
 void COP1::bc1f(CPU* cpu, uint32_t instruction) {

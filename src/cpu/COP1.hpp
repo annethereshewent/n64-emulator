@@ -21,6 +21,10 @@ union convu64 {
     uint64_t u64;
     double f64;
 };
+union convi64 {
+    int64_t i64;
+    double f64;
+};
 
 class CPU;
 
@@ -147,6 +151,9 @@ public:
     static void cNgeD(CPU* cpu, uint32_t instruction);
     static void cLeD(CPU* cpu, uint32_t instruction);
     static void cNgtD(CPU* cpu, uint32_t instruction);
+
+    static void cvtSL(CPU* cpu, uint32_t instruction);
+    static void cvtDL(CPU* cpu, uint32_t instruction);
 
     void writeRegister(uint32_t index, uint64_t value);
     void setCop1Registers(Cop0Status cop0Status);

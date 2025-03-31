@@ -17,11 +17,15 @@ uint32_t RDPInterface::readRegisters(uint32_t offset) {
             return current;
             break;
         case 3:
+            status.dmaBusy = 0;
             return status.value;
+            break;
+        case 4:
+            return 0xffffff;
             break;
         default:
             std::cout << "(RDPInterface::readRegisters)offset not implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -44,6 +48,8 @@ void RDPInterface::writeRegisters(uint32_t offset, uint32_t value) {
             if (!status.freeze) {
                 uint64_t cycles = rdp_process_commands();
 
+                pipeBusy = 0xffffff;
+
                 status.gclk = 1;
                 status.cmdBusy = 1;
                 status.pipeBusy = 1;
@@ -60,7 +66,7 @@ void RDPInterface::writeRegisters(uint32_t offset, uint32_t value) {
             break;
         default:
             std::cout << "(RDPInterface::writeRegisters)offset not implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -95,6 +101,7 @@ void RDPInterface::updateStatus(uint32_t value) {
 
     if (((value >> 7) & 0b1) == 1) {
         status.pipeBusy = 0;
+        pipeBusy = 0;
     }
 
     if (((value >> 8) & 0b1) == 1) {

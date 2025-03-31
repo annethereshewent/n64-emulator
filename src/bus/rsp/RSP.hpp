@@ -410,6 +410,7 @@ public:
     void setVecFromAccSignedMid(uint8_t vd);
     void setVecFromAccSignedLow(uint8_t vd);
     void setVecFromAccMid(uint8_t vd);
+    void setVecFromAccUnsignedMid(uint8_t vd);
 
     void writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo);
 

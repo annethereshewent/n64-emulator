@@ -6,11 +6,13 @@
 
 class MIPSInterface {
 public:
-    bool upperMode;
+    bool upperMode = false;
     // number of bytes (minus 1) to write in repeat mode
-    uint8_t repeatCount;
-    bool repeatMode;
-    bool ebus;
+    uint8_t repeatCount = 0;
+    bool repeatMode = false;
+    bool ebus = false;
+
+    uint32_t mipsVersion = 0x2020102;
 
     MIPSInterrupt mipsInterrupt;
     MIPSInterrupt mipsMask;

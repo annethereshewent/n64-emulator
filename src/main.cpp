@@ -7,6 +7,7 @@
 #if __APPLE__
     #include <sysdir.h>  // for sysdir_start_search_path_enumeration
     #include <glob.h>    // for glob needed to expand ~ to user dir
+    #include <execinfo.h>
 #endif
 
 SDL_Gamepad* findController() {
@@ -23,29 +24,48 @@ SDL_Gamepad* findController() {
 
     return nullptr;
 }
+#if __APPLE__
+    void handler(int sig) {
+        void *array[50];
+        size_t size;
+
+        // get void*'s for all entries on the stack
+        size = backtrace(array, 50);
+
+        // print out all the frames to stderr
+        fprintf(stderr, "Error: signal %d:\n", sig);
+        backtrace_symbols_fd(array, size, STDERR_FILENO);
+        throw std::runtime_error("Runtime error");
+    }
+#endif
 
 int main(int argc, char **argv) {
+    #if __APPLE__
+        signal(SIGSEGV, handler);
+    #endif
+
     CPU cpu;
     SDL_Event event;
 
     if (argc < 1) {
-        std::cout << "Please specify a filename.\n";
-        exit(1);
+        throw std::runtime_error("Please specify a filename.");
     }
 
     if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
-        std::cout << "could not load sdl :-(\n";
-        exit(1);
+        std::println("{}", SDL_GetError());
+        throw std::runtime_error("Could not initialize SDL");
     }
 
     SDL_Window* window = SDL_CreateWindow("N64+", 640, 480, SDL_WINDOW_VULKAN);
 
     if(window == NULL || window == nullptr) {
-        printf("window creation Error: %s\n", SDL_GetError());
+        std::println("window creation Error: %s\n", SDL_GetError());
+        throw std::runtime_error("Could not initialize SDL");
     }
 
     cpu.bus.loadRom(argv[1]);
-    std::string saveName = cpu.bus.getSaveName(argv[1]);
+    cpu.bus.setCic();
+    std::vector<std::string> saveNames = cpu.bus.getSaveNames(argv[1]);
 
     std::string basePath;
 
@@ -61,16 +81,13 @@ int main(int argc, char **argv) {
                 globfree(&globbuf);
                 basePath = result;
             } else {
-                std::println("Unable to expand tilde");
-                exit(1);
+                throw std::runtime_error("Unable to expand tilde");
             }
         } else {
-            std::println("could not open directory to application support");
-            exit(1);
+            throw std::runtime_error("could not open directory to application support");
         }
     #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-        std::println("TODO: Windows support");
-        exit(1);
+        throw std::runtime_error("TODO: Windows support");
     #endif
 
     std::string separator = "/N64+/";
@@ -79,9 +96,11 @@ int main(int argc, char **argv) {
 
     std::filesystem::create_directory(savesDir);
 
-    saveName = savesDir + saveName;
+    for (std::string& saveName: saveNames) {
+        saveName = savesDir + saveName;
+    }
 
-    cpu.bus.openSave(saveName);
+    cpu.bus.openSaves(saveNames);
 
     GFX_INFO gfxInfo;
 
@@ -97,8 +116,7 @@ int main(int argc, char **argv) {
     rdp_init(window, gfxInfo, false, false, false);
 
     cpu.bus.initAudio();
-
-    SDL_Gamepad* gamepad = findController();
+    cpu.bus.gamepad = findController();
 
     uint8_t xAxis = 0;
     uint8_t yAxis = 0;
@@ -212,14 +230,14 @@ int main(int argc, char **argv) {
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-                    if (gamepad != nullptr) {
-                        double xAxisL = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
-                        double yAxisL = (double)-SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+                    if (cpu.bus.gamepad != nullptr) {
+                        double xAxisL = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
+                        double yAxisL = (double)-SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
 
-                        double xAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
-                        double yAxisR = (double)SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
+                        double xAxisR = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
+                        double yAxisR = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
 
-                        double rightTrigger = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+                        double rightTrigger = SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
                         xAxis = std::abs(xAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisL) : 0;
                         yAxis = std::abs(yAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisL) : 0;
@@ -250,7 +268,7 @@ int main(int argc, char **argv) {
                     }
                     break;
                 case SDL_EVENT_GAMEPAD_ADDED:
-                    gamepad = findController();
+                    cpu.bus.gamepad = findController();
                     break;
             }
         }

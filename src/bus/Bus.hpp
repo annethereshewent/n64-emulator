@@ -31,6 +31,11 @@ const uint32_t EEPROM_16K = 0xc000;
 
 const uint32_t SRAM_SIZE = 0x8000;
 const uint32_t FLASH_SIZE = 0x20000;
+const uint32_t SECTOR_SIZE = 0x4000;
+
+const uint32_t FLASH_ID = 0x11118001;
+const uint32_t SILICON_ID = 0xc2001e;
+const uint32_t FLASHBUF_SIZE = 128;
 
 enum SaveType {
     Sram,
@@ -41,13 +46,30 @@ enum SaveType {
     NoSave
 };
 
+enum Width {
+    WidthICache = 16,
+    WidthDCache = 32,
+    Bit64 = 8,
+    Bit32 = 4
+};
+
+enum FlashMode {
+    EraseSector,
+    EraseChip,
+    Status,
+    PageProgram,
+    ReadSilliconId,
+    ReadArray
+};
+
 class Bus {
 public:
     std::vector<uint8_t> rdram = {};
     std::vector<bool> rdram9 = {};
 
-    std::vector<TlbLut> tlbReadLut;
-    std::vector<TlbLut> tlbWriteLut;
+    std::vector<TlbLut> tlbReadLut = {};
+    std::vector<TlbLut> tlbWriteLut = {};
+    std::vector<uint8_t> consoleBuffer = {};
 
     std::array<TlbEntry, 32> tlbEntries = {};
 
@@ -55,25 +77,37 @@ public:
     std::vector<uint8_t> sram = {};
     std::vector<uint8_t> flash = {};
 
+    std::array<uint8_t, 128> flashBuffer = {};
+
     std::fstream saveFile;
 
     uint64_t timeSinceSaveWrite = 0;
 
     char gameId[4];
-    SaveType saveType = Eeprom4k;
+    std::vector<SaveType> saveTypes = {};
+
+    SDL_Gamepad* gamepad = nullptr;
 
     uint32_t input = 0;
 
     CPU& cpu;
     RSP rsp;
 
-    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this) {
+    FlashMode flashMode = ReadArray;
+    uint32_t flashStatus = 0;
+    uint16_t flashSector = 0;
+
+    Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this), pif(*this) {
+        // reserve is needed to ensure rdram is aligned for use with parallel-rdp
+        rdram.reserve(0x800000);
         rdram.resize(0x800000);
+        rdram9.reserve(0x800000);
         rdram9.resize(0x800000);
-        spdmem.resize(0x1000);
 
         tlbReadLut.resize(0x100000);
         tlbWriteLut.resize(0x100000);
+
+        consoleBuffer.resize(0x10000);
 
         rsp.status.value = 1;
 
@@ -83,9 +117,13 @@ public:
         for (int i = 0; i < dcache.size(); i++) {
             dcache[i].index = (uint16_t)(i << 4) & 0xff0;
         }
-    };
 
-    std::vector<uint8_t> spdmem;
+        // set rdram size in rdram itself as part of initialization
+        uint32_t rdramSize = (uint32_t)rdram.size();
+
+        memcpy(&rdram[0x318], &rdramSize, sizeof(uint32_t));
+        memcpy(&rdram[0x3f0], &rdramSize, sizeof(uint32_t));
+    };
 
     PIF pif;
 
@@ -107,19 +145,19 @@ public:
 
     SDL_AudioStream* stream;
 
-    uint64_t memRead64(uint64_t address);
-    uint32_t memRead32(uint64_t address, bool ignoreCache = false, bool ignoreCycles = false);
-    uint16_t memRead16(uint64_t address);
-    uint8_t memRead8(uint64_t address);
+    uint64_t memRead64(uint64_t address, bool cached);
+    uint32_t memRead32(uint64_t address, bool cached, Width bitWidth = Bit32, bool ignoreCycles = false);
+    uint16_t memRead16(uint64_t address, bool cached);
+    uint8_t memRead8(uint64_t address, bool cached);
 
     uint32_t readDataCache(uint64_t address, bool ignoreCycles = false);
     uint32_t readInstructionCache(uint64_t address);
 
     void formatEeprom();
     void loadRom(std::string filename);
-    void openSave(std::string saveName);
+    void openSaves(std::vector<std::string> saveNames);
     void writeSave();
-    std::string getSaveName(std::string filename);
+    std::vector<std::string> getSaveNames(std::string filename);
 
     void writeDataCache(uint64_t address, uint32_t value, int64_t mask = -1);
     bool dcacheHit(uint32_t lineIndex, uint64_t address);
@@ -128,17 +166,21 @@ public:
     void fillInstructionCache(uint32_t lineIndex, uint64_t address);
     void dcacheWriteback(uint64_t line, bool ignoreCycles = false);
 
-    void memWrite64(uint64_t address, uint64_t value);
-    void memWrite32(uint64_t address, uint32_t value, bool ignoreCache = false, int64_t mask = -1);
-    void memWrite16(uint64_t address, uint16_t value);
-    void memWrite8(uint64_t address, uint8_t value);
+    void memWrite64(uint64_t address, uint64_t value, bool cached, uint64_t mask = 0xffffffffffffffff);
+    void memWrite32(uint64_t address, uint32_t value, bool cached, bool ignoreCache = false, int64_t mask = -1);
+    void memWrite16(uint64_t address, uint16_t value, bool cached);
+    void memWrite8(uint64_t address, uint8_t value, bool cached);
 
-    void pushSamples(uint64_t length, uint32_t dramAddress);
+    void pushSamples(uint64_t length, uint64_t dramAddress);
 
     void setInterrupt(uint32_t flag);
     void clearInterrupt(uint32_t flag);
 
-    void dmaWrite();
+    void dmaFlashWrite();
+    void dmaFlashRead();
+    void dmaSramWrite();
+    void dmaSramRead();
+    void dmaCartWrite();
     void handleRspDma(SPDma dma);
 
     void checkIrqs();
@@ -158,8 +200,19 @@ public:
     void updateButton(JoypadButton button, bool state);
     void updateAxis(uint8_t xAxis, uint8_t yAxis);
 
-    uint64_t translateAddress(uint64_t address, bool isWrite = false);
-    uint64_t getTlbAddress(uint64_t address, bool isWrite = false);
+    std::tuple<uint64_t, bool, bool> translateAddress(uint64_t address, bool isWrite = false);
+    std::tuple<uint64_t, bool, bool> getTlbAddress(uint64_t address, bool isWrite = false);
+
+    std::string generateHash();
+    void setCic();
+
+    void formatSram();
+    void formatFlash();
+    void executeFlashCommand(uint32_t command);
+
+    void tlbException(uint64_t address, bool isWrite);
+
+    void writeRumblePak(int channel, uint16_t address, int data);
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);

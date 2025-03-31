@@ -12,6 +12,8 @@ public:
     uint32_t end = 0;
     uint32_t current = 0;
 
+    uint32_t pipeBusy = 0xffffff;
+
     uint32_t clockCounter = 0;
     bool isFrozen = false;
     bool frameFinished = false;

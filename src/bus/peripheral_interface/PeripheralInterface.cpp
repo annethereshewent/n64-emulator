@@ -23,8 +23,7 @@ uint32_t PeripheralInterface::calculateCycles(int32_t domain, uint32_t length) {
             pageSize = powf(2.0, (double)(dom2Pgs + 2));
             break;
         default:
-            std::cout << "invalid domain given\n";
-            exit(1);
+            throw std::runtime_error("invalid domain given");
             break;
     }
 

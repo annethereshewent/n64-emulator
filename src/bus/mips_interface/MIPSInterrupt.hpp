@@ -10,5 +10,5 @@ typedef union MIPSInterrupt {
         unsigned int dpInterrupt: 1;
     };
 
-    uint8_t value;
+    uint32_t value;
 } mipsinterruptbitset;

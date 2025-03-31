@@ -4,101 +4,101 @@
 
 COP0::COP0(CPU& cpu): cpu(cpu) {
     instructions = {
-        COP0::mfc0,     // 0
-        COP0::dmfc0,    // 1
-        COP0::reserved, // 2
-        COP0::reserved, // 3
-        COP0::mtc0,     // 4
-        COP0::dmtc0,    // 5
-        COP0::reserved, // 6
-        COP0::reserved, // 7
-        COP0::reserved, // 8
-        COP0::reserved, // 9
-        COP0::reserved, // a
-        COP0::reserved, // b
-        COP0::reserved, // c
-        COP0::reserved, // d
-        COP0::reserved, // e
-        COP0::reserved, // f
-        COP0::cp0,      // 10
-        COP0::reserved, // 11
-        COP0::reserved, // 12
-        COP0::reserved, // 13
-        COP0::reserved, // 14
-        COP0::reserved, // 15
-        COP0::reserved, // 16
-        COP0::reserved, // 17
-        COP0::reserved, // 18
-        COP0::reserved, // 19
-        COP0::reserved, // 1a
-        COP0::reserved, // 1b
-        COP0::reserved, // 1c
-        COP0::reserved, // 1d
-        COP0::reserved, // 1e
-        COP0::reserved, // 1f
+        COP0::mfc0,
+        COP0::dmfc0,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::mtc0,
+        COP0::dmtc0,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::cp0,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
     };
 
     cp0Instructions = {
-        COP0::reserved, // 0
-        COP0::tlbr,     // 1
-        COP0::tlbwi,    // 2
-        COP0::reserved, // 3
-        COP0::reserved, // 4
-        COP0::reserved, // 5
-        COP0::tlbwr,    // 6
-        COP0::reserved, // 7
-        COP0::tlbp,     // 8
-        COP0::reserved, // 9
-        COP0::reserved, // 10
-        COP0::reserved, // 11
-        COP0::reserved, // 12
-        COP0::reserved, // 13
-        COP0::reserved, // 14
-        COP0::reserved, // 15
-        COP0::reserved, // 16
-        COP0::reserved, // 17
-        COP0::reserved, // 18
-        COP0::reserved, // 19
-        COP0::reserved, // 20
-        COP0::reserved, // 21
-        COP0::reserved, // 22
-        COP0::reserved, // 23
-        COP0::eret,     // 24
-        COP0::reserved, // 25
-        COP0::reserved, // 26
-        COP0::reserved, // 27
-        COP0::reserved, // 28
-        COP0::reserved, // 29
-        COP0::reserved, // 30
-        COP0::reserved, // 31
+        COP0::reserved,
+        COP0::tlbr,
+        COP0::tlbwi,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::tlbwr,
+        COP0::reserved,
+        COP0::tlbp,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::eret,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
+        COP0::reserved,
     };
+
+    config = 0x7006E463;
 }
 
 // mask values gotten mostly from https://github.com/gopher64
 void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
     latch = value;
 
-    // TODO: find out which of these registers are written to outside of here
-    // ie: "cause" is definitely written to outside of here, so don't want to overwrite its values
     switch (index) {
         case 0:
-            this->index = (uint32_t)value & 0x8000003f;
+            this->index = (this->index & ~0x8000003f) | ((uint32_t)value & 0x8000003f);
             break;
         case 2:
-            entryLo0 = value & 0x3fffffff;
+            entryLo0 = (entryLo0 & ~0x3fffffff) | (value & 0x3fffffff);
             break;
         case 3:
-            entryLo1 = value & 0x3fffffff;
+            entryLo1 = (entryLo1 & ~0x3fffffff) | (value & 0x3fffffff);
             break;
         case 4:
-            context = value & 0xffffffffff800000;
+            context = (context & ~0xffffffffff800000) | (value & 0xffffffffff800000);
             break;
         case 5:
-            pageMask = (uint32_t)value & 0x1ffe000;
+            pageMask = (pageMask & ~0x1ffe000) | ((uint32_t)value & 0x1ffe000);
             break;
         case 6:
             random = 31;
-            wired = (uint32_t)value & 0x3f;
+            wired = (wired & ~0x3f) | (uint32_t)value & 0x3f;
             break;
         case 9: {
             uint64_t newCount = value & 0xffffffff;
@@ -110,7 +110,7 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
             break;
         }
         case 10:
-            entryHi = value & 0xc00000ffffffe0ff;
+            entryHi = (entryHi & ~0xc00000ffffffe0ff) | (value & 0xc00000ffffffe0ff);
             break;
         case 11: {
             compare = (uint32_t)value;
@@ -133,7 +133,7 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
         }
         case 12: {
             uint8_t oldFr = status.fr;
-            status.value = (uint32_t)value & 0xff57ffff;
+            status.value = (status.value & ~0xff57ffff) | (uint32_t)value & 0xff57ffff;
 
             if (oldFr != status.fr) {
                 cpu.cop1.setCop1Registers(status);
@@ -147,25 +147,25 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
             epc = value;
             break;
         case 16:
-            config = (uint32_t)value & 0xf00800f;
+            config = (config & ~0xf00800f) | (uint32_t)value & 0xf00800f;
             break;
         case 17:
             llAddress = (uint32_t)value;
             break;
         case 18:
-            watchLo = (uint32_t)value & 0xfffffffb;
+            watchLo = (watchLo & ~0xfffffffb) | (uint32_t)value & 0xfffffffb;
             break;
         case 19:
-            watchHi = (uint32_t)value & 0xf;
+            watchHi = (watchHi & ~0xf) | (uint32_t)value & 0xf;
             break;
         case 20:
-            xContext = value & 0xFFFFFFFE00000000;
+            xContext = (xContext & ~0xFFFFFFFE00000000) | value & 0xFFFFFFFE00000000;
             break;
         case 26:
-            parityError = (uint32_t)value & 0xff;
+            parityError = (parityError & ~0xff) | (uint32_t)value & 0xff;
             break;
         case 28:
-            tagLo = (uint32_t)value & 0xfffffc0;
+            tagLo = (tagLo & ~0xfffffc0) | (uint32_t)value & 0xfffffc0;
         case 30:
             errorEpc = value;
             break;
@@ -286,7 +286,7 @@ uint64_t COP0::readRegister(uint32_t index) {
             break;
         default:
             std::cout << "invalid register given for cop0: " << index << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }

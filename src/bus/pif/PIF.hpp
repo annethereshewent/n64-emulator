@@ -96,10 +96,15 @@ std::array<uint8_t, 1984> PIF_BOOT_ROM = {
 // TODO: move bus as a reference property of PIF
 class PIF {
 public:
+
     std::array<uint8_t, 64> ram = {};
     std::array<PIFChannel, 5> channels;
 
     std::array<uint8_t, 1984> rom = PIF_BOOT_ROM;
+
+    Bus& bus;
+
+    uint8_t getCrc(int channel, uint16_t address, int data);
 
     void executeCommand();
     void setupChannels();
@@ -107,11 +112,17 @@ public:
     int setupPIFChannel(int channel, int buf);
     void disablePIFChannel(int channel);
 
-    void processController(int channelId, Bus& bus);
-    void processCartridge(Bus& bus);
+    void processController(int channelId);
+    void processCartridge();
 
-    void readEeprom(Bus& bus);
-    void writeEeprom(Bus& bus);
+    void readEeprom();
+    void writeEeprom();
 
-    PIF();
+    void writePakBlock(int addrAcrc, int data, int dcrc, int channel);
+    void readPakBlock(int addrAcrc, int data, int dcrc, int channel);
+
+
+    PIF(Bus& bus): bus(bus) {
+        ram = {};
+    };
 };

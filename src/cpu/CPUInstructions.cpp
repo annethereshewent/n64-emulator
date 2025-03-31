@@ -30,7 +30,6 @@ void CPU::addi(CPU* cpu, uint32_t instruction) {
 }
 
 void CPU::addiu(CPU* cpu, uint32_t instruction) {
-
     uint64_t immediate = getSignedImmediate(instruction);
 
     uint32_t rs = getRs(instruction);
@@ -94,8 +93,18 @@ void CPU::bgtz(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void CPU::bgtzl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bgtzl\n";
-    exit(1);
+    if ((int64_t)cpu->r[getRs(instruction)] > 0) {
+        uint32_t immediate = getImmediate(instruction);
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+        cpu->inDelaySlot = true;
+    } else {
+        cpu->discarded = true;
+        cpu->pc = cpu->nextPc;
+    }
 }
 void CPU::blez(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
@@ -113,8 +122,22 @@ void CPU::blez(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void CPU::blezl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: blezl\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+
+    if ((int64_t)cpu->r[rs] <= 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+
+        cpu->inDelaySlot = true;
+    } else {
+        cpu->discarded = true;
+        cpu->pc = cpu->nextPc;
+    }
 }
 void CPU::bne(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
@@ -158,7 +181,11 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[base] + offset;
 
-    uint64_t actualAddress = cpu->bus.translateAddress(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
 
     switch (cacheOp) {
         case 0x0: {
@@ -187,12 +214,31 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
             cpu->bus.icache[line].tag = tag;
             break;
         }
+        case 0x9: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            cpu->bus.dcache[line].valid = ((cpu->cop0.tagLo >> 7) & 0b1) == 1;
+            cpu->bus.dcache[line].valid = ((cpu->cop0.tagLo >> 6) & 0b1) == 1;
+            cpu->bus.dcache[line].tag = ((cpu->cop0.tagLo & 0xfffff00) << 4);
+            break;
+        }
+        case 0xd: {
+            uint64_t line = (actualAddress >> 4) & 0x1ff;
+
+            if (!cpu->bus.dcacheHit(line, actualAddress) && cpu->bus.dcache[line].dirty) {
+                cpu->bus.dcacheWriteback(line);
+            }
+
+            cpu->bus.dcache[line].tag = actualAddress & ~0xfff;
+            cpu->bus.dcache[line].dirty = true;
+            cpu->bus.dcache[line].valid = true;
+            break;
+        }
         case 0x10: {
             uint64_t line = (actualAddress >> 5) & 0x1ff;
-            ICache* icachePtr = &cpu->bus.icache[line];
 
-            if (icachePtr[0].valid && (icachePtr[0].tag & 0x1ffffffc) == (uint32_t)(address & ~0xfff)) {
-                icachePtr[0].valid = false;
+            if (cpu->bus.icacheHit(line, actualAddress)) {
+                cpu->bus.icache[line].valid = false;
             }
             break;
         }
@@ -225,7 +271,7 @@ void CPU::cache(CPU* cpu, uint32_t instruction) {
         }
         default: {
             std::cout << "cache op not yet implemented: " << std::hex << cacheOp << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
         }
     }
@@ -248,10 +294,6 @@ void CPU::j(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = address;
 }
 void CPU::jal(CPU* cpu, uint32_t instruction) {
-    // TODO: check if this is correct. some other emulators
-    // do some stuff like check if delay slot is taken and
-    // only branch if thats not the case but idk if i need
-    // to do that with my code?
     cpu->r[31] = cpu->nextPc;
 
     uint64_t offset = ((uint64_t)instruction & 0x3ffffff) << 2;
@@ -267,9 +309,15 @@ void CPU::lb(CPU* cpu, uint32_t instruction) {
     uint32_t rt = getRt(instruction);
     uint32_t base = getRs(instruction);
 
-    uint32_t address = cpu->r[base] + offset;
+    uint64_t address = cpu->r[base] + offset;
 
-    uint64_t value = (int8_t)(int64_t)(uint64_t)cpu->bus.memRead8(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = (int8_t)(int64_t)(uint64_t)cpu->bus.memRead8(actualAddress, cached);
 
     cpu->r[rt] = value;
 }
@@ -280,7 +328,13 @@ void CPU::lbu(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    cpu->r[rt] = (uint64_t)cpu->bus.memRead8(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    cpu->r[rt] = (uint64_t)cpu->bus.memRead8(actualAddress, cached);
 }
 void CPU::ld(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -289,15 +343,56 @@ void CPU::ld(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    cpu->r[rt] = cpu->bus.memRead64(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    cpu->r[rt] = cpu->bus.memRead64(actualAddress, cached);
 }
 void CPU::ldl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ldl\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    uint32_t shift = 8 * (address & 0x7);
+
+    uint64_t mask = (((uint64_t)1 << shift) - 1);
+
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = cpu->bus.memRead64(actualAddress & ~0x7, cached);
+
+    cpu->r[rt] = (cpu->r[rt] & mask) | (value << shift);
 }
 void CPU::ldr(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ldr\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t shift = 8 * (7 - (actualAddress & 0x7));
+    uint32_t maskShift = 8 * ((actualAddress & 0x7) + 1);
+
+    uint64_t mask = (actualAddress & 0x7) == 7 ? 0 : ~(((uint64_t)1 << maskShift) - 1);
+
+    uint64_t value = cpu->bus.memRead64(actualAddress & ~0x7, cached);
+
+    cpu->r[rt] = (cpu->r[rt] & mask) | (value >> shift);
 }
 void CPU::lh(CPU* cpu, uint32_t instruction) {
     uint64_t offset = getSignedImmediate(instruction);
@@ -306,7 +401,13 @@ void CPU::lh(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = cpu->r[base] + offset;
 
-    uint64_t value = (int16_t)(int64_t)(uint64_t)cpu->bus.memRead16(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = (int16_t)(int64_t)(uint64_t)cpu->bus.memRead16(actualAddress, cached);
 
     cpu->r[rt] = value;
 }
@@ -317,17 +418,39 @@ void CPU::lhu(CPU* cpu, uint32_t instruction) {
 
     uint32_t address = cpu->r[base] + offset;
 
-    uint64_t value = (uint64_t)cpu->bus.memRead16(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint64_t value = (uint64_t)cpu->bus.memRead16(actualAddress, cached);
 
     cpu->r[rt] = value;
 }
 void CPU::ll(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: ll\n";
-    exit(1);
+    cpu->llbit = true;
+
+    uint64_t immediate = getSignedImmediate(instruction);
+    uint32_t baseReg = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = cpu->r[baseReg] + immediate;
+
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t value = cpu->bus.memRead32(actualAddress, cached);
+
+    cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
+
+    cpu->cop0.llAddress = actualAddress >> 4;
 }
 void CPU::lld(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lld\n";
-    exit(1);
+    throw std::runtime_error("TODO: lld\n");
 }
 void CPU::lw(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -336,7 +459,13 @@ void CPU::lw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t value = cpu->bus.memRead32(address);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t value = cpu->bus.memRead32(actualAddress, cached);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)value;
  }
@@ -347,11 +476,17 @@ void CPU::lwl(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t shift = 8 * (address & 0x3);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t shift = 8 * (actualAddress & 0x3);
 
     uint32_t mask = ((1 << shift) - 1);
 
-    uint32_t value = cpu->bus.memRead32(address & ~0x3);
+    uint32_t value = cpu->bus.memRead32(actualAddress & ~0x3, cached);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value << shift));
 }
@@ -362,18 +497,23 @@ void CPU::lwr(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = cpu->r[baseReg] + immediate;
 
-    uint32_t shift = 8 * (3 - (address & 0x3));
-    uint32_t maskShift = 8 * ((address & 0x3) + 1);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address);
 
-    uint32_t mask = (address & 0x3) == 3 ? 0 : ~(1 << maskShift);
+    if (error) {
+        return;
+    }
 
-    uint32_t value = cpu->bus.memRead32(address & ~0x3);
+    uint32_t shift = 8 * (3 - (actualAddress & 0x3));
+    uint32_t maskShift = 8 * ((actualAddress & 0x3) + 1);
+
+    uint32_t mask = (actualAddress & 0x3) == 3 ? 0 : ~((1 << maskShift) - 1);
+
+    uint32_t value = cpu->bus.memRead32(actualAddress & ~0x3, cached);
 
     cpu->r[rt] = (int32_t)(int64_t)(uint64_t)(((uint32_t)cpu->r[rt] & mask) | (value >> shift));
 }
 void CPU::lwu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: lwu\n";
-    exit(1);
+    throw std::runtime_error("TODO: lwu\n");
 }
 void CPU::ori(CPU* cpu, uint32_t instruction) {
     uint32_t imm = getImmediate(instruction);
@@ -384,8 +524,8 @@ void CPU::ori(CPU* cpu, uint32_t instruction) {
     cpu->r[rt] = cpu->r[rs] | imm;
 }
 void CPU::reserved(CPU* cpu, uint32_t instruction) {
-    std::cout << "Error: opcode reserved\n";
-    exit(1);
+    throw std::runtime_error("Error: opcode reserved\n");
+
 }
 void CPU::sb(CPU* cpu, uint32_t instruction) {
     uint8_t byte = (uint8_t)cpu->r[getRt(instruction)];
@@ -395,15 +535,39 @@ void CPU::sb(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite8(address, byte);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite8(actualAddress, byte, cached);
 }
 void CPU::sc(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sc\n";
-    exit(1);
+    uint32_t rt = getRt(instruction);
+    if (cpu->llbit) {
+        cpu->llbit = false;
+
+        uint64_t immediate = getSignedImmediate(instruction);
+        uint32_t baseReg = getRs(instruction);
+
+        uint64_t address = cpu->r[baseReg] + immediate;
+
+        auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+        if (error) {
+            return;
+        }
+
+        cpu->bus.memWrite32(actualAddress, (uint32_t)cpu->r[rt], cached);
+
+        cpu->r[rt] = 1;
+    } else {
+        cpu->r[rt] = 0;
+    }
 }
 void CPU::scd(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: scd\n";
-    exit(1);
+    throw std::runtime_error("TODO: scd\n");
 }
 void CPU::sd(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -411,15 +575,59 @@ void CPU::sd(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite64(address, cpu->r[getRt(instruction)]);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite64(actualAddress, cpu->r[getRt(instruction)], cached);
 }
 void CPU::sdl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sdl\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = immediate + cpu->r[rs];
+
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t shift = (actualAddress & 0x7) * 8;
+
+    uint32_t maskShift = 8 * (8 - (actualAddress & 0x7));
+
+    uint64_t mask = (actualAddress & 0x7) == 0 ? 0xffffffffffffffff : ((uint64_t)1 << maskShift) - 1;
+
+    uint64_t value = (cpu->r[rt] >> shift);
+
+    cpu->bus.memWrite64(actualAddress & ~0x7, value, cached, mask);
 }
 void CPU::sdr(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sdr\n";
-    exit(1);
+    uint64_t immediate = getSignedImmediate(instruction);
+
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    uint64_t address = immediate + cpu->r[rs];
+
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t shift = 8 * (7 - (actualAddress & 0x7));
+
+    uint64_t mask = ~(((uint64_t)1 << shift) - 1);
+
+    uint32_t value = cpu->r[rt] << shift;
+
+    cpu->bus.memWrite64(actualAddress & ~0x7, value, cached, mask);
 }
 void CPU::sh(CPU* cpu, uint32_t instruction) {
     uint16_t half = (uint16_t)cpu->r[getRt(instruction)];
@@ -429,7 +637,13 @@ void CPU::sh(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite16(address, half);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite16(actualAddress, half, cached);
 }
 void CPU::slti(CPU* cpu, uint32_t instruction) {
     int64_t immediate = (int16_t)(int64_t)getImmediate(instruction);
@@ -442,7 +656,7 @@ void CPU::slti(CPU* cpu, uint32_t instruction) {
     cpu->r[getRt(instruction)] = val;
 }
 void CPU::sltiu(CPU* cpu, uint32_t instruction) {
-    uint64_t immediate = getSignedImmediate(instruction);
+    uint64_t immediate = getImmediate(instruction);
     uint64_t val = 0;
 
     if (cpu->r[getRs(instruction)] < immediate) {
@@ -458,7 +672,13 @@ void CPU::sw(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
-    cpu->bus.memWrite32(address, (uint32_t)cpu->r[rt]);
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    cpu->bus.memWrite32(actualAddress, (uint32_t)cpu->r[rt], cached);
 }
 void CPU::swl(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -468,15 +688,21 @@ void CPU::swl(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
-    uint32_t shift = (address & 0x3) * 8;
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
 
-    uint32_t maskShift = 8 * (4 - (address & 0x3));
+    if (error) {
+        return;
+    }
 
-    uint32_t mask = (address & 0x3) == 0 ? -1 : (1 << maskShift) - 1;
+    uint32_t shift = (actualAddress & 0x3) * 8;
+
+    uint32_t maskShift = 8 * (4 - (actualAddress & 0x3));
+
+    uint32_t mask = (actualAddress & 0x3) == 0 ? -1 : (1 << maskShift) - 1;
 
     uint32_t value = (uint32_t)(cpu->r[rt] >> shift);
 
-    cpu->bus.memWrite32(address & ~3, value, false, mask);
+    cpu->bus.memWrite32(actualAddress & ~0x3, value, cached, false, mask);
 }
 void CPU::swr(CPU* cpu, uint32_t instruction) {
     uint64_t immediate = getSignedImmediate(instruction);
@@ -486,13 +712,19 @@ void CPU::swr(CPU* cpu, uint32_t instruction) {
 
     uint64_t address = immediate + cpu->r[rs];
 
-    uint32_t shift = 8 * (3 - (address & 0x3));
+    auto [actualAddress, error, cached] = cpu->bus.translateAddress(address, true);
+
+    if (error) {
+        return;
+    }
+
+    uint32_t shift = 8 * (3 - (actualAddress & 0x3));
 
     uint32_t mask = ~((1 << shift) - 1);
 
     uint32_t value = (uint32_t)(cpu->r[rt] << shift);
 
-    cpu->bus.memWrite32(address & ~3, value, false, mask);
+    cpu->bus.memWrite32(actualAddress & ~0x3, value, cached, false, mask);
 }
 void CPU::xori(CPU* cpu, uint32_t instruction) {
     cpu->r[getRt(instruction)] = cpu->r[getRs(instruction)] ^ (uint64_t)getImmediate(instruction);
@@ -553,7 +785,6 @@ void CPU::jr(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = cpu->r[rs];
 }
 void CPU::jalr(CPU* cpu, uint32_t instruction) {
-    // TODO: see jal comments
     cpu->r[getRd(instruction)] = cpu->nextPc;
 
     cpu->inDelaySlot = true;
@@ -561,8 +792,7 @@ void CPU::jalr(CPU* cpu, uint32_t instruction) {
     cpu->nextPc = cpu->r[getRs(instruction)];
 }
 void CPU::sync(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: sync\n";
-    exit(1);
+    // NOP
 }
 void CPU::mfhi(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
@@ -590,16 +820,37 @@ void CPU::dsllv(CPU* cpu, uint32_t instruction) {
     cpu->r[rd] = cpu->r[rt] << shift;
 }
 void CPU::dsrlv(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsrlv\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    uint32_t shift = cpu->r[rs] & 0x3f;
+
+    cpu->r[rd] = cpu->r[rt] >> shift;
 }
 void CPU::dsrav(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsrav\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+    uint32_t rd = getRd(instruction);
+
+    uint32_t shift = cpu->r[rs] & 0x3f;
+
+    cpu->r[rd] = (uint64_t)((int64_t)cpu->r[rt] >> shift);
 }
 void CPU::mult(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: mult\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+    uint32_t rt = getRt(instruction);
+
+    int64_t val1 = (int32_t)(int64_t)cpu->r[rs];
+    int64_t val2 = (int32_t)(int64_t)cpu->r[rt];
+
+    int64_t result = val1 * val2;
+
+    cpu->lo = (int32_t)(int64_t)(uint64_t)result;
+
+    cpu->hi = (int32_t)(int64_t)(uint64_t)(result >> 32);
+
+    cpu->cop0.addCycles(4);
 }
 void CPU::multu(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
@@ -651,8 +902,15 @@ void CPU::divu(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(36);
 }
 void CPU::dmult(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dmult\n";
-    exit(1);
+    i128 val1 = (int64_t)(i128)cpu->r[getRs(instruction)];
+    i128 val2 = (int64_t)(i128)cpu->r[getRt(instruction)];
+
+    u128 result = (u128)(val1 * val2);
+
+    cpu->lo = (uint64_t)result;
+    cpu->hi = (uint64_t)(result >> 64);
+
+    cpu->cop0.addCycles(7);
 }
 void CPU::dmultu(CPU* cpu, uint32_t instruction) {
     u128 result = (u128)cpu->r[getRs(instruction)] * (u128)cpu->r[getRt(instruction)];
@@ -696,15 +954,9 @@ void CPU::add(CPU* cpu, uint32_t instruction) {
     uint32_t rd = getRd(instruction);
 
     cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rt] + (uint32_t)cpu->r[rs]);
-
-    // TODO: possibly add integer overflow exception
 }
 void CPU::addu(CPU* cpu, uint32_t instruction) {
-    uint32_t rs = getRs(instruction);
-    uint32_t rt = getRt(instruction);
-    uint32_t rd = getRd(instruction);
-
-    cpu->r[rd] = (int32_t)(int64_t)(uint64_t)((uint32_t)cpu->r[rs] + (uint32_t)cpu->r[rt]);
+    CPU::add(cpu, instruction);
 }
 void CPU::sub(CPU* cpu, uint32_t instruction) {
     CPU::subu(cpu, instruction);
@@ -765,64 +1017,54 @@ void CPU::sltu(CPU* cpu, uint32_t instruction) {
     }
 }
 void CPU::dadd(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dadd\n";
-    exit(1);
+    cpu->r[getRd(instruction)] = cpu->r[getRs(instruction)] + cpu->r[getRt(instruction)];
 }
 void CPU::daddu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: daddu\n";
-    exit(1);
+    CPU::dadd(cpu, instruction);
 }
 void CPU::dsub(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsub\n";
-    exit(1);
+    cpu->r[getRd(instruction)] = cpu->r[getRs(instruction)] - cpu->r[getRt(instruction)];
 }
 void CPU::dsubu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsubu\n";
-    exit(1);
+    CPU::dsub(cpu, instruction);
 }
 void CPU::tge(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tge\n";
-    exit(1);
+    throw std::runtime_error("TODO: tge\n");
 }
 void CPU::tgeu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tgeu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tgeu\n");
 }
 void CPU::tlt(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tlt\n";
-    exit(1);
+    throw std::runtime_error("TODO: tlt\n");
 }
 void CPU::tltu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tltu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tltu\n");
 }
 void CPU::teq(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: teq\n";
-    exit(1);
+    throw std::runtime_error("TODO: teq\n");
 }
 void CPU::tne(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tne\n";
-    exit(1);
+    throw std::runtime_error("TODO: tne\n");
 }
 void CPU::dsll(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsll\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction);
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shift;
 }
 void CPU::dsrl(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsrl\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction);
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] >> shift;
 }
 void CPU::dsra(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsra\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction);
+    cpu->r[getRd(instruction)] = (uint64_t)((int64_t)cpu->r[getRt(instruction)] >> shift);
 }
 void CPU::dsll32(CPU* cpu, uint32_t instruction) {
     uint32_t shift = shiftAmount(instruction) + 32;
     cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] << shift;
 }
 void CPU::dsrl32(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: dsrl32\n";
-    exit(1);
+    uint32_t shift = shiftAmount(instruction) + 32;
+    cpu->r[getRd(instruction)] = cpu->r[getRt(instruction)] >> shift;
 }
 void CPU::dsra32(CPU* cpu, uint32_t instruction) {
     uint32_t shift = shiftAmount(instruction) + 32;
@@ -896,39 +1138,47 @@ void CPU::tgei(CPU* cpu, uint32_t instruction) {
 
     if (value > immediate) {
         // throw an exception here!
-        std::cout << "TODO: throw exception\n";
-        exit(1);
+        throw std::runtime_error("TODO: throw exception\n");
+
     }
 }
 void CPU::tgeiu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tgeiu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tgeiu\n");
 }
 void CPU::tlti(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tlti\n";
-    exit(1);
+    throw std::runtime_error("TODO: tlti\n");
 }
 void CPU::tltiu(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tltiu\n";
-    exit(1);
+    throw std::runtime_error("TODO: tltiu\n");
 }
 void CPU::teqi(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: teqi\n";
-    exit(1);
+    throw std::runtime_error("TODO: teqi\n");
 }
 
 void CPU::tnei(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: tnei\n";
-    exit(1);
+    throw std::runtime_error("TODO: tnei\n");
 }
 
 void CPU::bltzal(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bltzal\n";
-    exit(1);
+    uint32_t rs = getRs(instruction);
+
+    cpu->r[31] = cpu->nextPc;
+    if ((int64_t)cpu->r[rs] < 0) {
+        uint32_t immediate = getImmediate(instruction);
+
+        uint64_t amount = (int16_t)(int64_t)(uint64_t)(immediate << 2);
+
+        cpu->fastForwardRelativeLoop((int16_t)amount);
+
+        cpu->nextPc = cpu->pc + amount;
+    }
+
+    cpu->inDelaySlot = true;
 }
 void CPU::bgezal(CPU* cpu, uint32_t instruction) {
     uint32_t rs = getRs(instruction);
 
+    uint64_t nextPc = cpu->nextPc;
     if ((int64_t)cpu->r[rs] >= 0) {
         uint32_t immediate = getImmediate(instruction);
 
@@ -936,17 +1186,16 @@ void CPU::bgezal(CPU* cpu, uint32_t instruction) {
 
         cpu->fastForwardRelativeLoop((int16_t)amount);
 
-        cpu->r[31] = cpu->nextPc;
         cpu->nextPc = cpu->pc + amount;
     }
+
+    cpu->r[31] = nextPc;
 
     cpu->inDelaySlot = true;
 }
 void CPU::bltzall(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bltzall\n";
-    exit(1);
+    throw std::runtime_error("TODO: bltzall\n");
 }
 void CPU::bgezall(CPU* cpu, uint32_t instruction) {
-    std::cout << "TODO: bgezall\n";
-    exit(1);
+    throw std::runtime_error("TODO: bgezall\n");
 }

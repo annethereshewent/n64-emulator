@@ -32,6 +32,8 @@ public:
         this->eventType = NoEvent;
         this->cycles = 0xffffffffffffffff;
     };
+
+    std::string getEventName();
 };
 
 class Scheduler {

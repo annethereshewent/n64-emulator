@@ -4,6 +4,7 @@
 #include <iostream>
 #include <bit>
 #include <regex>
+#include <openssl/sha.h>
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
 #include "rsp/RSP.cpp"
@@ -15,10 +16,10 @@
 #include "video_interface/VideoInterface.cpp"
 #include "../interface.cpp"
 
-uint8_t Bus::memRead8(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-    bool cached = (address & 0x20000000) == 0;
+const uint32_t TLBS = 12;
+const uint32_t TLBL = 8;
 
+uint8_t Bus::memRead8(uint64_t actualAddress, bool cached) {
     if (cached) {
         uint32_t value = readDataCache(actualAddress & ~0x3);
 
@@ -38,31 +39,57 @@ uint8_t Bus::memRead8(uint64_t address) {
         }
     }
 
-    switch (actualAddress) {
-        default:
-            if (actualAddress <= 0x03EFFFFF) {
-                return rdram[actualAddress];
-            }
-            if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
-                uint64_t offset = actualAddress - 0x10000000;
-
-                if (offset < cartridge.size()) {
-                    return cartridge[offset];
-                }
-
-                std::cout << "invalid cartridge offset given!\n";
-                exit(1);
-            }
-            std::cout << "(memRead8) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
-            break;
+    if (actualAddress <= 0x03EFFFFF) {
+        switch (actualAddress & 0x3) {
+            case 0:
+                return rdram[actualAddress + 3];
+                break;
+            case 1:
+                return rdram[(actualAddress & ~0x3) + 2];
+                break;
+            case 2:
+                return rdram[(actualAddress & ~0x3) + 1];
+                break;
+            case 3:
+                return rdram[actualAddress & ~0x3];
+                break;
+        }
     }
+    if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
+        uint64_t offset = actualAddress - 0x10000000;
+
+        if (offset < cartridge.size()) {
+            return cartridge[offset];
+        }
+
+        throw std::runtime_error("invalid cartridge offset given!");
+    }
+
+    if (actualAddress >= 0x4000000 && actualAddress <= 0x4ffffff) {
+        uint32_t value = memRead32(actualAddress, cached);
+
+        switch (actualAddress & 0x3) {
+            case 0:
+                return (uint8_t)(value >> 24);
+                break;
+            case 1:
+                return (uint8_t)(value >> 16);
+                break;
+            case 2:
+                return (uint8_t)(value >> 8);
+                break;
+            case 3:
+                return (uint8_t)value;
+                break;
+        }
+    }
+
+    std::println("(memRead8) unsupported address received: {:x}", actualAddress);
+    throw std::runtime_error("");
+
 }
 
-uint16_t Bus::memRead16(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-    bool cached = (address & 0x20000000) == 0;
-
+uint16_t Bus::memRead16(uint64_t actualAddress, bool cached) {
     if (cached) {
         uint32_t value = readDataCache(actualAddress & ~0x3);
 
@@ -73,22 +100,19 @@ uint16_t Bus::memRead16(uint64_t address) {
         return (uint16_t)value;
     }
 
-    switch (actualAddress) {
-        default:
-            if (actualAddress <= 0x03EFFFFF) {
-                return *(uint16_t*)&rdram[actualAddress];
-            }
-            std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
-            break;
+    if (actualAddress <= 0x03EFFFFF) {
+        if ((actualAddress & 0x3) == 0) {
+            return *(uint16_t*)&rdram[actualAddress + 2];
+        } else {
+            return *(uint16_t*)&rdram[actualAddress & ~0x3];
+        }
     }
+    std::cout << "(memRead16) unsupported address received: " << std::hex << actualAddress << "\n";
+    throw std::runtime_error("");
+
 }
 
-void Bus::memWrite8(uint64_t address, uint8_t value) {
-    uint64_t actualAddress = translateAddress(address, true);
-
-    bool cached = (address & 0x20000000) == 0;
-
+void Bus::memWrite8(uint64_t actualAddress, uint8_t value, bool cached) {
     if (cached) {
         switch (actualAddress & 0x3) {
             case 0:
@@ -111,22 +135,31 @@ void Bus::memWrite8(uint64_t address, uint8_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                rdram[actualAddress] = value;
+                switch (actualAddress & 0x3) {
+                    case 0:
+                        rdram[actualAddress + 3] = value;
+                        break;
+                    case 1:
+                        rdram[(actualAddress & ~0x3) + 2] = value;
+                        break;
+                    case 2:
+                        rdram[(actualAddress & ~0x3) + 1] = value;
+                        break;
+                    case 3:
+                        rdram[actualAddress & ~0x3] = value;
+                        break;
+                }
 
                 return;
             }
 
-            std::cout << "(memWrite8) unsupported address given: " << std::hex << address << "\n";
-            exit(1);
+            std::cout << "(memWrite8) unsupported address given: " << std::hex << actualAddress << "\n";
+            throw std::runtime_error("");
             break;
     }
 }
 
-void Bus::memWrite16(uint64_t address, uint16_t value) {
-    uint64_t actualAddress = translateAddress(address, true);
-
-    bool cached = (address & 0x20000000) == 0;
-
+void Bus::memWrite16(uint64_t actualAddress, uint16_t value, bool cached) {
     if (cached) {
         if ((actualAddress & 0x3) == 0) {
             writeDataCache(actualAddress & ~0x3, (uint32_t)value << 16, 0xffff0000);
@@ -140,56 +173,52 @@ void Bus::memWrite16(uint64_t address, uint16_t value) {
     switch (actualAddress) {
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                writeValueLE(&rdram[actualAddress], value, 2);
+                // due to little endian/big endian conversions, need to something like this.
+                if ((actualAddress & 0x3) == 0) {
+                    memcpy(&rdram[actualAddress + 2], &value, sizeof(uint16_t));
+                } else {
+                    memcpy(&rdram[actualAddress & ~0x3], &value, sizeof(uint16_t));
+                }
 
                 return;
             }
 
-            std::cout << "(memWrite16) unsupported address given: " << std::hex << address << "\n";
-            exit(1);
+            std::cout << "(memWrite16) unsupported address given: " << std::hex << actualAddress << "\n";
+            throw std::runtime_error("");
             break;
     }
 }
 
-void Bus::memWrite64(uint64_t address, uint64_t value) {
-    uint64_t actualAddress = translateAddress(address, true);
-
-    bool cached = (address & 0x20000000) == 0;
+void Bus::memWrite64(uint64_t actualAddress, uint64_t value, bool cached, uint64_t mask) {
 
     if (cached) {
-        writeDataCache(actualAddress + 4, (uint32_t)value);
-        writeDataCache(actualAddress, (uint32_t)(value >> 32));
+        writeDataCache(actualAddress + 4, (uint32_t)value, (uint32_t)(int64_t)mask);
+        writeDataCache(actualAddress, (uint32_t)(value >> 32), (uint32_t)(int64_t)(mask >> 32));
         return;
     }
 
     if (actualAddress <= 0x03EFFFFF) {
-        writeValueLE(&rdram[actualAddress], value, 8);
+        memcpy(&rdram[actualAddress], &value, sizeof(uint64_t));
         return;
     }
 }
 
-uint64_t Bus::memRead64(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-    bool cached = (address & 0x20000000) == 0;
-
+uint64_t Bus::memRead64(uint64_t actualAddress, bool cached) {
     if (cached) {
         return ((uint64_t)readDataCache(actualAddress) << 32) | (uint64_t)readDataCache(actualAddress + 4);
     }
 
     if (actualAddress <= 0x03EFFFFF) {
+        throw std::runtime_error("TODO: memRead64");
         return *(uint64_t*)&rdram[actualAddress];
     }
 
-    std::cout << "(memRead64) unsupported address given: " << std::hex << address << "\n";
-    exit(1);
+    std::cout << "(memRead64) unsupported address given: " << std::hex << actualAddress << "\n";
+    throw std::runtime_error("");
 
 }
-uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
-    uint64_t actualAddress = ignoreCache ? address : translateAddress(address);
-
-    bool cached = (address & 0x20000000) == 0;
-
-    if (cached && !ignoreCache) {
+uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, bool ignoreCycles) {
+    if (cached && bitWidth != WidthDCache && bitWidth != WidthICache) {
         return readDataCache(actualAddress, ignoreCycles);
     }
 
@@ -197,6 +226,10 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
         case 0x4040010:
             cpu.cop0.addCycles(20);
             return rsp.status.value;
+            break;
+        case 0x4040014:
+            cpu.cop0.addCycles(20);
+            return rsp.status.dmaFull;
             break;
         case 0x4040018:
             cpu.cop0.addCycles(20);
@@ -209,6 +242,27 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
         case 0x410000c:
             cpu.cop0.addCycles(20);
             return rdp.status.value;
+            break;
+        case 0x4100010:
+            cpu.cop0.addCycles(20);
+            return 0xffffff;
+            break;
+        case 0x4100014:
+            cpu.cop0.addCycles(20);
+            // TODO
+            return 0;
+            break;
+        case 0x4100018:
+            cpu.cop0.addCycles(20);
+            return rdp.pipeBusy;
+            break;
+        case 0x410001c:
+            cpu.cop0.addCycles(20);
+            return 0;
+            break;
+        case 0x4300004:
+            cpu.cop0.addCycles(20);
+            return mips.mipsVersion;
             break;
         case 0x4300008:
             cpu.cop0.addCycles(20);
@@ -235,7 +289,39 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             cpu.cop0.addCycles(20);
             return peripheralInterface.piStatus.value;
             break;
-        case 0x470000C:
+        case 0x4600014:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Latch;
+            break;
+        case 0x4600018:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Pwd;
+            break;
+        case 0x460001c:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Pgs;
+            break;
+        case 0x4600020:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom1Rls;
+            break;
+        case 0x4600024:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Latch;
+            break;
+        case 0x4600028:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Pwd;
+            break;
+        case 0x460002c:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Pgs;
+            break;
+        case 0x4600030:
+            cpu.cop0.addCycles(20);
+            return peripheralInterface.dom2Rls;
+            break;
+        case 0x470000c:
             // just return 0x14 to skip the initialization process
             // TODO: actually implement rdInterface related stuff
             cpu.cop0.addCycles(20);
@@ -257,7 +343,7 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
-                uint32_t cycles = ignoreCache ? 9 : 32;
+                uint32_t cycles = calculateRdRamCycles(bitWidth) / (bitWidth / 4);
 
                 if (!ignoreCycles) {
                     cpu.cop0.addCycles(cycles);
@@ -265,16 +351,32 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
 
                 return *(uint32_t*)&rdram[actualAddress];
             }
-            if (actualAddress >= 0x08000000 && actualAddress <= 0x0FFFFFFF) {
+            if (actualAddress >= 0x08000000 && actualAddress <= 0x0801ffff) {
                 // cartridge sram
                 // TODO: implement saves
-                return 0xff;
+                if (actualAddress >= 0x8000000 && actualAddress <= 0x801ffff) {
+                    if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                        uint32_t offset = actualAddress - 0x8000000;
+
+                        formatSram();
+
+                        return std::byteswap(*(uint32_t*)&sram[offset]);
+                    } else {
+                        if ((actualAddress & 0x1ffff) == 0 && flashMode == Status) {
+                            return flashStatus;
+                        }
+                        if ((actualAddress & 0x1ffff) == 0 && flashMode == ReadArray) {
+                            return 0;
+                        }
+                        throw std::runtime_error("invalid option given to flash read");
+                    }
+                }
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {
                 uint64_t offset = actualAddress - 0x4000000;
 
                 if (!ignoreCycles) {
-                    cpu.cop0.addCycles(1);
+                    cpu.cop0.addCycles(bitWidth / 4);
                 }
 
                 return std::byteswap(*(uint32_t*)&rsp.dmem[offset]);
@@ -283,20 +385,30 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
                 uint64_t offset = actualAddress - 0x4001000;
 
                 if (!ignoreCycles) {
-                    cpu.cop0.addCycles(1);
+                    cpu.cop0.addCycles(bitWidth / 4);
                 }
 
                 return std::byteswap(*(uint32_t*)&rsp.imem[offset]);
             }
+            if (actualAddress >= 0x5000000 && actualAddress <= 0x07ffffff) {
+                // N64 DD registers, ignore
+                return actualAddress & 0xffff | ((actualAddress & 0xffff) << 16);
+            }
             if (actualAddress >= 0x10000000 && actualAddress <= 0x1FBFFFFF) {
                 uint32_t offset = actualAddress & 0xfffffff;
+
+                uint32_t cycles = peripheralInterface.calculateCycles(1, 4);
+
+                if (!ignoreCycles) {
+                    cpu.cop0.addCycles(cycles);
+                }
 
                 if (offset < cartridge.size()) {
                     return std::byteswap(*(uint32_t*)&cartridge[offset]);
                 }
 
                 std::cout << "invalid offset given to cartridge: " << std::hex << offset << "\n";
-                exit(1);
+                throw std::runtime_error("");
             }
             if (actualAddress >= 0x1FC00000 && actualAddress <= 0x1FC007BF) {
                 if (!ignoreCycles) {
@@ -314,18 +426,17 @@ uint32_t Bus::memRead32(uint64_t address, bool ignoreCache, bool ignoreCycles) {
 
                 return std::byteswap(*(uint32_t*)&pif.ram[offset]);
             }
+            if (actualAddress >= 0x1fd00000 && actualAddress <= 0x1fffffff) {
+                return actualAddress & 0xffff | ((actualAddress & 0xffff) << 16);
+            }
 
             std::cout << "(memRead32) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
 
-void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t mask) {
-    uint64_t actualAddress = ignoreCache ? address : translateAddress(address, true);
-
-    bool cached = (address & 0x20000000) == 0;
-
+void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool ignoreCache, int64_t mask) {
     if (cached && !ignoreCache) {
         writeDataCache(actualAddress, value, mask);
         return;
@@ -342,8 +453,15 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&rsp.spReadLength.value, value, mask);
             rsp.pushDma(DmaDirection::Read);
             break;
+        case 0x404000c:
+            Bus::writeWithMask32(&rsp.spWriteLength.value, value, mask);
+            rsp.pushDma(DmaDirection::Write);
+            break;
         case 0x4040010:
             rsp.updateStatus(value);
+            break;
+        case 0x404001c:
+            rsp.semaphore = 0;
             break;
         case 0x4080000:
             Bus::writeWithMask32(&rsp.pc, value & 0xffc, mask);
@@ -357,6 +475,11 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             if ((value >> 11 & 0b1) == 1) {
                 clearInterrupt(DP_INTERRUPT_FLAG);
             }
+            checkIrqs();
+            cpu.checkIrqs();
+            break;
+        case 0x4300008:
+            Bus::writeWithMask32(&mips.mipsInterrupt.value, value, mask);
             checkIrqs();
             cpu.checkIrqs();
             break;
@@ -473,13 +596,65 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&peripheralInterface.dramAddress, value & 0xfffffe, mask);
             break;
         case 0x4600004:
-            Bus::writeWithMask32(&peripheralInterface.cartAddress, value & 0xfffffe, mask);
+            Bus::writeWithMask32(&peripheralInterface.cartAddress, value, mask);
             break;
-        case 0x460000c:
-            Bus::writeWithMask32(&peripheralInterface.wrLen, value & 0xffffff, mask);
+        case 0x4600008: {
+            Bus::writeWithMask32(&peripheralInterface.rdLen, value & 0xffffff, mask);
+            uint32_t cartAddress = peripheralInterface.cartAddress;
 
-            dmaWrite();
+            if (cartAddress >= 0x1ffe0000 && cartAddress <= 0x1ffe1fff) {
+                throw std::runtime_error("todo: sc64 dma");
+            } else if (cartAddress >= 0x10000000 && cartAddress <= 0x1fbfffff) {
+                throw std::runtime_error("TODO: dmaCartRead");
+                // dmaCartRead();
+            } else if (cartAddress >= 0x8000000 && cartAddress <= 0xfffffff) {
+                if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                    dmaSramRead();
+                } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
+                    dmaFlashRead();
+                } else {
+                    std::println("invalid address given for PI dma write: {:x}", cartAddress);
+                    throw std::runtime_error("");
+                }
+            } else {
+                uint64_t cycles = peripheralInterface.calculateCycles(1, peripheralInterface.rdLen + 1);
+
+                cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+            }
+
             break;
+        }
+        case 0x460000c: {
+            Bus::writeWithMask32(&peripheralInterface.wrLen, value & 0xffffff, mask);
+            uint32_t cartAddress = peripheralInterface.cartAddress;
+
+            if (cartAddress >= 0x1ffe0000 && cartAddress <= 0x1ffe1fff) {
+                throw std::runtime_error("todo: sc64 dma");
+            } else if (cartAddress >= 0x10000000 && cartAddress <= 0x1fbfffff) {
+                dmaCartWrite();
+            } else if (cartAddress >= 0x8000000 && cartAddress <= 0xfffffff) {
+                if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                    dmaSramWrite();
+                } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
+                    dmaFlashWrite();
+                } else {
+                    std::println("invalid address given for PI dma write: {:x}", cartAddress);
+                    throw std::runtime_error("");
+                }
+            } else {
+                uint32_t length = peripheralInterface.wrLen + 1;
+                uint32_t dramAddr = peripheralInterface.dramAddress;
+
+                for (uint32_t i = 0; i < length; i++) {
+                    rdram[(dramAddr + i) ^ 3] = 0;
+                }
+
+                uint64_t cycles = peripheralInterface.calculateCycles(1, length);
+
+                cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+            }
+            break;
+        }
         case 0x4600010:
             if ((value & 0b1) == 1) {
                 peripheralInterface.piStatus.value = 0;
@@ -499,7 +674,19 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             Bus::writeWithMask32(&peripheralInterface.dom1Pgs, value & 0xff, mask);
             break;
         case 0x4600020:
-            Bus::writeWithMask32(&peripheralInterface.dom1Rls, value & 0xff, mask);
+            Bus::writeWithMask32(&peripheralInterface.dom1Rls, value & 0x3, mask);
+            break;
+        case 0x4600024:
+            Bus::writeWithMask32(&peripheralInterface.dom2Latch, value & 0xff, mask);
+            break;
+        case 0x4600028:
+            Bus::writeWithMask32(&peripheralInterface.dom2Pwd, value & 0xff, mask);
+            break;
+        case 0x460002c:
+            Bus::writeWithMask32(&peripheralInterface.dom2Pgs, value & 0xf, mask);
+            break;
+        case 0x4600030:
+            Bus::writeWithMask32(&peripheralInterface.dom2Rls, value & 0x3, mask);
             break;
         case 0x4700000:
             Bus::writeWithMask32(&rdInterface.mode.value, value & 0xf, mask);
@@ -522,7 +709,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
             serialInterface.status.dmaBusy = 1;
 
             uint64_t cycles = serialInterface.processRam(*this);
-
             cpu.scheduler.addEvent(Event(SIDma, cpu.cop0.count + cycles));
             break;
         }
@@ -545,8 +731,33 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                // Bus::writeValueLE(&rdram[actualAddress], returnVal, 4);
                 memcpy(&rdram[actualAddress], &returnVal, sizeof(uint32_t));
+
+                return;
+            }
+            if (actualAddress >= 0x13ff0000 && actualAddress <= 0x13ffffff) {
+                uint32_t offset = actualAddress & 0xffff;
+
+                if (offset == 0x14) {
+                    uint32_t length = mask != -1 ? value & mask : value;
+
+                    char result[length + 1];
+
+                    memcpy(&result, &consoleBuffer[0x20], length * sizeof(uint8_t));
+                    result[length] = 0;
+
+                    std::string output = result;
+
+                    std::print("{}", output);
+                } else {
+                    uint32_t returnVal = std::byteswap(*(uint32_t*)&consoleBuffer[offset]);
+
+                    Bus::writeWithMask32(&returnVal, value, mask);
+
+                    returnVal = std::byteswap(returnVal);
+
+                    memcpy(&consoleBuffer[offset], &returnVal, sizeof(uint32_t));
+                }
 
                 return;
             }
@@ -559,7 +770,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 returnVal = std::byteswap(returnVal);
 
-                // Bus::writeWord(&pif.ram[offset], returnVal);
                 memcpy(&pif.ram[offset], &returnVal, sizeof(uint32_t));
 
                 cpu.scheduler.addEvent(Event(PIFExecuteCommand, cpu.cop0.count + 3200));
@@ -579,8 +789,6 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 memcpy(&rsp.dmem[offset], &returnVal, sizeof(uint32_t));
 
-                // Bus::writeWord(&rsp.dmem[offset], returnVal);
-
                 return;
             }
             if (actualAddress >= 0x4001000 && actualAddress <= 0x4001FFF) {
@@ -591,57 +799,88 @@ void Bus::memWrite32(uint64_t address, uint32_t value, bool ignoreCache, int64_t
 
                 Bus::writeWithMask32(&returnVal, value, mask);
 
-                // Bus::writeWord(&rsp.imem[offset], returnVal);
                 returnVal = std::byteswap(returnVal);
 
                 memcpy(&rsp.imem[offset], &returnVal, sizeof(uint32_t));
 
                 return;
             }
+            if (actualAddress >= 0x5000000 && actualAddress <= 0x05ffffff) {
+                // N64 DD registers, ignore
+                return;
+            }
+            if (actualAddress >= 0x8000000 && actualAddress <= 0x801ffff) {
+                if (std::find(saveTypes.begin(), saveTypes.end(), Sram) != saveTypes.end()) {
+                    uint32_t offset = actualAddress - 0x8000000;
+
+                    formatSram();
+
+                    uint32_t returnVal = std::byteswap(*(uint32_t*)&sram[offset]);
+
+                    Bus::writeWithMask32(&returnVal, value, mask);
+
+                    returnVal = std::byteswap(returnVal);
+
+                    memcpy(&sram[offset], &returnVal, sizeof(uint32_t));
+                } else if (std::find(saveTypes.begin(), saveTypes.end(), Flash) != saveTypes.end()) {
+                    if ((actualAddress & 0x1ffff) == 0x10000) {
+                        formatFlash();
+                        executeFlashCommand(value & mask);
+                    } else if ((actualAddress & 0x1ffff) == 0 && flashMode == Status) {
+                        flashStatus = (value & mask) & 0xff;
+                    } else {
+                        throw std::runtime_error("invalid flash command given");
+                    }
+
+                }
+
+                return;
+            }
 
             std::cout << "(memWrite32) unsupported address received: " << std::hex << actualAddress << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
 
-void Bus::openSave(std::string saveName) {
-    saveFile = std::fstream(saveName, std::ios::binary | std::ios::in | std::ios::out);
+void Bus::openSaves(std::vector<std::string> saveNames) {
 
-    if (saveFile.is_open()) {
-        saveFile.seekg(0, std::ios::end);
-        size_t fileSize = saveFile.tellg();
-        saveFile.seekg(0, std::ios::beg);
+    for (std::string saveName: saveNames) {
+        saveFile = std::fstream(saveName, std::ios::binary | std::ios::in | std::ios::out);
 
-        if (fileSize != 0) {
-            switch (saveType) {
-                case Eeprom16k:
-                case Eeprom4k:
-                    eeprom.resize(fileSize);
-                    saveFile.read(reinterpret_cast<char*>(eeprom.data()), fileSize);
-                    break;
-                case Flash:
-                    flash.resize(fileSize);
-                    saveFile.read(reinterpret_cast<char*>(flash.data()), fileSize);
-                    break;
-                case Sram:
-                    sram.resize(fileSize);
-                    saveFile.read(reinterpret_cast<char*>(sram.data()), fileSize);
-                    break;
-                case NoSave:
-                    // do nothing
-                    break;
-                case Mempak:
-                    std::println("todo: mempak");
-                    exit(1);
-                    break;
+        if (saveFile.is_open()) {
+            saveFile.seekg(0, std::ios::end);
+            size_t fileSize = saveFile.tellg();
+            saveFile.seekg(0, std::ios::beg);
+
+            if (fileSize != 0) {
+                for (SaveType saveType: saveTypes) {
+                    switch (saveType) {
+                        case Eeprom16k:
+                        case Eeprom4k:
+                            eeprom.resize(fileSize);
+                            saveFile.read(reinterpret_cast<char*>(eeprom.data()), fileSize);
+                            break;
+                        case Flash:
+                            flash.resize(fileSize);
+                            saveFile.read(reinterpret_cast<char*>(flash.data()), fileSize);
+                            break;
+                        case Sram:
+                            sram.resize(fileSize);
+                            saveFile.read(reinterpret_cast<char*>(sram.data()), fileSize);
+                            break;
+                        case NoSave:
+                            // do nothing
+                            break;
+                        case Mempak:
+                            throw std::runtime_error("todo: mempak");
+                            break;
+                    }
+                }
             }
         } else {
-            std::println("an error occurred while reading existing file.");
-            exit(1);
+            saveFile = std::fstream(saveName, std::ios::out);
         }
-    } else {
-        saveFile = std::fstream(saveName, std::ios::out);
     }
 }
 
@@ -650,61 +889,155 @@ void Bus::writeSave() {
         std::println("writing save....");
         saveFile.seekg(0, std::ios::beg);
 
-        switch (saveType) {
-            case Eeprom16k:
-            case Eeprom4k:
-                saveFile.write((char*)&eeprom[0], sizeof(uint8_t) * eeprom.size());
-                break;
-            case Flash:
-                saveFile.write((char*)&flash[0], sizeof(uint8_t) * flash.size());
-                break;
-            case Sram:
-                saveFile.write((char*)&sram[0], sizeof(uint8_t) * sram.size());
-                break;
-            case NoSave:
-                // do nothing
-                break;
-            case Mempak:
-                std::println("todo: mempak");
-                exit(1);
-                break;
+        for (SaveType type: saveTypes) {
+            switch (type) {
+                case Eeprom16k:
+                case Eeprom4k:
+                    saveFile.write((char*)&eeprom[0], sizeof(uint8_t) * eeprom.size());
+                    break;
+                case Flash:
+                    saveFile.write((char*)&flash[0], sizeof(uint8_t) * flash.size());
+                    break;
+                case Sram:
+                    saveFile.write((char*)&sram[0], sizeof(uint8_t) * sram.size());
+                    break;
+                case NoSave:
+                    // do nothing
+                    break;
+                case Mempak:
+                    throw std::runtime_error("todo: mempak");
+                    break;
+            }
         }
     }
 
     timeSinceSaveWrite = 0;
 }
 
-std::string Bus::getSaveName(std::string filename) {
+std::vector<std::string> Bus::getSaveNames(std::string filename) {
     std::string saveName;
     std::string extension;
-    switch (saveType) {
-        case Eeprom16k:
-        case Eeprom4k:
-            extension = ".eep";
-            break;
-        case Flash:
-            extension = ".fla";
-            break;
-        case Sram:
-            extension = ".sra";
-            break;
-        case NoSave:
-            return "";
-            break;
-        case Mempak:
-            extension = ".mem";
-            break;
-    }
-    saveName = std::regex_replace(filename, std::regex("\\.n64$|\\.z64$|\\.N64$|\\.Z64$"), extension);
-    saveName = std::regex_replace(saveName, std::regex(".*/"), "");
 
-    return saveName;
+    std::vector<std::string> names = {};
+
+    for (SaveType type: saveTypes) {
+        switch (type) {
+            case Eeprom16k:
+            case Eeprom4k:
+                extension = ".eep";
+                break;
+            case Flash:
+                extension = ".fla";
+                break;
+            case Sram:
+                extension = ".sra";
+                break;
+            case NoSave:
+                break;
+            case Mempak:
+                extension = ".mem";
+                break;
+        }
+        saveName = std::regex_replace(filename, std::regex("\\.n64$|\\.z64$|\\.N64$|\\.Z64$"), extension);
+        saveName = std::regex_replace(saveName, std::regex(".*/"), "");
+
+        names.push_back(saveName);
+    }
+
+
+    return names;
 }
 
 void Bus::formatEeprom() {
-    if (eeprom.size() == 0) {
+    if (eeprom.size() < 0x800) {
         eeprom.resize(0x800);
         std::fill(eeprom.begin(), eeprom.end(), 0xff);
+    }
+}
+
+void Bus::formatFlash() {
+    if (flash.size() < FLASH_SIZE) {
+        flash.resize(FLASH_SIZE);
+        std::fill(flash.begin(), flash.end(), 0xff);
+    }
+}
+
+void Bus::executeFlashCommand(uint32_t command) {
+    switch (command >> 24) {
+        case 0xa5: {
+            uint32_t offset = (command & 0xffff) * 128;
+
+            flashStatus |= 0x1;
+
+            for (int i = 0; i < FLASHBUF_SIZE; i++) {
+                flash[offset + i] = flashBuffer[i];
+            }
+
+            flashStatus &= ~0x1;
+            flashStatus |= 0x4;
+            flashMode = Status;
+
+            auto p1 = std::chrono::system_clock::now();
+            timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+                p1.time_since_epoch()
+            ).count();
+            break;
+        }
+        case 0xb4:
+            flashMode = PageProgram;
+            break;
+        case 0xf0:
+            flashMode = ReadArray;
+            break;
+        case 0xe1:
+            flashMode = ReadSilliconId;
+            flashStatus |= 0x1;
+            break;
+        case 0xd2:
+            flashMode = Status;
+            break;
+        case 0x3c:
+            flashMode = EraseChip;
+            break;
+        case 0x4b:
+            flashMode = EraseSector;
+            flashSector = command & 0xffff;
+            break;
+        case 0x78:
+            flashStatus |= 0x2;
+
+            if (flashMode == EraseChip) {
+                for (int i = 0; i < flash.size(); i++) {
+                    flash[i] = 0xff;
+                }
+                auto p1 = std::chrono::system_clock::now();
+                timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    p1.time_since_epoch()
+                ).count();
+            } else if (flashMode == EraseSector) {
+                uint32_t offset = (flashSector & 0xff80) * 128;
+
+                for (int i = 0; i < SECTOR_SIZE; i++) {
+                    flash[offset + i] = 0xff;
+                }
+                auto p1 = std::chrono::system_clock::now();
+                timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    p1.time_since_epoch()
+                ).count();
+            } else {
+                throw std::runtime_error("invalid erase flash command given");
+            }
+
+
+            flashStatus &= ~0x2;
+            flashStatus |= 0x8;
+            flashMode = Status;
+
+            break;
+        default:
+            std::println("todo: {:x}", command >> 24);
+            throw std::runtime_error("");
+            break;
     }
 }
 
@@ -761,23 +1094,23 @@ void Bus::loadRom(std::string filename) {
 
         switch (saveType) {
             case 0:
-                saveType = NoSave;
+                saveTypes = {};
                 break;
             case 1:
-                saveType = Eeprom4k;
+                saveTypes = { Eeprom4k };
                 break;
             case 2:
-                saveType = Eeprom16k;
+                saveTypes = { Eeprom16k };
                 break;
             case 3:
-                saveType = Sram;
+                saveTypes = { Sram };
                 break;
             case 5:
-                saveType = Flash;
+                saveTypes = { Flash };
                 break;
             default:
                 std::cout << "unknown save type detected: " << std::dec << saveType << "\n";
-                exit(1);
+                throw std::runtime_error("");
                 break;
         }
     } else {
@@ -830,21 +1163,19 @@ void Bus::loadRom(std::string filename) {
         };
 
         if (std::find(eeprom16KSaves.begin(), eeprom16KSaves.end(), gameId) != eeprom16KSaves.end()) {
-            saveType = Eeprom16k;
+            saveTypes = { Eeprom16k };
         } else if (std::find(flashSaves.begin(), flashSaves.end(), gameId) != flashSaves.end()) {
-            saveType = Flash;
+            saveTypes = { Flash };
         } else if (strcmp(gameId, "NPQ") == 0) {
-            saveType = NoSave;
+            saveTypes = {};
         } else {
-            saveType = Eeprom4k;
+            saveTypes = { Eeprom4k, Sram };
         }
     }
     file.close();
 }
 
-uint32_t Bus::readInstructionCache(uint64_t address) {
-    uint64_t actualAddress = translateAddress(address);
-
+uint32_t Bus::readInstructionCache(uint64_t actualAddress) {
     uint32_t lineIndex = ((actualAddress >> 5) & 0x1FF);
 
     if (!icacheHit(lineIndex, actualAddress)) {
@@ -867,7 +1198,7 @@ void Bus::fillInstructionCache(uint32_t lineIndex, uint64_t address) {
     uint64_t cacheAddress = (uint64_t)((uint32_t)((icache[lineIndex].tag) | (icache[lineIndex].index)) & 0x1ffffffc);
 
     for (int i = 0; i < 8; i++) {
-        icache[lineIndex].words[i] = memRead32(cacheAddress + i * 4, true);
+        icache[lineIndex].words[i] = memRead32(cacheAddress + i * 4, true, WidthICache);
     }
 }
 
@@ -923,10 +1254,10 @@ void Bus::fillDataCache(uint32_t lineIndex, uint64_t address, bool ignoreCycles)
 
     uint64_t cacheAddress = (uint64_t)((uint32_t)((dcache[lineIndex].tag) | (dcache[lineIndex].index)) & 0x1ffffffc);
 
-    dcache[lineIndex].words[0] = memRead32(cacheAddress, true);
-    dcache[lineIndex].words[1] = memRead32(cacheAddress + 4, true);
-    dcache[lineIndex].words[2] = memRead32(cacheAddress + 8, true);
-    dcache[lineIndex].words[3] = memRead32(cacheAddress + 12, true);
+    dcache[lineIndex].words[0] = memRead32(cacheAddress, true, WidthDCache);
+    dcache[lineIndex].words[1] = memRead32(cacheAddress + 4, true, WidthDCache);
+    dcache[lineIndex].words[2] = memRead32(cacheAddress + 8, true, WidthDCache);
+    dcache[lineIndex].words[3] = memRead32(cacheAddress + 12, true, WidthDCache);
 }
 
 bool Bus::dcacheHit(uint32_t lineIndex, uint64_t address) {
@@ -967,30 +1298,81 @@ void Bus::dcacheWriteback(uint64_t line, bool ignoreCycles) {
 
     for (int i = 0; i < 4; i++) {
         uint64_t currAddress = cacheAddress | (i * 4);
-        memWrite32(currAddress, dcache[line].words[i], true);
+        memWrite32(currAddress, dcache[line].words[i], true, true);
     }
 }
 
-uint64_t Bus::translateAddress(uint64_t address, bool isWrite) {
+std::tuple<uint64_t, bool, bool> Bus::translateAddress(uint64_t address, bool isWrite) {
     if ((address & 0xc0000000) != 0x80000000) {
         return getTlbAddress(address, isWrite);
     }
-    return address & 0x1FFFFFFF;
+    return std::tuple(address & 0x1fffffff, false, (address & 0x20000000) == 0);
 }
 
-uint64_t Bus::getTlbAddress(uint64_t address, bool isWrite) {
+std::tuple<uint64_t, bool, bool> Bus::getTlbAddress(uint64_t address, bool isWrite) {
     uint64_t actualAddress = address & 0xffffffff;
 
     if (isWrite) {
         if (tlbWriteLut[actualAddress >> 12].address != 0) {
-            return tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+            return std::tuple(tlbWriteLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, tlbWriteLut[actualAddress >> 12].cached);
         }
     } else if (tlbReadLut[actualAddress >> 12].address != 0) {
-        return tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff);
+        return std::tuple(tlbReadLut[actualAddress >> 12].address & 0x1ffff000 | (actualAddress & 0xfff), false, tlbReadLut[actualAddress >> 12].cached);
     }
 
-    std::println("invalid TLB address given");
-    exit(1);
+    tlbException(address, isWrite);
+
+    return std::tuple(0x0, true, false);
+}
+
+void Bus::tlbException(uint64_t address, bool isWrite) {
+    if (isWrite) {
+        cpu.cop0.cause = TLBS;
+    } else {
+        cpu.cop0.cause = TLBL;
+    }
+
+    cpu.cop0.badVAddress = address;
+
+    cpu.cop0.xContext = (cpu.cop0.xContext & ~0x7ffff0) | ((address >> 9) & 0x7ffff0);
+    cpu.cop0.context = (cpu.cop0.xContext & ~0x7ffff0) | ((address >> 9) & 0x7ffff0);
+    cpu.cop0.xContext = (cpu.cop0.xContext & ~0x180000000) | ((address >> 31) & 0x180000000);
+
+    cpu.cop0.entryHi = (cpu.cop0.entryHi & ~0xffffe000) | address & 0xffffe000;
+
+    bool isValid = true;
+
+    uint64_t offset = 0x180;
+
+    uint64_t maskedAddress = address & ~0x3;
+
+    for (TlbEntry entry: tlbEntries) {
+        if (maskedAddress >= entry.startEven && maskedAddress <= entry.endEven) {
+            isValid = entry.vEven != 0;
+
+            if (isValid && isWrite && entry.dEven == 0) {
+                cpu.cop0.cause = 1 << 2;
+                isValid = false;
+            }
+            break;
+        }
+
+        if (maskedAddress >= entry.startOdd && maskedAddress <= entry.endOdd) {
+            isValid = entry.vOdd != 0;
+
+            if (isValid && isWrite && entry.dOdd == 0) {
+                cpu.cop0.cause = 1 << 2;
+                isValid = false;
+            }
+            break;
+        }
+    }
+
+    if (isValid && cpu.cop0.status.exl == 0) {
+        offset = 0;
+    }
+
+    cpu.enterException(false, offset);
 }
 
 void Bus::tlbWrite(uint32_t index) {
@@ -1091,13 +1473,14 @@ void Bus::tlbMap(uint32_t index) {
         !(entry.startEven >= 0x80000000 && entry.endEven < 0xc0000000) &&
         entry.physEven < 0x20000000
     ) {
-        for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+        for (uint32_t i = entry.startEven; i < entry.endEven; i += 0x1000) {
             tlbReadLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
             tlbReadLut[i >> 12].cached = entry.cEven != 2;
         }
 
+
         if (entry.dEven != 0) {
-            for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+            for (uint32_t i = entry.startEven; i < entry.endEven; i += 0x1000) {
                 tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physEven + (i - entry.startEven) + 0xfff);
                 tlbWriteLut[i >> 12].cached = entry.cEven != 2;
             }
@@ -1109,15 +1492,15 @@ void Bus::tlbMap(uint32_t index) {
         !(entry.startOdd >= 0x80000000 && entry.endOdd < 0xc0000000) &&
         entry.physOdd < 0x20000000
     ) {
-        for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
-            tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
-            tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
+        for (uint32_t i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+            tlbReadLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
+            tlbReadLut[i >> 12].cached = entry.cOdd != 2;
         }
 
         if (entry.dOdd != 0) {
-            for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
-                tlbReadLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
-                tlbReadLut[i >> 12].cached = entry.cOdd != 2;
+            for (uint32_t i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+                tlbWriteLut[i >> 12].address = 0x80000000 | (entry.physOdd + (i - entry.startOdd) + 0xfff);
+                tlbWriteLut[i >> 12].cached = entry.cOdd != 2;
             }
         }
     }
@@ -1132,12 +1515,26 @@ void Bus::tlbUnmap(uint32_t index) {
             tlbReadLut[i >> 12].address = 0;
             tlbReadLut[i >> 12].cached = false;
         }
+
+        if (entry.dEven != 0) {
+            for (int i = entry.startEven; i < entry.endEven; i += 0x1000) {
+                tlbWriteLut[i >> 12].address = 0;
+                tlbWriteLut[i >> 12].cached = false;
+            }
+        }
     }
 
     if (entry.vOdd != 0) {
         for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
-            tlbWriteLut[i >> 12].address = 0;
-            tlbWriteLut[i >> 12].cached = false;
+            tlbReadLut[i >> 12].address = 0;
+            tlbReadLut[i >> 12].cached = false;
+        }
+
+        if (entry.dOdd != 0) {
+            for (int i = entry.startOdd; i < entry.endOdd; i += 0x1000) {
+                tlbWriteLut[i >> 12].address = 0;
+                tlbWriteLut[i >> 12].cached = false;
+            }
         }
     }
 }
@@ -1161,9 +1558,10 @@ void Bus::clearInterrupt(uint32_t flag) {
     cpu.checkIrqs();
 }
 
-void Bus::dmaWrite() {
-    uint32_t currDramAddr = peripheralInterface.dramAddress;
-    uint32_t currCartAddr = peripheralInterface.cartAddress;
+void Bus::dmaCartWrite() {
+    uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
+    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xfffffff;
+
     uint32_t length = peripheralInterface.wrLen + 1;
 
     if (length > 0x7f & (length & 1) != 0) {
@@ -1174,8 +1572,10 @@ void Bus::dmaWrite() {
     }
     for (int i = 0; i < length; i++) {
         if (currCartAddr + i >= cartridge.size()) {
+            // xoring with 3 essentially byteswaps the values
             rdram[(currDramAddr + i) ^ 3] = 0;
         } else {
+            // see above comment
             rdram[(currDramAddr + i) ^ 3] = cartridge[currCartAddr + i];
         }
     }
@@ -1191,6 +1591,128 @@ void Bus::dmaWrite() {
 
     cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
 }
+
+void Bus::dmaFlashWrite() {
+    uint32_t length = peripheralInterface.wrLen + 1;
+    uint32_t dramAddress = peripheralInterface.dramAddress & 0xfffffe;
+    uint32_t currCartAddr = peripheralInterface.cartAddress;
+
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= dramAddress & 0x7;
+    }
+
+    if ((currCartAddr & 0x1ffff) == 0 && length == 8 && flashMode == ReadSilliconId) {
+        memcpy(&rdram[dramAddress], &FLASH_ID, sizeof(uint32_t));
+        memcpy(&rdram[dramAddress + 4], &SILICON_ID, sizeof(uint32_t));
+    } else if ((currCartAddr & 0x1ffff) < 0x10000 && flashMode == ReadArray) {
+        formatFlash();
+        currCartAddr = (currCartAddr & 0xffff) * 2;
+
+        for (int i = 0; i < length; i++) {
+            rdram[(dramAddress + i) ^ 3] = flash[currCartAddr + i];
+        }
+    }
+
+    uint64_t cycles = peripheralInterface.calculateCycles(2, length);
+
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
+void Bus::dmaFlashRead() {
+    uint32_t length = peripheralInterface.rdLen + 1;
+    uint32_t dramAddress = peripheralInterface.dramAddress & 0xfffffe;
+    uint32_t currCartAddr = peripheralInterface.cartAddress;
+
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= dramAddress & 0x7;
+    }
+
+    if ((currCartAddr & 0x1ffff) == 0 && length == 128 && flashMode == PageProgram) {
+        for (int i = 0; i < length; i++) {
+            flashBuffer[i] = rdram[(dramAddress + i) ^ 3];
+        }
+    } else {
+        throw std::runtime_error("invalid dma flash read option given");
+    }
+
+    uint64_t cycles = peripheralInterface.calculateCycles(2, length);
+
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
+void Bus::dmaSramWrite() {
+    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xffff;
+    uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
+
+    uint32_t length = peripheralInterface.wrLen + 1;
+
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= currDramAddr & 0x7;
+    }
+
+    formatSram();
+
+    for (int i = 0; i < length; i++) {
+        if (currCartAddr + i == sram.size()) {
+            break;
+        }
+
+        rdram[(currDramAddr + i) ^ 3] = sram[currCartAddr + i];
+    }
+
+    uint64_t cycles = peripheralInterface.calculateCycles(2, length);
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
+void Bus::dmaSramRead() {
+    uint32_t currCartAddr = peripheralInterface.cartAddress & 0xffff;
+    uint32_t currDramAddr = peripheralInterface.dramAddress & 0xffffff;
+
+    uint32_t length = peripheralInterface.rdLen + 1;
+
+    if (length >= 0x7f && (length & 1) != 0) {
+        length += 1;
+    }
+    if (length <= 0x80) {
+        length -= currDramAddr & 0x7;
+    }
+
+    formatSram();
+
+    for (int i = 0; i < length; i++) {
+        if (currCartAddr + i == sram.size()) {
+            break;
+        }
+
+        sram[currCartAddr + i] = rdram[(currDramAddr + i) ^ 3];
+    }
+
+    auto p1 = std::chrono::system_clock::now();
+    timeSinceSaveWrite = std::chrono::duration_cast<std::chrono::milliseconds>(
+        p1.time_since_epoch()
+    ).count();
+
+    uint64_t cycles = peripheralInterface.calculateCycles(2, length);
+    cpu.scheduler.addEvent(Event(PIDma, cpu.cop0.count + cycles));
+}
+
+
+void Bus::formatSram() {
+    if (sram.size() < SRAM_SIZE) {
+        sram.resize(SRAM_SIZE);
+        std::fill(sram.begin(), sram.end(), 0xff);
+    }
+}
+
 
 // TODO: move this to mips interface. currently having compile
 // issues putting the code in there :/
@@ -1257,7 +1779,7 @@ void Bus::restartAudio() {
     initAudio();
 }
 
-void Bus::pushSamples(uint64_t length, uint32_t dramAddress) {
+void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
     int16_t samples[length / 2];
 
     for (int i = 0; i < length / 2; i++) {
@@ -1285,4 +1807,62 @@ void Bus::updateAxis(uint8_t xAxis, uint8_t yAxis) {
     input &= 0xffff;
     input |= xAxis << 16;
     input |= yAxis << 24;
+}
+
+void Bus::setCic() {
+    std::string hash = generateHash();
+
+    std::transform(hash.begin(), hash.end(), hash.begin(),
+    [](unsigned char c){ return std::toupper(c); });
+
+    // wish c++ supported switch case with strings lmao
+    // 0x3f is true for most cases, so worry about the cases
+    // that it isn't true for only.
+    uint8_t cicSeed = 0x3f;
+    if (hash == "BF3620D30817007091EBE9BDDD1B88C23B8A0052170B3309CDE5B6B4238E45E7") {
+        cicSeed = 0x78;
+    } else if (hash == "04B7BC6717A9F0EB724CF927E74AD3876C381CBB280D841736FC5E55580B756B") {
+        cicSeed = 0x91;
+    } else if (hash == "36ADC40148AF56F0D78CD505EB6A90117D1FD6F11C6309E52ED36BC4C6BA340E") {
+        cicSeed = 0x85;
+    } else if (hash == "53C0088FB777870D0AF32F0251E964030E2E8B72E830C26042FD191169508C05") {
+        cicSeed = 0xdd;
+    }
+
+    pif.ram[0x26] = cicSeed;
+    pif.ram[0x26] = cicSeed;
+}
+
+void Bus::writeRumblePak(int channel, uint16_t address, int data) {
+    if (address == 0xc000) {
+        uint16_t rumble = (uint16_t)pif.ram[data + 31];
+
+        // todo: implement more controllers, but for now there's only one.
+        if (channel == 0) {
+            // todo: check if these values are right or whether they can vary
+            SDL_RumbleGamepad(
+                gamepad,
+                (rumble & 1) * 0xffff,
+                (rumble & 1) * 0xffff,
+                (rumble & 1) * 60000
+            );
+        }
+    }
+}
+
+// see: https://stackoverflow.com/questions/50489951/openssl-convert-binary-bytes-to-sha256-c
+std::string Bus::generateHash() {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    uint16_t size = 0x1000 - 0x40;
+    SHA256_Update(&sha256, &cartridge[0x40], sizeof(uint8_t) * size);
+    SHA256_Final(hash, &sha256);
+
+    std::stringstream ss;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+
+    return ss.str();
 }

@@ -6,6 +6,7 @@
 #include "COP0.hpp"
 #include "COP1.hpp"
 #include <unordered_set>
+#include <unordered_map>
 #include "Scheduler.hpp"
 
 const uint64_t FPS_INTERVAL = 1000 / 60;
@@ -13,6 +14,8 @@ const uint64_t FPS_INTERVAL = 1000 / 60;
 class CPU {
 public:
     std::array<uint64_t, 32> r = {};
+
+    std::unordered_map<uint64_t, uint64_t> branches = {};
 
     uint32_t clock = 93750000;
     bool llbit = false;
@@ -23,6 +26,11 @@ public:
     uint64_t previousPc;
     uint64_t pc;
     uint64_t nextPc;
+
+    uint64_t debugPc;
+    bool debugFinished = false;
+
+    uint64_t instructionCount = 0;
 
     Scheduler scheduler;
 
@@ -52,7 +60,7 @@ public:
     void step();
 
     void checkIrqs(bool usePreviousPc = true);
-    void enterException(bool usePreviousPc = false);
+    void enterException(bool usePreviousPc = false, uint64_t offset = 0x180);
 
     void fastForwardRelativeLoop(int16_t amount);
     void fastForwardAbsoluteLoop(uint64_t target);

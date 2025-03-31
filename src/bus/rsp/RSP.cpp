@@ -4,9 +4,10 @@
 #include <iostream>
 #include "RSPInstructions.cpp"
 #include "../../util/VectorUtils.cpp"
+#include "RSPDisassembler.cpp"
 
 void RSP::handleDma(SPDma dma) {
-    uint32_t length = dma.length.length + 1;
+    uint32_t length = ((dma.length.length & 0xfff) | 7) + 1;
     uint32_t count = dma.length.count + 1;
     uint32_t skip = dma.length.skip;
 
@@ -24,7 +25,7 @@ void RSP::handleDma(SPDma dma) {
             for (int j = 0; j < length; j += 4) {
                 uint32_t value = std::byteswap(*(uint32_t*)&bus.rdram[dramAddress]);
 
-                uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
+                uint8_t* ramPtr = isImem ? &imem[memAddress & 0xfff] : &dmem[memAddress & 0xfff];
 
                 memcpy(ramPtr, &value, sizeof(uint32_t));
 
@@ -37,8 +38,7 @@ void RSP::handleDma(SPDma dma) {
         for (int i = 0; i < count; i++) {
             for (int j = 0; j < length; j += 4) {
 
-                uint8_t* ramPtr = isImem ? &imem[memAddress] : &dmem[memAddress];
-
+                uint8_t* ramPtr = isImem ? &imem[memAddress & 0xfff] : &dmem[memAddress & 0xfff];
                 uint32_t value = std::byteswap(*(uint32_t*)ramPtr);
 
                 memcpy(&bus.rdram[dramAddress], &value, sizeof(uint32_t));
@@ -94,7 +94,7 @@ void RSP::updateStatus(uint32_t value) {
     if ((value & 0b1) == 1 && ((value >> 1) & 0b1) == 0) {
         status.halted = 0;
     }
-    if ((value & 0b1) == 0 & ((value >> 1) & 0b1) == 1) {
+    if ((value & 0b1) == 0 && ((value >> 1) & 0b1) == 1) {
         status.halted = 1;
         bus.cpu.scheduler.removeEvent(EventType::RunRspPc);
     }
@@ -181,7 +181,6 @@ void RSP::popDma() {
         fifo[0] = fifo[1];
 
         status.dmaFull = 0;
-
         handleDma(fifo[0]);
     } else {
         status.dmaBusy = 0;
@@ -206,6 +205,12 @@ void RSP::startRsp() {
 
 uint32_t RSP::readRegisters(uint32_t offset) {
     switch (offset) {
+        case 0:
+            return dmaMemAddress;
+            break;
+        case 1:
+            return dmaRamAddress;
+            break;
         case 2:
             return spReadLength.value;
             break;
@@ -238,7 +243,7 @@ uint32_t RSP::readRegisters(uint32_t offset) {
         }
         default:
             std::cout << "(rsp read registers)not yet implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -272,7 +277,7 @@ void RSP::writeRegisters(uint32_t offset, uint32_t value) {
             break;
         default:
             std::cout << "(rsp write registers)not yet implemented: " << std::dec << offset << "\n";
-            exit(1);
+            throw std::runtime_error("");
             break;
     }
 }
@@ -295,6 +300,7 @@ uint64_t RSP::runRsp() {
 
         bool previousDelaySlot = inDelaySlot;
 
+        uint32_t subCommand = 0;
         switch (command) {
             case 0:
                 secondary[instruction & 0x3f](this, instruction);
@@ -379,6 +385,16 @@ uint64_t RSP::runRsp() {
                 break;
         }
 
+        // if (!found.contains(previousPc) || !contains(found[previousPc], instruction)) {
+        //     if (found.contains(previousPc)) {
+        //         found[previousPc].push_back(instruction);
+        //     } else {
+        //         std::vector<uint32_t> instructions = {instruction};
+        //         found[previousPc] = instructions;
+        //     }
+        //     std::println("[RSP] [PC: {:x}] [Opcode: 0x{:x}] {}", previousPc, instruction, rspDisassemble(this, instruction));
+        // }
+
         if (previousDelaySlot && inDelaySlot) {
             inDelaySlot = false;
             if (cpuBroken) {
@@ -410,7 +426,6 @@ uint64_t RSP::runRsp() {
 }
 
 void RSP::memWrite32(uint32_t address, uint32_t value) {
-    // Bus::writeWord(&dmem[address & 0xfff], value);
     uint32_t swapped = std::byteswap(value);
     memcpy(&dmem[address & 0xfff], &swapped, sizeof(uint32_t));
 }
@@ -419,7 +434,6 @@ void RSP::memWrite32(uint32_t address, uint32_t value) {
 void RSP::memWrite16(uint32_t address, uint16_t value) {
     uint16_t swapped = std::byteswap(value);
     memcpy(&dmem[address & 0xfff], &swapped, sizeof(uint16_t));
-    // Bus::writeHalf(&dmem[address & 0xfff], value);
 }
 
 uint32_t RSP::memRead32(uint8_t* ptr) {
@@ -544,7 +558,6 @@ void RSP::updateAccumulatorHigh32(int element, int32_t result, bool accumulate) 
     updateAccumulatorHiLo(element, result >> 16, result << 16, accumulate);
 }
 
-
 void RSP::writeAcc32(uint8_t* ptr, int upperOffset, uint32_t value, bool isLo) {
     ptr[1] = (uint8_t)value;
     ptr[0] = (uint8_t)(value >> 8);
@@ -571,11 +584,23 @@ void RSP::setVecFromAccSignedMid(uint8_t vd) {
     }
 }
 
+void RSP::setVecFromAccUnsignedMid(uint8_t vd) {
+    for (int i = 0; i < 8; i ++) {
+        int64_t value = (int64_t)getAccumulator16(&accLo[i * 2]) | (int64_t)getAccumulator16(&accMid[i * 2]) << 16 | (int64_t)getAccumulator16(&accHi[i * 2]) << 32;
+        value = (value << 16) >> 16;
+        if (value >= 0) {
+            if ((int32_t)value < 0) {
+                setVec16(vd, i, 0xffff);
+            } else {
+                setVec16(vd, i, (uint16_t)(value >> 16));
+            }
+        } else {
+            setVec16(vd, i, 0);
+        }
+    }
+}
+
 void RSP::setVecFromAccLow(uint8_t vd) {
-    // for (int i = 0; i < 8; i++) {
-    //     int16_t lo = getAccumulator16(&accLo[i * 2]);
-    //     setVec16(vd, i, lo);
-    // }
     memcpy(&vpr[vd], &accLo, sizeof(u128));
 }
 
@@ -598,10 +623,6 @@ void RSP::setVecFromAccSignedLow(uint8_t vd) {
 }
 
 void RSP::setVecFromAccMid(uint8_t vd) {
-    // for (int i = 0; i < 8; i++) {
-    //     int16_t mid = getAccumulator16(&accMid[i * 2]);
-    //     setVec16(vd, i, mid);
-    // }
     memcpy(&vpr[vd], &accMid, sizeof(u128));
 }
 

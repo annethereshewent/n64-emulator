@@ -155,6 +155,7 @@ public:
 
     void formatEeprom();
     void loadRom(std::string filename);
+    void loadRomBytes(uint8_t* romBytes, uint32_t romSize);
     void openSaves(std::vector<std::string> saveNames);
     void writeSave();
     std::vector<std::string> getSaveNames(std::string filename);
@@ -203,7 +204,7 @@ public:
     std::tuple<uint64_t, bool, bool> translateAddress(uint64_t address, bool isWrite = false);
     std::tuple<uint64_t, bool, bool> getTlbAddress(uint64_t address, bool isWrite = false);
 
-    std::string generateHash();
+    std::string sha256();
     void setCic();
 
     void formatSram();

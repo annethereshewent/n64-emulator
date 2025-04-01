@@ -4,7 +4,7 @@
 #include <iostream>
 #include <bit>
 #include <regex>
-#include <openssl/sha.h>
+#include <CommonCrypto/CommonDigest.h>
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
 #include "rsp/RSP.cpp"
@@ -1041,39 +1041,25 @@ void Bus::executeFlashCommand(uint32_t command) {
     }
 }
 
-void Bus::loadRom(std::string filename) {
-    std::ifstream file(filename, std::ios::binary);
-
-    // get its size:
-    file.seekg(0, std::ios::end);
-    size_t fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    // reserve capacity
-    std::vector<uint8_t> rom;
-    rom.resize(fileSize);
-
-    file.read(reinterpret_cast<char*>(rom.data()), fileSize);
+void Bus::loadRomBytes(uint8_t* romBytes, uint32_t romSize) {
+    uint32_t cartridgeFormat = std::byteswap(*(uint32_t*)&romBytes[0]);
 
     std::vector<uint8_t> formattedRom;
-
-    formattedRom.resize(fileSize);
-
-    uint32_t cartridgeFormat = std::byteswap(*(uint32_t*)&rom[0]);
+    formattedRom.resize(romSize);
 
     switch (cartridgeFormat) {
         case 0x80371240:
-            formattedRom = rom;
+            memcpy(&formattedRom[0], romBytes, romSize);
             break;
         case 0x37804012:
-            for (int i = 0; i < rom.size(); i += 2) {
-                uint16_t data = std::byteswap(*(uint16_t*)&rom[i]);
+            for (int i = 0; i < romSize; i += 2) {
+                uint16_t data = std::byteswap(*(uint16_t*)&romBytes[i]);
                 memcpy(&formattedRom[i], &data, sizeof(uint16_t));
             }
             break;
         case 0x40123780:
-            for (int i = 0; i < rom.size(); i += 4) {
-                uint32_t data = std::byteswap(*(uint32_t*)&rom[i]);
+            for (int i = 0; i < romSize; i += 4) {
+                uint32_t data = std::byteswap(*(uint32_t*)&romBytes[i]);
                 memcpy(&formattedRom[i], &data, sizeof(uint32_t));
             }
             break;
@@ -1172,7 +1158,24 @@ void Bus::loadRom(std::string filename) {
             saveTypes = { Eeprom4k, Sram };
         }
     }
+}
+
+void Bus::loadRom(std::string filename) {
+    std::ifstream file(filename, std::ios::binary);
+
+    // get its size:
+    file.seekg(0, std::ios::end);
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // reserve capacity
+    std::vector<uint8_t> rom;
+    rom.resize(fileSize);
+
+    file.read(reinterpret_cast<char*>(rom.data()), fileSize);
     file.close();
+
+    loadRomBytes(&rom[0], fileSize);
 }
 
 uint32_t Bus::readInstructionCache(uint64_t actualAddress) {
@@ -1810,7 +1813,7 @@ void Bus::updateAxis(uint8_t xAxis, uint8_t yAxis) {
 }
 
 void Bus::setCic() {
-    std::string hash = generateHash();
+    std::string hash = sha256();
 
     std::transform(hash.begin(), hash.end(), hash.begin(),
     [](unsigned char c){ return std::toupper(c); });
@@ -1850,19 +1853,21 @@ void Bus::writeRumblePak(int channel, uint16_t address, int data) {
     }
 }
 
-// see: https://stackoverflow.com/questions/50489951/openssl-convert-binary-bytes-to-sha256-c
-std::string Bus::generateHash() {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
+std::string Bus::sha256() {
     uint16_t size = 0x1000 - 0x40;
-    SHA256_Update(&sha256, &cartridge[0x40], sizeof(uint8_t) * size);
-    SHA256_Final(hash, &sha256);
 
-    std::stringstream ss;
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    // Safely construct a buffer of the relevant bytes
+    const uint8_t* data = &cartridge[0x40];
+
+    // Hash buffer using CommonCrypto
+    unsigned char hash[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(data, size, hash);
+
+    // Convert to hex string
+    std::ostringstream result;
+    for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; ++i) {
+        result << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
     }
 
-    return ss.str();
+    return result.str();
 }

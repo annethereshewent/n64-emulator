@@ -1,12 +1,8 @@
-#pragma once
-
 #include <iostream>
 #include "PIF.hpp"
 #include "../Bus.hpp"
 
 class Bus;
-
-const uint32_t CART_CHANNEL = 4;
 
 void PIF::executeCommand() {
     uint8_t commandByte = ram[0x3f];

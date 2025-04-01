@@ -3,6 +3,8 @@
 #include "SerialInterface.hpp"
 #include <iostream>
 #include "../Bus.hpp"
+#include "../pif/PIF.hpp"
+#include <bit>
 
 class Bus;
 

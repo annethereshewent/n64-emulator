@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include "../../cpu/CPUInstruction.hpp"
 
 class ICache {
 public:

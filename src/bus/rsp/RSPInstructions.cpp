@@ -1,11 +1,10 @@
-#pragma once
-
 #include "RSP.hpp"
 #include <iostream>
 #include <algorithm>
 #include "../Bus.hpp"
 #include <print>
 #include <bit>
+#include "../../cpu/CPU.hpp"
 
 typedef unsigned __int128 u128;
 typedef __int128 i128;

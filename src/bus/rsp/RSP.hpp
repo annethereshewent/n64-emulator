@@ -6,6 +6,7 @@
 #include "../DmaDirection.hpp"
 #include <unordered_map>
 #include <array>
+#include <vector>
 
 const uint32_t NUM_RSP_REGISTERS = 8;
 

@@ -3,6 +3,10 @@
 #include <cstdint>
 #include "PIFChannel.hpp"
 
+class Bus;
+
+const uint32_t CART_CHANNEL = 4;
+
 // boot rom code gotten from https://github.com/gopher64/gopher64
 std::array<uint8_t, 1984> PIF_BOOT_ROM = {
     60, 9, 52, 0, 64, 137, 96, 0, 60, 9, 0, 6, 53, 41, 228, 99, 64, 137, 128, 0, 60, 8, 164, 4,
@@ -93,7 +97,6 @@ std::array<uint8_t, 1984> PIF_BOOT_ROM = {
     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
-// TODO: move bus as a reference property of PIF
 class PIF {
 public:
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include "wsi_platform.cpp"
 #include "wsi.cpp"
 #include "rdp_device.cpp"

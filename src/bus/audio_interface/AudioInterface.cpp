@@ -2,6 +2,7 @@
 
 #include "AudioInterface.hpp"
 #include "../Bus.hpp"
+#include "../../cpu/CPU.hpp"
 
 void AudioInterface::pushDma() {
     AudioDma dma;

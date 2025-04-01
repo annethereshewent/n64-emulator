@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include "MIPSInterrupt.hpp"
-#include "../../cpu/CPU.hpp"
 
 class MIPSInterface {
 public:

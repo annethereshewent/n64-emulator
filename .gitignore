@@ -7,3 +7,6 @@ n64-plus
 CMakeFiles/
 profile.json
 *.log
+MoltenVK/
+SDL3.xcframework/
+lib/

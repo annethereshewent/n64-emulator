@@ -1,9 +1,9 @@
-#pragma once
-
 #include "RDPInterface.hpp"
 #include <cstdint>
 #include <iostream>
 #include "../../interface.cpp"
+#include "../Bus.hpp"
+#include "../../cpu/CPU.hpp"
 
 uint32_t RDPInterface::readRegisters(uint32_t offset) {
     switch (offset) {

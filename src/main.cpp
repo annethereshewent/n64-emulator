@@ -2,7 +2,6 @@
 #include "cpu/CPU.cpp"
 #include <iterator>
 #include <SDL3/SDL.h>
-#include "interface.cpp"
 #include "controller/Controller.hpp"
 #if __APPLE__
     #include <sysdir.h>  // for sysdir_start_search_path_enumeration
@@ -101,19 +100,7 @@ int main(int argc, char **argv) {
     }
 
     cpu.bus.openSaves(saveNames);
-
-    GFX_INFO gfxInfo;
-
-    gfxInfo.RDRAM = &cpu.bus.rdram[0];
-    gfxInfo.DMEM = &cpu.bus.rsp.dmem[0];
-    gfxInfo.RDRAM_SIZE = cpu.bus.rdram.size();
-    gfxInfo.DPC_CURRENT_REG = &cpu.bus.rdp.current;
-    gfxInfo.DPC_START_REG = &cpu.bus.rdp.start;
-    gfxInfo.DPC_END_REG = &cpu.bus.rdp.end;
-    gfxInfo.DPC_STATUS_REG = &cpu.bus.rdp.status.value;
-    gfxInfo.debugOn = &cpu.debugOn;
-
-    rdp_init(window, gfxInfo, false, false, false);
+    cpu.bus.initRdp(window);
 
     cpu.bus.initAudio();
     cpu.bus.gamepad = findController();

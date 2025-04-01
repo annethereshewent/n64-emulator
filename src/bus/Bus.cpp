@@ -1871,3 +1871,18 @@ std::string Bus::sha256() {
 
     return result.str();
 }
+
+void Bus::initRdp(SDL_Window* window) {
+    GFX_INFO gfxInfo;
+
+    gfxInfo.RDRAM = &rdram[0];
+    gfxInfo.DMEM = &rsp.dmem[0];
+    gfxInfo.RDRAM_SIZE = rdram.size();
+    gfxInfo.DPC_CURRENT_REG = &rdp.current;
+    gfxInfo.DPC_START_REG = &rdp.start;
+    gfxInfo.DPC_END_REG = &rdp.end;
+    gfxInfo.DPC_STATUS_REG = &rdp.status.value;
+    gfxInfo.debugOn = &cpu.debugOn;
+
+    rdp_init(window, gfxInfo, false, false, false);
+}

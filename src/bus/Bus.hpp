@@ -19,6 +19,8 @@
 #include <iostream>
 #include <fstream>
 
+class CPU;
+
 const uint32_t SP_INTERRUPT_FLAG = 1;
 const uint32_t SI_INTERRUPT_FLAG = 1 << 1;
 const uint32_t AI_INTERRUPT_FLAG = 1 << 2;
@@ -214,6 +216,8 @@ public:
     void tlbException(uint64_t address, bool isWrite);
 
     void writeRumblePak(int channel, uint16_t address, int data);
+
+    void initRdp(SDL_Window* window);
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);

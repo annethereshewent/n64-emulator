@@ -1,37 +1,46 @@
 #include "wsi_platform.hpp"
-#include <SDL3/SDL_vulkan.h>
+#include <SDL2/SDL_vulkan.h>
 
 VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance, VkPhysicalDevice gpu)
 {
 	VkSurfaceKHR surface = nullptr;
-	bool result = SDL_Vulkan_CreateSurface(window, instance, NULL, &surface);
+	bool result = SDL_Vulkan_CreateSurface(window, instance, &surface);
 	if (result != true)
 	{
 		printf("Error creating surface\n");
 	}
+	std::println("great success!");
 	return surface;
 }
 
 void SDL_WSIPlatform::destroy_surface(VkInstance instance, VkSurfaceKHR surface)
 {
-	SDL_Vulkan_DestroySurface(instance, surface, NULL);
+	// do nothing!
 }
 
 std::vector<const char *> SDL_WSIPlatform::get_instance_extensions()
 {
-
 	unsigned int extensionCount = 0;
-	char const *const *extensions = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
-	if (extensions == NULL)
-	{
-		printf("Error getting instance extensions\n");
+	// const char ** extensionNames;
+	// SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, extensionNames);
+
+	// for (const char* extensionName: extensionNames) {
+	// 	std::println("{}", extensionName);
+	// }
+
+	// return extensionNames;
+	std::println("getting extension names");
+	SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, NULL);
+	std::println("got extensionNames, size = {}", extensionCount);
+
+	std::vector<const char*> extensionNames(extensionCount);
+
+	SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, &extensionNames[0]);
+
+	for (const char* name: extensionNames) {
+		std::println("name = {}", name);
 	}
 
-	std::vector<const char *> extensionNames;
-	for (int i = 0; i < extensionCount; ++i)
-	{
-		extensionNames.push_back(extensions[i]);
-	}
 	return extensionNames;
 }
 

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "cpu/CPU.cpp"
 #include <iterator>
-#include <SDL3/SDL.h>
+#include <SDL2/SDL.h>
 #include "interface.cpp"
 #include "controller/Controller.hpp"
 #if __APPLE__
@@ -10,12 +10,21 @@
     #include <execinfo.h>
 #endif
 
-SDL_Gamepad* findController() {
-    int count;
-    SDL_JoystickID* ids = SDL_GetGamepads(&count);
+const uint32_t DPAD_DOWN = 0;
+const uint32_t DPAD_UP = 1;
+const uint32_t DPAD_LEFT = 2;
+const uint32_t DPAD_RIGHT = 3;
+const uint32_t BUTTON_A = 4;
+const uint32_t BUTTON_B = 5;
+const uint32_t BUTTON_START = 6;
+const uint32_t BUTTON_L = 7;
+const uint32_t BUTTON_R = 8;
+
+SDL_Joystick* findController() {
+    int count = SDL_NumJoysticks();
 
     for (int i = 0; i < count; i++) {
-        SDL_Gamepad* gamepad = SDL_OpenGamepad(ids[i]);
+        SDL_Joystick* gamepad = SDL_JoystickOpen(i);
 
         if (gamepad != nullptr) {
             return gamepad;
@@ -51,12 +60,14 @@ int main(int argc, char **argv) {
         throw std::runtime_error("Please specify a filename.");
     }
 
-    if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
-        std::println("{}", SDL_GetError());
+    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) != 0) {
+        std::println("Error: {}", SDL_GetError());
         throw std::runtime_error("Could not initialize SDL");
     }
 
-    SDL_Window* window = SDL_CreateWindow("N64+", 640, 480, SDL_WINDOW_VULKAN);
+    SDL_Window* window = SDL_CreateWindow("N64+", 0, 0, 640, 480, SDL_WINDOW_VULKAN);
+
+    std::println("successfully created window");
 
     if(window == NULL || window == nullptr) {
         std::println("window creation Error: %s\n", SDL_GetError());
@@ -113,16 +124,25 @@ int main(int argc, char **argv) {
     gfxInfo.DPC_STATUS_REG = &cpu.bus.rdp.status.value;
     gfxInfo.debugOn = &cpu.debugOn;
 
+
+    std::println("initializing rdp");
+
     rdp_init(window, gfxInfo, false, false, false);
 
+    std::println("rdp initialize success!");
+
+    std::println("attempting to init audio");
     cpu.bus.initAudio();
+    std::println("init audio success");
+    std::println("finding controller...");
     cpu.bus.gamepad = findController();
+    std::println("search completed");
 
     uint8_t xAxis = 0;
     uint8_t yAxis = 0;
 
     std::unordered_map<uint32_t, JoypadButton> keyboardMap = {
-        {SDLK_E, BButton},
+        {SDLK_e, BButton},
         {SDLK_RETURN, Start},
         {SDLK_LCTRL, ZButton},
         {SDLK_SPACE, AButton},
@@ -132,21 +152,21 @@ int main(int argc, char **argv) {
         {SDLK_RIGHT, DpadRight},
         {SDLK_1, LButton},
         {SDLK_2, RButton},
-        {SDLK_I, UpCButton},
-        {SDLK_J, LeftCButton},
-        {SDLK_K, DownCButton},
-        {SDLK_L, RightCButton}
+        {SDLK_i, UpCButton},
+        {SDLK_j, LeftCButton},
+        {SDLK_k, DownCButton},
+        {SDLK_l, RightCButton}
     };
     std::unordered_map<uint32_t, JoypadButton> buttonMap = {
-        {SDL_GAMEPAD_BUTTON_DPAD_DOWN, DpadDown},
-        {SDL_GAMEPAD_BUTTON_DPAD_UP, DpadUp},
-        {SDL_GAMEPAD_BUTTON_DPAD_LEFT, DpadLeft},
-        {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, DpadRight},
-        {SDL_GAMEPAD_BUTTON_EAST, AButton},
-        {SDL_GAMEPAD_BUTTON_SOUTH, BButton},
-        {SDL_GAMEPAD_BUTTON_START, Start},
-        {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, LButton},
-        {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, RButton}
+        {DPAD_DOWN, DpadDown},
+        {DPAD_UP, DpadUp},
+        {DPAD_LEFT, DpadLeft},
+        {DPAD_RIGHT, DpadRight},
+        {BUTTON_A, AButton},
+        {BUTTON_B, BButton},
+        {BUTTON_START, Start},
+        {BUTTON_L, LButton},
+        {BUTTON_R, RButton}
     };
 
     while (true) {
@@ -172,102 +192,118 @@ int main(int argc, char **argv) {
 
         while(SDL_PollEvent(&event) > 0) {
             switch(event.type) {
-                case SDL_EVENT_QUIT:
+                case SDL_QUIT:
                     cpu.bus.saveFile.close();
                     exit(0);
                     break;
-                case SDL_EVENT_KEY_DOWN:
-                    if (keyboardMap.contains(event.key.key)) {
-                        cpu.bus.updateButton(keyboardMap[event.key.key], true);
+                case SDL_KEYDOWN:
+                    if (keyboardMap.contains(event.key.keysym.scancode)) {
+                        cpu.bus.updateButton(keyboardMap[event.key.keysym.scancode], true);
                     } else {
-                        switch (event.key.key) {
-                            case SDLK_G:
+                        switch (event.key.keysym.scancode) {
+                            case SDLK_g:
                                 cpu.debugOn = !cpu.debugOn;
                                 break;
-                            case SDLK_W:
+                            case SDLK_w:
                                 yAxis = (uint8_t)MAX_AXIS_VAL;
                                 break;
-                            case SDLK_A:
+                            case SDLK_a:
                                 xAxis = (uint8_t)-MAX_AXIS_VAL;
                                 break;
-                            case SDLK_S:
+                            case SDLK_s:
                                 yAxis = (uint8_t)-MAX_AXIS_VAL;
                                 break;
-                            case SDLK_D:
+                            case SDLK_d:
                                 xAxis = (uint8_t)MAX_AXIS_VAL;
                                 break;
                         }
                     }
                     break;
-                case SDL_EVENT_KEY_UP:
-                    if (keyboardMap.contains(event.key.key)) {
-                        cpu.bus.updateButton(keyboardMap[event.key.key], false);
+                case SDL_KEYUP:
+                    if (keyboardMap.contains(event.key.keysym.scancode)) {
+                        cpu.bus.updateButton(keyboardMap[event.key.keysym.scancode], false);
                     } else {
-                        switch (event.key.key) {
-                            case SDLK_W:
+                        switch (event.key.keysym.scancode) {
+                            case SDLK_w:
                                 yAxis = 0;
                                 break;
-                            case SDLK_A:
+                            case SDLK_a:
                                 xAxis = 0;
                                 break;
-                            case SDLK_S:
+                            case SDLK_s:
                                 yAxis = 0;
                                 break;
-                            case SDLK_D:
+                            case SDLK_d:
                                 xAxis = 0;
                                 break;
                         }
                     }
                     break;
-                case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-                    if (buttonMap.contains(event.gbutton.button)) {
-                        cpu.bus.updateButton(buttonMap[event.gbutton.button], true);
+                case SDL_JOYBUTTONDOWN:
+                    std::println("you pressed button {}", event.jbutton.button);
+                    if (buttonMap.contains(event.jbutton.button)) {
+                        cpu.bus.updateButton(buttonMap[event.jbutton.button], true);
                     }
                     break;
-                case SDL_EVENT_GAMEPAD_BUTTON_UP:
-                    if (buttonMap.contains(event.gbutton.button)) {
-                        cpu.bus.updateButton(buttonMap[event.gbutton.button], false);
+                case SDL_JOYBUTTONUP:
+                    if (buttonMap.contains(event.jbutton.button)) {
+                        cpu.bus.updateButton(buttonMap[event.jbutton.button], false);
                     }
                     break;
-                case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+                case SDL_JOYAXISMOTION:
                     if (cpu.bus.gamepad != nullptr) {
-                        double xAxisL = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_LEFTX) / AXIS_DIVISOR;
-                        double yAxisL = (double)-SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_LEFTY) / AXIS_DIVISOR;
+                        switch (event.jaxis.axis) {
+                            case 0: {
+                                int16_t xAxisL = event.jaxis.value / AXIS_DIVISOR;
 
-                        double xAxisR = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
-                        double yAxisR = (double)SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
+                                xAxis = std::abs(xAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisL) : 0;
+                                break;
+                            }
+                            case 1: {
+                                int16_t yAxisL = -event.jaxis.value / AXIS_DIVISOR;
 
-                        double rightTrigger = SDL_GetGamepadAxis(cpu.bus.gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+                                yAxis = std::abs(yAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisL) : 0;
+                                break;
+                            }
+                            case 2: {
+                                int16_t xAxisR = event.jaxis.value;
 
-                        xAxis = std::abs(xAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(xAxisL) : 0;
-                        yAxis = std::abs(yAxisL) > 10.0 ? (int8_t)(uint8_t)std::round(yAxisL) : 0;
+                                if (xAxisR > 0x7000) {
+                                    cpu.bus.updateButton(RightCButton, true);
+                                } else if (xAxisR < -0x7000) {
+                                    cpu.bus.updateButton(LeftCButton, true);
+                                } else {
+                                    cpu.bus.updateButton(LeftCButton, false);
+                                    cpu.bus.updateButton(RightCButton, false);
+                                }
+                                break;
+                            }
+                            case 3: {
+                                int16_t yAxisR = event.jaxis.value;
+                                if (yAxisR < -0x7000) {
+                                    cpu.bus.updateButton(UpCButton, true);
+                                } else if (yAxisR > 0x7000) {
+                                    cpu.bus.updateButton(DownCButton, true);
+                                } else {
+                                    cpu.bus.updateButton(UpCButton, false);
+                                    cpu.bus.updateButton(DownCButton, false);
+                                }
+                                break;
+                            }
+                            case 5: {
+                                int16_t rightTrigger = event.jaxis.value;
 
-                        if (rightTrigger > 0x1000) {
-                            cpu.bus.updateButton(ZButton, true);
-                        } else {
-                            cpu.bus.updateButton(ZButton, false);
-                        }
-
-                        if (xAxisR > 0x7000) {
-                            cpu.bus.updateButton(RightCButton, true);
-                        } else if (xAxisR < -0x7000) {
-                            cpu.bus.updateButton(LeftCButton, true);
-                        } else {
-                            cpu.bus.updateButton(LeftCButton, false);
-                            cpu.bus.updateButton(RightCButton, false);
-                        }
-
-                        if (yAxisR < -0x7000) {
-                            cpu.bus.updateButton(UpCButton, true);
-                        } else if (yAxisR > 0x7000) {
-                            cpu.bus.updateButton(DownCButton, true);
-                        } else {
-                            cpu.bus.updateButton(UpCButton, false);
-                            cpu.bus.updateButton(DownCButton, false);
+                                if (rightTrigger > 0x1000) {
+                                    cpu.bus.updateButton(ZButton, true);
+                                } else {
+                                    cpu.bus.updateButton(ZButton, false);
+                                }
+                                break;
+                            }
                         }
                     }
                     break;
-                case SDL_EVENT_GAMEPAD_ADDED:
+                case SDL_JOYDEVICEADDED:
                     cpu.bus.gamepad = findController();
                     break;
             }

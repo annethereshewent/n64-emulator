@@ -1755,27 +1755,34 @@ void Bus::writeValueLE(uint8_t* ptr, uint32_t value, int size) {
 }
 
 void Bus::initAudio() {
-    const SDL_AudioSpec srcspec = { SDL_AUDIO_S16, 2, (int)audioInterface.frequency };
-    SDL_AudioSpec devicespec = { SDL_AUDIO_S16, 2, 48000 };
+    const SDL_AudioSpec srcspec = { (int)audioInterface.frequency, AUDIO_S16, 2 };
+    SDL_AudioSpec devicespec = {48000, AUDIO_S16, 2 };
 
-    SDL_AudioDeviceID device = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &devicespec);
+    SDL_AudioDeviceID device = SDL_OpenAudioDevice(NULL, 0, &devicespec, NULL, 0);
 
     SDL_AudioSpec dstspec;
-    if (!SDL_GetAudioDeviceFormat(device, &dstspec, nullptr)) {
+    if (SDL_GetAudioDeviceSpec(0, 0, &dstspec) != 0) {
         std::println("couldn't get audio device format: {}", SDL_GetError());
     }
 
-    SDL_AudioStream *stream = SDL_CreateAudioStream(&srcspec, &dstspec);
+    SDL_PauseAudioDevice(device, 0);
 
-    if (!SDL_BindAudioStream(device, stream)) {
-        std::println("couldn't bind audio stream to device: {}", SDL_GetError());
+    std::println("dstspec format: {}, freq: {}", dstspec.format, dstspec.freq);
+
+    SDL_AudioStream *stream = SDL_NewAudioStream(AUDIO_S16, 2, srcspec.freq, AUDIO_S16, 2, dstspec.freq);
+
+    std::println("audioInterface.frequency = {}", audioInterface.frequency);
+
+    if (stream == nullptr) {
+        std::println("SDL_NewAudioStream failed: {}", SDL_GetError());
     }
 
     this->stream = stream;
+    this->device = device;
 }
 
 void Bus::restartAudio() {
-    SDL_DestroyAudioStream(stream);
+    SDL_FreeAudioStream(stream);
     initAudio();
 }
 
@@ -1790,9 +1797,22 @@ void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
         }
     }
 
-    if (!SDL_PutAudioStreamData(stream, samples, (length / 2) * sizeof(int16_t))) {
+    if (SDL_AudioStreamPut(stream, samples, (length / 2) * sizeof(int16_t)) != 0) {
         std::println("couldn't put samples into stream: {}", SDL_GetError());
     }
+
+
+    if (SDL_AudioStreamAvailable(stream) >= 2048) {
+        uint8_t buffer[4096];
+
+        int len = SDL_AudioStreamGet(stream, buffer, sizeof(buffer));
+
+        if (len > 0) {
+            SDL_QueueAudio(device, buffer, len);
+        }
+    }
+
+
 }
 
 void Bus::updateButton(JoypadButton button, bool state) {
@@ -1836,11 +1856,9 @@ void Bus::setCic() {
 void Bus::writeRumblePak(int channel, uint16_t address, int data) {
     if (address == 0xc000) {
         uint16_t rumble = (uint16_t)pif.ram[data + 31];
-
-        // todo: implement more controllers, but for now there's only one.
         if (channel == 0) {
-            // todo: check if these values are right or whether they can vary
-            SDL_RumbleGamepad(
+            std::println("rumbling controller!");
+            SDL_JoystickRumble(
                 gamepad,
                 (rumble & 1) * 0xffff,
                 (rumble & 1) * 0xffff,

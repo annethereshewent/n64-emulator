@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <vector>
-#include <SDL3/SDL.h>
+#include <SDL2/SDL.h>
 #include "peripheral_interface/PeripheralInterface.hpp"
 #include "rsp/RSP.hpp"
 #include "video_interface/VideoInterface.hpp"
@@ -86,7 +86,9 @@ public:
     char gameId[4];
     std::vector<SaveType> saveTypes = {};
 
-    SDL_Gamepad* gamepad = nullptr;
+    SDL_Joystick* gamepad = nullptr;
+
+    SDL_AudioDeviceID device;
 
     uint32_t input = 0;
 

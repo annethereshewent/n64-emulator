@@ -5,8 +5,8 @@
 #include "rdp_device.cpp"
 #include "interface.hpp"
 #include "spirv.hpp"
-#include <SDL3/SDL_vulkan.h>
-#include <SDL3/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+#include <SDL2/SDL.h>
 #include "command_ring.cpp"
 #include "rdp_dump_write.cpp"
 #include "video_interface.cpp"
@@ -214,15 +214,20 @@ void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _inte
 	wsi->set_platform(wsi_platform);
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
+
+	std::println("made it to here");
+
 	Context::SystemHandles handles = {};
 	if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
 	{
 		rdp_close();
 	}
+	std::println("hello!");
 	if (!wsi->init_simple(1, handles))
 	{
 		rdp_close();
 	}
+	std::println("test!!!!!!!!");
 	RDP::CommandProcessorFlags flags = 0;
 	if (_upscale)
 	{
@@ -238,7 +243,9 @@ void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _inte
 		processor = nullptr;
 		rdp_close();
 	}
+	std::println("beginning frame");
 	wsi->begin_frame();
+	std::println("success!!!!");
 
 	emu_running = true;
 }

@@ -322,6 +322,7 @@ void CPU::step() {
         switch (event.eventType) {
             case VideoInterrupt:
                 rdp_update_screen();
+
                 bus.rdp.frameFinished = true;
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 

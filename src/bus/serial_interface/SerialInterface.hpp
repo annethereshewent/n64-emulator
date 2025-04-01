@@ -4,6 +4,8 @@
 #include "SIStatus.hpp"
 #include "../DmaDirection.hpp"
 
+class Bus;
+
 class SerialInterface {
 public:
     SIStatus status;

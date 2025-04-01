@@ -5,6 +5,7 @@
 #include "SPLength.hpp"
 #include "../DmaDirection.hpp"
 #include <unordered_map>
+#include <array>
 
 const uint32_t NUM_RSP_REGISTERS = 8;
 

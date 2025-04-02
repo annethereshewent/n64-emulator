@@ -10,3 +10,4 @@ profile.json
 MoltenVK/
 SDL3.xcframework/
 lib/
+build-mobile.sh

@@ -1,8 +1,7 @@
-#pragma once
-
 #include "AudioInterface.hpp"
 #include "../Bus.hpp"
 #include "../../cpu/CPU.hpp"
+#include "../../util/BitUtils.cpp"
 
 void AudioInterface::pushDma() {
     AudioDma dma;

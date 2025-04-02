@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 
 void setBit(uint32_t* value, int bit) {

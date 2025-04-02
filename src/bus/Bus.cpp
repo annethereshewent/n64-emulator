@@ -287,7 +287,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             break;
         case 0x4600010:
             cpu.cop0.addCycles(20);
-            return peripheralInterface.piStatus.value;
+            return peripheralInterface.piStatus;
             break;
         case 0x4600014:
             cpu.cop0.addCycles(20);
@@ -657,11 +657,11 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
         }
         case 0x4600010:
             if ((value & 0b1) == 1) {
-                peripheralInterface.piStatus.value = 0;
+                peripheralInterface.piStatus = 0;
             }
             if (((value >> 1) & 0b1) == 1) {
                 clearInterrupt(PI_INTERRUPT_FLAG);
-                peripheralInterface.piStatus.dmaCompleted = 0;
+                clearBit(&peripheralInterface.piStatus, DmaCompleted);
             }
             break;
         case 0x4600014:
@@ -1588,7 +1588,7 @@ void Bus::dmaCartWrite() {
     peripheralInterface.cartAddress += length + 1;
     peripheralInterface.cartAddress &= ~0b1;
 
-    peripheralInterface.piStatus.dmaBusy = 1;
+    setBit(&peripheralInterface.piStatus, DmaBusy);
 
     uint64_t cycles = peripheralInterface.calculateCycles(1, length);
 
@@ -1729,9 +1729,9 @@ void Bus::checkIrqs() {
 }
 
 void Bus::finishPiDma() {
-    peripheralInterface.piStatus.ioBusy = 0;
-    peripheralInterface.piStatus.dmaBusy = 0;
-    peripheralInterface.piStatus.dmaCompleted = 1;
+    clearBit(&peripheralInterface.piStatus, IoBusy);
+    clearBit(&peripheralInterface.piStatus, DmaBusy);
+    setBit(&peripheralInterface.piStatus, DmaCompleted);
 
     setInterrupt(PI_INTERRUPT_FLAG);
 }

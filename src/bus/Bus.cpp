@@ -1783,7 +1783,6 @@ void Bus::restartAudio() {
 }
 
 void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
-    std::println("ayyy lmao");
     int16_t samples[length / 2];
 
     for (int i = 0; i < length / 2; i++) {

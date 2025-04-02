@@ -300,14 +300,13 @@ void COP1::writeRegister(uint32_t index, uint64_t value) {
         case 0:
             break;
         case 0x1f: {
-            fcsr.value = (uint32_t)value;
-            fcsr.unused = 0;
+            fcsr = (uint32_t)value;
 
-            uint32_t enableBits = (fcsr.value >> 7) & 0x1f;
+            uint32_t enableBits = (fcsr >> 7) & 0x1f;
 
-            uint32_t causeBits = (fcsr.value >> 12) & 0x1f;
+            uint32_t causeBits = (fcsr >> 12) & 0x1f;
 
-            if (enableBits & causeBits || fcsr.caseUnimplemented) {
+            if (enableBits & causeBits || ((fcsr >> CauseUnimplemented) & 0b1) == 1) {
                 throw std::runtime_error("lmao im supposed to throw some sort of floating point exception\n");
             }
             break;
@@ -324,7 +323,7 @@ uint32_t COP1::readRegister(uint32_t index) {
             return 0xa00;
             break;
         case 0x1f:
-            return fcsr.value;
+            return fcsr;
             break;
         default:
             throw std::runtime_error("invalid index given for COP1::readRegister: " + std::to_string(index));
@@ -530,7 +529,7 @@ void COP1::cvtDS(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(4);
 }
 void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
-    switch (cpu->cop1.fcsr.roundingMode) {
+    switch (cpu->cop1.fcsr & 0x3) {
         case 0:
             roundWS(cpu, instruction);
             break;
@@ -550,7 +549,7 @@ void COP1::cvtWS(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::cvtLS(CPU* cpu, uint32_t instruction) {
-    switch (cpu->cop1.fcsr.roundingMode) {
+    switch (cpu->cop1.fcsr & 0x3) {
         case 0:
             roundLS(cpu, instruction);
             break;
@@ -579,11 +578,11 @@ void COP1::cEqS(CPU* cpu, uint32_t instruction) {
     float float2 = cpu->cop1.getFloat(rt);
 
     if (std::isnan(float1) || std::isnan(float2)) {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
     } else if (float1 == float2) {
-        cpu->cop1.fcsr.condition = 1;
+        setBit(&cpu->cop1.fcsr, Condition);
     } else {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
     }
 }
 void COP1::cUeqS(CPU* cpu, uint32_t instruction) {
@@ -595,11 +594,15 @@ void COP1::cOltS(CPU* cpu, uint32_t instruction) {
     double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
 
     if (std::isnan(double1) || std::isnan(double2)) {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
         return;
     }
 
-    cpu->cop1.fcsr.condition = (uint8_t)(double1 < double2);
+    if (double1 < double2) {
+        setBit(&cpu->cop1.fcsr, Condition);
+    } else {
+        clearBit(&cpu->cop1.fcsr, Condition);
+    }
 }
 void COP1::cUltS(CPU* cpu, uint32_t instruction) {
     throw std::runtime_error("TODO: cUltS");
@@ -630,9 +633,9 @@ void COP1::cLtS(CPU* cpu, uint32_t instruction) {
     float float2 = cpu->cop1.getFloat(rt);
 
     if (float1 < float2) {
-        cpu->cop1.fcsr.condition = 1;
+        setBit(&cpu->cop1.fcsr, Condition);
     } else {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
     }
 }
 void COP1::cNgeS(CPU* cpu, uint32_t instruction) {
@@ -646,9 +649,10 @@ void COP1::cLeS(CPU* cpu, uint32_t instruction) {
     float float2 = cpu->cop1.getFloat(rt);
 
     if (float1 <= float2) {
-        cpu->cop1.fcsr.condition = 1;
+        // cpu->cop1.fcsr.condition = 1;
+        setBit(&cpu->cop1.fcsr, Condition);
     } else {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
     }
 }
 void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
@@ -656,7 +660,7 @@ void COP1::cNgtS(CPU* cpu, uint32_t instruction) {
 }
 
 void COP1::bc1f(CPU* cpu, uint32_t instruction) {
-    if (!cpu->cop1.fcsr.condition) {
+    if (((cpu->cop1.fcsr >> Condition) & 0b1) == 0) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
 
         cpu->fastForwardRelativeLoop((int16_t)amount);
@@ -666,7 +670,7 @@ void COP1::bc1f(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void COP1::bc1t(CPU* cpu, uint32_t instruction) {
-    if (cpu->cop1.fcsr.condition) {
+    if (((cpu->cop1.fcsr >> Condition) & 0b1) == 1) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
 
         cpu->fastForwardRelativeLoop((int16_t)amount);
@@ -676,7 +680,7 @@ void COP1::bc1t(CPU* cpu, uint32_t instruction) {
     cpu->inDelaySlot = true;
 }
 void COP1::bc1fl(CPU* cpu, uint32_t instruction) {
-    if (!cpu->cop1.fcsr.condition) {
+    if (((cpu->cop1.fcsr >> Condition) & 0b1) == 0) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
 
         cpu->fastForwardRelativeLoop((int16_t)amount);
@@ -690,7 +694,7 @@ void COP1::bc1fl(CPU* cpu, uint32_t instruction) {
     }
 }
 void COP1::bc1tl(CPU* cpu, uint32_t instruction) {
-    if (cpu->cop1.fcsr.condition) {
+    if (((cpu->cop1.fcsr >> Condition) & 0b1) == 1) {
         uint64_t amount = (int16_t)(int64_t)(uint64_t)(CPU::getSignedImmediate(instruction) << 2);
 
         cpu->fastForwardRelativeLoop((int16_t)amount);
@@ -821,7 +825,7 @@ void COP1::cvtSD(CPU* cpu, uint32_t instruction) {
     cpu->cop0.addCycles(4);
 }
 void COP1::cvtWD(CPU* cpu, uint32_t instruction) {
-    switch (cpu->cop1.fcsr.roundingMode) {
+    switch (cpu->cop1.fcsr & 0x3) {
         case 0:
             COP1::roundWD(cpu, instruction);
             break;
@@ -850,14 +854,14 @@ void COP1::cEqD(CPU* cpu, uint32_t instruction) {
     double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
 
     if (std::isnan(double1) || std::isnan(double2)) {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
         return;
     }
 
     if (double1 == double2) {
-        cpu->cop1.fcsr.condition = 1;
+        setBit(&cpu->cop1.fcsr, Condition);
     } else {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
     }
 }
 void COP1::cUeqD(CPU* cpu, uint32_t instruction) {
@@ -892,9 +896,9 @@ void COP1::cLtD(CPU* cpu, uint32_t instruction) {
     double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
 
     if (double1 < double2) {
-        cpu->cop1.fcsr.condition = 1;
+        setBit(&cpu->cop1.fcsr, Condition);
     } else {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
     }
 }
 void COP1::cNgeD(CPU* cpu, uint32_t instruction) {
@@ -905,9 +909,9 @@ void COP1::cLeD(CPU* cpu, uint32_t instruction) {
     double double2 = cpu->cop1.getDouble(CPU::getRt(instruction));
 
     if (double1 <= double2) {
-        cpu->cop1.fcsr.condition = 1;
+        setBit(&cpu->cop1.fcsr, Condition);
     } else {
-        cpu->cop1.fcsr.condition = 0;
+        clearBit(&cpu->cop1.fcsr, Condition);
     }
 }
 void COP1::cNgtD(CPU* cpu, uint32_t instruction) {

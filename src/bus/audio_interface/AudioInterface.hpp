@@ -2,9 +2,17 @@
 
 #include <cstdint>
 #include <array>
-#include "AIStatus.hpp"
 
 class Bus;
+
+enum AIStatusBits {
+    Full = 0,
+    BC = 16,
+    WC = 19,
+    Enabled = 25,
+    Busy = 30,
+    Full2 = 31
+};
 
 class AudioDma {
 public:
@@ -31,7 +39,7 @@ public:
 
     bool dmaEnable = false;
 
-    AIStatus status;
+    uint32_t status;
 
     std::array<AudioDma, 2> fifo = {};
 

@@ -283,7 +283,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             break;
         case 0x450000c:
             cpu.cop0.addCycles(20);
-            return audioInterface.status.value;
+            return audioInterface.status;
             break;
         case 0x4600010:
             cpu.cop0.addCycles(20);

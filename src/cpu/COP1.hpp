@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../bus/cop1/FCSR.hpp"
 #include <vector>
 #include <cstdint>
 #include "CPUInstruction.hpp"
@@ -26,11 +25,31 @@ union convi64 {
     double f64;
 };
 
+enum FCSRBits {
+        FlagInexact = 2,
+        FlagUnderflow = 3,
+        FlagOverflow = 4,
+        FlagDivisionByZero = 5,
+        FlagInvalidOp = 6,
+        InexactOpEnable = 7,
+        UnderflowEnable = 8,
+        OverflowEnable = 9,
+        DivisionByZeroEnable = 10,
+        InvalidOpEnable = 11,
+        CauseUnderflow = 12,
+        CauseOverflow = 13,
+        CauseDivisionByZero = 14,
+        CauseInvalidOp = 15,
+        CauseUnimplemented = 16,
+        Condition = 23,
+        FlushDenormToZero = 24
+};
+
 class CPU;
 
 class COP1 {
 public:
-    FCSR fcsr;
+    uint32_t fcsr = 0;
 
     std::array<uint32_t, 32> fgr32 = {};
     std::array<uint64_t, 32> fgr64 = {};

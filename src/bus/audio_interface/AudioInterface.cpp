@@ -6,15 +6,15 @@
 
 void AudioInterface::pushDma() {
     AudioDma dma;
-    if (status.dmaBusy) {
+    if (((status >> Busy) & 0b1) == 1) {
         dma.address = dramAddress;
         dma.duration = getDuration();
         dma.length = audioLength;
 
         fifo[1] = dma;
 
-        status.dmaFull1 = 1;
-        status.dmaFull2 = 1;
+        setBit(&status, Full);
+        setBit(&status, Full2);
     } else {
         dma.address = dramAddress;
         dma.duration = getDuration();
@@ -24,20 +24,21 @@ void AudioInterface::pushDma() {
 
         handleDma();
 
-        status.dmaBusy = 1;
+        setBit(&status, Busy);
     }
 }
 
 void AudioInterface::popDma() {
-    if (status.dmaFull1) {
+    if (((status >> Full) & 0b1) == 1) {
         fifo[0] = fifo[1];
 
-        status.dmaFull1 = 0;
-        status.dmaFull2 = 0;
+        clearBit(&status, Full);
+        clearBit(&status, Full2);
 
         handleDma();
     } else {
-        status.dmaBusy = 0;
+        clearBit(&status, Busy);
+
         delayedCarry = false;
     }
 }

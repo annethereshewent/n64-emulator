@@ -266,11 +266,11 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             break;
         case 0x4300008:
             cpu.cop0.addCycles(20);
-            return mips.mipsInterrupt.value;
+            return mips.mipsInterrupt;
             break;
         case 0x430000c:
             cpu.cop0.addCycles(20);
-            return mips.mipsMask.value;
+            return mips.mipsMask;
             break;
         case 0x4400010:
             cpu.cop0.addCycles(20);
@@ -479,7 +479,7 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             cpu.checkIrqs();
             break;
         case 0x4300008:
-            Bus::writeWithMask32(&mips.mipsInterrupt.value, value, mask);
+            Bus::writeWithMask32(&mips.mipsInterrupt, value, mask);
             checkIrqs();
             cpu.checkIrqs();
             break;
@@ -1543,9 +1543,9 @@ void Bus::tlbUnmap(uint32_t index) {
 }
 
 void Bus::setInterrupt(uint32_t flag) {
-    mips.mipsInterrupt.value |= flag;
+    mips.mipsInterrupt |= flag;
 
-    if ((mips.mipsInterrupt.value & mips.mipsMask.value) != 0) {
+    if ((mips.mipsInterrupt & mips.mipsMask) != 0) {
         cpu.cop0.cause &= ~(0x1f << 2);
         cpu.cop0.cause |= 1 << 10;
     }
@@ -1553,9 +1553,9 @@ void Bus::setInterrupt(uint32_t flag) {
 }
 
 void Bus::clearInterrupt(uint32_t flag) {
-    mips.mipsInterrupt.value &= ~flag;
+    mips.mipsInterrupt &= ~flag;
 
-    if ((mips.mipsInterrupt.value & mips.mipsMask.value) == 0) {
+    if ((mips.mipsInterrupt & mips.mipsMask) == 0) {
         cpu.cop0.cause &= ~(1 << 10);
     }
     cpu.checkIrqs();
@@ -1720,7 +1720,7 @@ void Bus::formatSram() {
 // TODO: move this to mips interface. currently having compile
 // issues putting the code in there :/
 void Bus::checkIrqs() {
-    if ((mips.mipsMask.value & mips.mipsInterrupt.value) != 0) {
+    if ((mips.mipsMask & mips.mipsInterrupt) != 0) {
         cpu.cop0.cause &= ~(0x1f << 2);
         cpu.cop0.cause |= 1 << 10;
     } else {
@@ -1783,6 +1783,7 @@ void Bus::restartAudio() {
 }
 
 void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
+    std::println("ayyy lmao");
     int16_t samples[length / 2];
 
     for (int i = 0; i < length / 2; i++) {

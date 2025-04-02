@@ -195,7 +195,7 @@ CPU::CPU(): bus(*this), cop0(*this), cop1(*this) {
 }
 
 void CPU::checkIrqs(bool usePreviousPc) {
-    if ((bus.mips.mipsInterrupt.value & bus.mips.mipsMask.value) == 0 && cop0.pendingInterrupt) {
+    if ((bus.mips.mipsInterrupt & bus.mips.mipsMask) == 0 && cop0.pendingInterrupt) {
         cop0.pendingInterrupt = false;
         cop0.cause = 1 << 15;
     }

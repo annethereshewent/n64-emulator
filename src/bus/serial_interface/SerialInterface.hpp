@@ -1,14 +1,21 @@
 #pragma once
 
 #include <cstdint>
-#include "SIStatus.hpp"
 #include "../DmaDirection.hpp"
 
 class Bus;
 
+enum SIStatusBits {
+    SiDmaBusy = 0,
+    SiIoBusy = 1,
+    SiReadPending = 2,
+    SiDmaError = 3,
+    SiInterrupt = 12
+};
+
 class SerialInterface {
 public:
-    SIStatus status;
+    uint32_t status;
     uint32_t dramAddress = 0;
     DmaDirection dir = DmaDirection::None;
 

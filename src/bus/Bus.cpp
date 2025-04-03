@@ -275,7 +275,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
         case 0x4400010:
             cpu.cop0.addCycles(20);
             videoInterface.updateVCurrent(cpu.scheduler, cpu.cop0.count);
-            return videoInterface.vcurrent.value;
+            return videoInterface.vcurrent;
             break;
         case 0x4500004:
             cpu.cop0.addCycles(20);
@@ -339,7 +339,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             break;
         case 0x4800018:
             cpu.cop0.addCycles(20);
-            return serialInterface.status.value;
+            return serialInterface.status;
             break;
         default:
             if (actualAddress <= 0x03EFFFFF) {
@@ -489,10 +489,12 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             cpu.checkIrqs();
             break;
         case 0x4400000:
-            Bus::writeWithMask32(&videoInterface.ctrl.value, value, mask);
-            videoInterface.ctrl.unused = 0;
+            Bus::writeWithMask32(&videoInterface.ctrl, value, mask);
+            // videoInterface.ctrl.unused = 0;
+            // TODO: see if this needs to be done
+            // clearBit(&videoInterface.ctrl, 10);
 
-            rdp_set_vi_register(0, videoInterface.ctrl.value);
+            rdp_set_vi_register(0, videoInterface.ctrl);
             break;
         case 0x4400004:
             Bus::writeWithMask32(&videoInterface.origin, value, mask);
@@ -538,32 +540,40 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             rdp_set_vi_register(7, videoInterface.hTotal);
             break;
         case 0x4400020:
-            Bus::writeWithMask32(&videoInterface.hTotalLeap.value, value, mask);
-            videoInterface.hTotalLeap.unused = 0;
-            rdp_set_vi_register(0x20 / 4, videoInterface.hTotalLeap.value);
+            Bus::writeWithMask32(&videoInterface.hTotalLeap, value, mask);
+            // TODO: see if this needs to be done at all, bit 10 is unused
+            // clearBit(&videoInterface.hTotalLeap, 10);
+
+            rdp_set_vi_register(0x20 / 4, videoInterface.hTotalLeap);
             break;
         case 0x4400024:
             Bus::writeWithMask32(&videoInterface.hVideo, value, mask);
             rdp_set_vi_register(0x24 / 4, videoInterface.hVideo);
             break;
         case 0x4400028:
-            Bus::writeWithMask32(&videoInterface.vVideo.value, value, mask);
-            videoInterface.vVideo.unused = 0;
-            rdp_set_vi_register(0x28 / 4, videoInterface.vVideo.value);
+            Bus::writeWithMask32(&videoInterface.vVideo, value, mask);
+            // videoInterface.vVideo.unused = 0;
+            // TODO: see if these bits need to be 0'd out
+            // videoInterface.vVideo &= ~(0x3f << 10);
+            rdp_set_vi_register(0x28 / 4, videoInterface.vVideo);
             break;
         case 0x440002c:
             Bus::writeWithMask32(&videoInterface.vBurst, value, mask);
             rdp_set_vi_register(0x2c / 4, videoInterface.vBurst);
             break;
         case 0x4400030:
-            Bus::writeWithMask32(&videoInterface.xScale.value, value, mask);
-            videoInterface.xScale.unused = 0;
-            rdp_set_vi_register(0x30 / 4, videoInterface.xScale.value);
+            Bus::writeWithMask32(&videoInterface.xScale, value, mask);
+            // videoInterface.xScale.unused = 0;
+            // TODO: see if these bits need to be 0'd out
+            // videoInterface.xScale &= ~(0xf << 12);
+            rdp_set_vi_register(0x30 / 4, videoInterface.xScale);
             break;
         case 0x4400034:
-            Bus::writeWithMask32(&videoInterface.yScale.value, value, mask);
-            videoInterface.yScale.unused = 0;
-            rdp_set_vi_register(0x34 / 4, videoInterface.yScale.value);
+            Bus::writeWithMask32(&videoInterface.yScale, value, mask);
+            // videoInterface.yScale.unused = 0;
+            // TODO: see if these bits need to be 0'd out
+            // videoInterface.yScale &= ~(0xf << 12);
+            rdp_set_vi_register(0x34 / 4, videoInterface.yScale);
             break;
         case 0x4500000:
             Bus::writeWithMask32(&audioInterface.dramAddress, value & 0xffffff, mask);
@@ -705,8 +715,7 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             break;
         case 0x4800004: {
             serialInterface.dir = DmaDirection::Read;
-
-            serialInterface.status.dmaBusy = 1;
+            setBit(&serialInterface.status, SiDmaBusy);
 
             uint64_t cycles = serialInterface.processRam(*this);
             cpu.scheduler.addEvent(Event(SIDma, cpu.cop0.count + cycles));
@@ -717,12 +726,12 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
 
             serialInterface.handleDma(*this);
 
-            serialInterface.status.dmaBusy = 1;
+            setBit(&serialInterface.status, SiDmaBusy);
 
             cpu.scheduler.addEvent(Event(SIDma, cpu.cop0.count + 6000));
             break;
         case 0x4800018:
-            serialInterface.status.interrupt = 0;
+            clearBit(&serialInterface.status, SiInterrupt);
             clearInterrupt(SI_INTERRUPT_FLAG);
             break;
         default:
@@ -774,8 +783,8 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
 
                 cpu.scheduler.addEvent(Event(PIFExecuteCommand, cpu.cop0.count + 3200));
 
-                serialInterface.status.dmaBusy = 1;
-                serialInterface.status.ioBusy = 1;
+                setBit(&serialInterface.status, SiDmaBusy);
+                setBit(&serialInterface.status, SiIoBusy);
                 return;
             }
             if (actualAddress >= 0x4000000 && actualAddress <= 0x4000FFF) {

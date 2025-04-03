@@ -326,16 +326,16 @@ void CPU::step() {
                 bus.rdp.frameFinished = true;
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 
-                bus.videoInterface.field ^= bus.videoInterface.ctrl.serrate;
+                bus.videoInterface.field ^= getBit(bus.videoInterface.ctrl, SERRATE_BIT);
 
                 scheduler.addEvent(Event(VideoInterrupt, cop0.count + bus.videoInterface.delay));
                 break;
             case PIFExecuteCommand:
                 bus.pif.executeCommand();
 
-                bus.serialInterface.status.dmaBusy = 0;
-                bus.serialInterface.status.ioBusy = 0;
-                bus.serialInterface.status.interrupt = 1;
+                clearBit(&bus.serialInterface.status, SiDmaBusy);
+                clearBit(&bus.serialInterface.status, SiIoBusy);
+                setBit(&bus.serialInterface.status, SiInterrupt);
 
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;
@@ -364,9 +364,9 @@ void CPU::step() {
 
                 bus.serialInterface.dir = DmaDirection::None;
 
-                bus.serialInterface.status.dmaBusy = 0;
-                bus.serialInterface.status.ioBusy = 0;
-                bus.serialInterface.status.interrupt = 1;
+                clearBit(&bus.serialInterface.status, SiDmaBusy);
+                clearBit(&bus.serialInterface.status, SiIoBusy);
+                setBit(&bus.serialInterface.status, SiInterrupt);
 
                 bus.setInterrupt(SI_INTERRUPT_FLAG);
                 break;

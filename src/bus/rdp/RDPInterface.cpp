@@ -4,6 +4,7 @@
 #include "../../interface.cpp"
 #include "../Bus.hpp"
 #include "../../cpu/CPU.hpp"
+#include "../../util/BitUtils.cpp"
 
 uint32_t RDPInterface::readRegisters(uint32_t offset) {
     switch (offset) {
@@ -17,8 +18,8 @@ uint32_t RDPInterface::readRegisters(uint32_t offset) {
             return current;
             break;
         case 3:
-            status.dmaBusy = 0;
-            return status.value;
+            clearBit(&status, DPCDmaBusy);
+            return status;
             break;
         case 4:
             return 0xffffff;
@@ -33,26 +34,26 @@ uint32_t RDPInterface::readRegisters(uint32_t offset) {
 void RDPInterface::writeRegisters(uint32_t offset, uint32_t value) {
     switch (offset) {
         case 0:
-            if (!status.startPending) {
+            if (((status >> StartPending) & 0b1) == 0) {
                 start = value;
-                status.startPending = 1;
+                setBit(&status, StartPending);
             }
             break;
         case 1:
             end = value;
-            if (status.startPending) {
+            if (((status >> StartPending) & 0b1) == 1) {
                 current = start;
 
-                status.startPending = 0;
+                clearBit(&status, StartPending);
             }
-            if (!status.freeze) {
+            if (((status >> Freeze) & 0b1) == 0) {
                 uint64_t cycles = rdp_process_commands();
 
                 pipeBusy = 0xffffff;
 
-                status.gclk = 1;
-                status.cmdBusy = 1;
-                status.pipeBusy = 1;
+                setBit(&status, Gclk);
+                setBit(&status, CmdBusy);
+                setBit(&status, PipeBusy);
 
                 if (cycles > 0) {
                     bus.cpu.scheduler.addEvent(Event(RDPEvent, bus.cpu.cop0.count + cycles));
@@ -73,44 +74,42 @@ void RDPInterface::writeRegisters(uint32_t offset, uint32_t value) {
 
 void RDPInterface::updateStatus(uint32_t value) {
     if ((value & 0b1) == 1) {
-        status.xbus = 0;
+        clearBit(&status, Xbus);
     }
     if (((value >> 1) & 0b1) == 1) {
-        status.xbus = 1;
+        setBit(&status, Xbus);
     }
 
     if (((value >> 2) & 0b1) == 1) {
-        status.freeze = 0;
+        clearBit(&status, Freeze);
     }
 
     if (((value >> 3) & 0b1) == 1) {
-        status.freeze = 1;
+        setBit(&status, Freeze);
     }
 
     if (((value >> 4) & 0b1) == 1) {
-        status.flush = 0;
+        clearBit(&status, Flush);
     }
 
     if (((value >> 5) & 0b1) == 1) {
-        status.flush = 1;
+        setBit(&status, Flush);
     }
 
     if (((value >> 6) & 0b1) == 1) {
-        status.tmemBusy = 0;
+        clearBit(&status, TmemBusy);
     }
 
     if (((value >> 7) & 0b1) == 1) {
-        status.pipeBusy = 0;
+        clearBit(&status, PipeBusy);
         pipeBusy = 0;
     }
 
     if (((value >> 8) & 0b1) == 1) {
-        status.cmdBusy = 0;
+        clearBit(&status, CmdBusy);
     }
 
     if (((value >> 9) & 0b1) == 1) {
         clockCounter = 0;
     }
-
-
 }

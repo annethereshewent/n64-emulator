@@ -17,6 +17,7 @@
 #include "COP1.cpp"
 #include "Scheduler.cpp"
 #include "Disassembler.cpp"
+#include "../util/BitUtils.cpp"
 
 CPU::CPU(): bus(*this), cop0(*this), cop1(*this) {
     r[0] = 0;
@@ -378,9 +379,9 @@ void CPU::step() {
                 bus.audioInterface.popDma();
                 break;
             case RDPEvent:
-                bus.rdp.status.gclk = 0;
-                bus.rdp.status.cmdBusy = 0;
-                bus.rdp.status.pipeBusy = 0;
+                clearBit(&bus.rdp.status, Gclk);
+                clearBit(&bus.rdp.status, CmdBusy);
+                clearBit(&bus.rdp.status, PipeBusy);
 
                 bus.setInterrupt(DP_INTERRUPT_FLAG);
                 break;

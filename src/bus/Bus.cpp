@@ -241,7 +241,7 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
             break;
         case 0x410000c:
             cpu.cop0.addCycles(20);
-            return rdp.status.value;
+            return rdp.status;
             break;
         case 0x4100010:
             cpu.cop0.addCycles(20);
@@ -468,7 +468,7 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             rsp.nextPc = rsp.pc + 4;
             break;
         case 0x410000c:
-            Bus::writeWithMask32(&rdp.status.value, value, mask);
+            Bus::writeWithMask32(&rdp.status, value, mask);
             break;
         case 0x4300000:
             mips.write(value);
@@ -1881,7 +1881,7 @@ void Bus::initRdp(SDL_Window* window) {
     gfxInfo.DPC_CURRENT_REG = &rdp.current;
     gfxInfo.DPC_START_REG = &rdp.start;
     gfxInfo.DPC_END_REG = &rdp.end;
-    gfxInfo.DPC_STATUS_REG = &rdp.status.value;
+    gfxInfo.DPC_STATUS_REG = &rdp.status;
     gfxInfo.debugOn = &cpu.debugOn;
 
     rdp_init(window, gfxInfo, false, false, false);

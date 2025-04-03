@@ -1,18 +1,17 @@
 #pragma once
 
 #include <bit>
-#include "wsi_platform.cpp"
 #include "wsi.cpp"
 #include "rdp_device.cpp"
 #include "interface.hpp"
 #include "spirv.hpp"
 #include "config.hpp"
-#ifdef USING_SDL2
-    #include <SDL2/SDL.h>
-	#include <SDL2/SDL_vulkan.h>
-#else
+#ifdef USING_SDL3
+	#include "wsi_platform.cpp"
     #include <SDL3/SDL.h>
 	#include <SDL3/SDL_vulkan.h>
+#else
+	#include "ios_wsi_platform.cpp"
 #endif
 #include "command_ring.cpp"
 #include "rdp_dump_write.cpp"
@@ -100,7 +99,11 @@ static bool fullscreen;
 static bool integer_scaling;
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
-static SDL_WSIPlatform *wsi_platform;
+#ifdef USING_SDL3
+	static SDL_WSIPlatform *wsi_platform;
+#else
+	static IOS_WSIPlatform *wsi_platform;
+#endif
 static WSI *wsi;
 static uint32_t cmd_data[0x00040000 >> 2];
 static int cmd_cur;
@@ -185,9 +188,16 @@ void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _inte
 	integer_scaling = _integer_scaling;
 	bool window_vsync = 0;
 	wsi = new WSI;
-	wsi_platform = new SDL_WSIPlatform;
-	wsi_platform->set_window(window);
-	wsi->set_platform(wsi_platform);
+
+	#ifdef USING_SDL3
+		wsi_platform = new SDL_WSIPlatform;
+		wsi_platform->set_window(window);
+		wsi->set_platform(wsi_platform);
+	#else
+		wsi_platform = new IOS_WSI_Platform;
+		wsi->set_platform(wsi_platform);
+	#endif
+
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
 	Context::SystemHandles handles = {};

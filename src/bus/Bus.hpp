@@ -3,9 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "../config.hpp"
-#ifdef USING_SDL2
-    #include <SDL2/SDL.h>
-#else
+#ifdef USING_SDL3
     #include <SDL3/SDL.h>
 #endif
 #include "peripheral_interface/PeripheralInterface.hpp"
@@ -95,8 +93,6 @@ public:
 
     #ifdef USING_SDL3
         SDL_Gamepad* gamepad = nullptr;
-    #else
-        SDL_AudioDeviceID device;
     #endif
 
     uint32_t input = 0;

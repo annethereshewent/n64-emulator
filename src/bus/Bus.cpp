@@ -1786,32 +1786,7 @@ void Bus::initAudio() {
 
         this->stream = stream;
     #else
-        SDL_AudioSpec srcspec = {};
-        srcspec.freq = (int)audioInterface.frequency;
-        srcspec.format = AUDIO_S16;
-        srcspec.channels = 2;
-
-        SDL_AudioSpec devicespec = {};
-        devicespec.freq = 48000;
-        devicespec.format = AUDIO_S16;
-        devicespec.channels = 2;
-
-        SDL_AudioSpec obtained = {};
-        SDL_AudioDeviceID device = SDL_OpenAudioDevice(NULL, 0, &devicespec, &obtained, 0);
-
-        SDL_PauseAudioDevice(device, 0);
-
-        SDL_AudioStream *stream = SDL_NewAudioStream(
-            AUDIO_S16, 2, srcspec.freq,
-            AUDIO_S16, 2, obtained.freq
-        );
-
-        if (stream == nullptr) {
-            std::println("SDL_NewAudioStream failed: {}", SDL_GetError());
-        }
-
-        this->stream = stream;
-        this->device = device;
+        // TODO
     #endif
 }
 
@@ -1819,7 +1794,7 @@ void Bus::restartAudio() {
     #ifdef USING_SDL3
         SDL_DestroyAudioStream(stream);
     #else
-        SDL_FreeAudioStream(stream);
+        // TODO
     #endif
     initAudio();
 }
@@ -1840,19 +1815,7 @@ void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
             std::println("couldn't put samples into stream: {}", SDL_GetError());
         }
     #else
-        if (SDL_AudioStreamPut(stream, samples, length) != 0) {
-            std::println("couldn't put samples into stream: {}", SDL_GetError());
-        }
-
-        if (SDL_AudioStreamAvailable(stream) >= 2048) {
-            uint8_t buffer[4096];
-
-            int len = SDL_AudioStreamGet(stream, &buffer, sizeof(buffer));
-
-            if (len > 0) {
-                SDL_QueueAudio(device, buffer, len);
-            }
-        }
+       // TODO
     #endif
 }
 

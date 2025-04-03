@@ -233,12 +233,15 @@ void rdp_init(GFX_INFO _gfx_info)
 	wsi = new WSI;
 
 	wsi_platform = new IOS_WSIPlatform;
+
+	wsi_platform->setLayer(gfx_info.metalLayer);
+
 	wsi->set_platform(wsi_platform);
 
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
 	Context::SystemHandles handles = {};
-	if (!wsi->init_simple(1, handles))
+	if (!::Vulkan::Context::init_loader(vkGetInstanceProcAddr) || !wsi->init_simple(1, handles))
 	{
 		rdp_close();
 	}

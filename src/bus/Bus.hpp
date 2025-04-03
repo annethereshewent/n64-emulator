@@ -227,7 +227,7 @@ public:
     #ifdef USING_SDL3
         void initRdp(SDL_Window* window);
     #else
-        void initRdp();
+        void initRdp(void* metalLayer);
     #endif
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);

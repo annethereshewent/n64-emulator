@@ -1906,11 +1906,12 @@ std::string Bus::sha256() {
         gfxInfo.DPC_END_REG = &rdp.end;
         gfxInfo.DPC_STATUS_REG = &rdp.status;
         gfxInfo.debugOn = &cpu.debugOn;
+        gfxInfo.metalLayer = nullptr;
 
         rdp_init(window, gfxInfo, false, false, false);
     }
 #else
-    void Bus::initRdp() {
+    void Bus::initRdp(void* metalLayer) {
         GFX_INFO gfxInfo;
 
         gfxInfo.RDRAM = &rdram[0];
@@ -1921,6 +1922,7 @@ std::string Bus::sha256() {
         gfxInfo.DPC_END_REG = &rdp.end;
         gfxInfo.DPC_STATUS_REG = &rdp.status;
         gfxInfo.debugOn = &cpu.debugOn;
+        gfxInfo.metalLayer = metalLayer;
 
         rdp_init(gfxInfo);
     }

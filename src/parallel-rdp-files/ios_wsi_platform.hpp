@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../parallel-rdp-standalone/vulkan/wsi.hpp"
+#include <cstdint>
 
 class IOS_WSIPlatform : public Vulkan::WSIPlatform
 {
@@ -15,6 +16,11 @@ public:
 	void poll_input_async(Granite::InputTrackerHandler *handler) override;
 
     void setLayer(void* layer);
+
+	void setWidth(uint32_t width);
+	void setHeight(uint32_t height);
 private:
     void* metalLayer;
+	uint32_t width = 0;
+	uint32_t height = 0;
 };

@@ -52,12 +52,12 @@ std::vector<const char *> IOS_WSIPlatform::get_instance_extensions()
 
 uint32_t IOS_WSIPlatform::get_surface_width()
 {
-    // TODO
+    return 640;
 }
 
 uint32_t IOS_WSIPlatform::get_surface_height()
 {
-    // TODO
+    return 480;
 }
 
 bool IOS_WSIPlatform::alive(Vulkan::WSI &wsi)
@@ -79,3 +79,10 @@ void IOS_WSIPlatform::setLayer(void* layer) {
 	metalLayer = layer;
 }
 
+void IOS_WSIPlatform::setWidth(uint32_t width) {
+	this->width = width;
+}
+
+void IOS_WSIPlatform::setHeight(uint32_t height) {
+	this->height = height;
+}

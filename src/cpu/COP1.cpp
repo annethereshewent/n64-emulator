@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CPU.hpp"
+#include "../util/BitUtils.cpp"
 
 COP1::COP1(CPU& cpu): cpu(cpu) {
     instructions = {
@@ -181,8 +182,8 @@ COP1::COP1(CPU& cpu): cpu(cpu) {
     };
 }
 
-void COP1::setCop1Registers(Cop0Status status) {
-    if (!status.fr) {
+void COP1::setCop1Registers(uint8_t fr) {
+    if (!fr) {
         for (int i = 0; i < fgr32.size(); i += 2) {
             fgr32[i] = (uint32_t)fgr64[i];
             fgr32[i+1] = (uint32_t)(fgr64[i] >> 32);
@@ -195,7 +196,7 @@ void COP1::setCop1Registers(Cop0Status status) {
 }
 
 float COP1::getFloat(uint32_t index) {
-    if (!cpu.cop0.status.fr) {
+    if (!getBit(cpu.cop0.status, Fr)) {
         return ((union convu32){.u32 = fgr32[index]}).f32;
     }
 
@@ -205,7 +206,7 @@ float COP1::getFloat(uint32_t index) {
 void COP1::setFloat(uint32_t index, float value) {
     uint32_t bits = ((union convu32){.f32 = value}).u32;
 
-    if (!cpu.cop0.status.fr) {
+    if (!getBit(cpu.cop0.status, Fr)) {
         fgr32[index] = bits;
     } else {
         fgr64[index] = (uint64_t)bits;
@@ -213,7 +214,7 @@ void COP1::setFloat(uint32_t index, float value) {
 }
 
 double COP1::getDouble(uint32_t index) {
-    if (!cpu.cop0.status.fr) {
+    if (!getBit(cpu.cop0.status, Fr)) {
         uint64_t bits = (uint64_t)fgr32[index] | ((uint64_t)fgr32[index + 1] << 32);
 
         return ((union convu64){.u64 = bits}).f64;
@@ -225,7 +226,7 @@ double COP1::getDouble(uint32_t index) {
 void COP1::setDouble(uint32_t index, double value) {
     uint64_t bits = ((union convu64){.f64 = value}).u64;
 
-    if (!cpu.cop0.status.fr) {
+    if (!getBit(cpu.cop0.status, Fr)) {
         fgr32[index] = (uint32_t)bits;
         fgr32[index + 1] = (uint32_t)(bits >> 32);
     } else {

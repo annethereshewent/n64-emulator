@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CPU.hpp"
+#include "../util/BitUtils.cpp"
 
 COP0::COP0(CPU& cpu): cpu(cpu) {
     instructions = {
@@ -132,11 +133,11 @@ void COP0::writeRegister(uint32_t index, uint64_t value, Scheduler* scheduler) {
             break;
         }
         case 12: {
-            uint8_t oldFr = status.fr;
-            status.value = (status.value & ~0xff57ffff) | (uint32_t)value & 0xff57ffff;
+            uint8_t oldFr = getBit(status, Fr);
+            status = (status & ~0xff57ffff) | (uint32_t)value & 0xff57ffff;
 
-            if (oldFr != status.fr) {
-                cpu.cop1.setCop1Registers(status);
+            if (oldFr != getBit(status, Fr)) {
+                cpu.cop1.setCop1Registers(getBit(status, Fr));
             }
             break;
         }
@@ -234,7 +235,7 @@ uint64_t COP0::readRegister(uint32_t index) {
             return compare;
             break;
         case 12:
-            return status.value;
+            return status;
             break;
         case 13:
             return cause;

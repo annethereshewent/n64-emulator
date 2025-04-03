@@ -1078,7 +1078,7 @@ std::string mfc1(CPU* cpu, uint32_t instruction) {
 
     uint32_t returnVal;
 
-    if (!cpu->cop0.status.fr) {
+    if (!getBit(cpu->cop0.status, Fr)) {
         returnVal = cpu->cop1.fgr32[rd];
     } else {
         returnVal = (uint32_t)cpu->cop1.fgr64[rd];
@@ -1092,7 +1092,7 @@ std::string dmfc1(CPU* cpu, uint32_t instruction) {
 
     uint64_t returnVal;
 
-    if (!cpu->cop0.status.fr) {
+    if (!getBit(cpu->cop0.status, Fr)) {
         returnVal = (uint64_t)cpu->cop1.fgr32[rd] | (uint64_t)cpu->cop1.fgr32[rd + 1] << 32;
     } else {
         returnVal = cpu->cop1.fgr64[rd];

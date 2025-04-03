@@ -4,6 +4,7 @@
 #include <iostream>
 #include "../bus/Bus.cpp"
 #include "CPU.hpp"
+#include "../util/BitUtils.cpp"
 
 void COP0::reserved(CPU* cpu, uint32_t instruction) {
     throw std::runtime_error("instruction reserved for COP0");
@@ -79,14 +80,14 @@ void COP0::tlbwr(CPU* cpu, uint32_t instruction) {
 }
 
 void COP0::eret(CPU* cpu, uint32_t instruction) {
-    if (cpu->cop0.status.erl) {
+    if (getBit(cpu->cop0.status, Erl)) {
         cpu->pc = cpu->cop0.errorEpc;
         cpu->nextPc = cpu->pc + 4;
-        cpu->cop0.status.erl = 0;
+        clearBit(&cpu->cop0.status, Erl);
     } else {
         cpu->pc = cpu->cop0.epc;
         cpu->nextPc = cpu->pc + 4;
-        cpu->cop0.status.exl = 0;
+        clearBit(&cpu->cop0.status, Exl);
     }
 
     cpu->llbit = false;

@@ -1380,7 +1380,7 @@ void Bus::tlbException(uint64_t address, bool isWrite) {
         }
     }
 
-    if (isValid && cpu.cop0.status.exl == 0) {
+    if (isValid && (((cpu.cop0.status >> Exl) & 0b1)) == 0) {
         offset = 0;
     }
 

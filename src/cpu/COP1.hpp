@@ -175,6 +175,6 @@ public:
     static void cvtDL(CPU* cpu, uint32_t instruction);
 
     void writeRegister(uint32_t index, uint64_t value);
-    void setCop1Registers(Cop0Status cop0Status);
+    void setCop1Registers(uint8_t fr);
     uint32_t readRegister(uint32_t index);
 };

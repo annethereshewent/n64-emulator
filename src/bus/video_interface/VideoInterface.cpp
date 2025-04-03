@@ -15,7 +15,10 @@ void VideoInterface::updateVCurrent(Scheduler& scheduler, uint64_t currentCount)
         if (vcurrent >= vTotal) {
             vcurrent -= vTotal;
         }
-    }
 
-    vcurrent |= (vcurrent & ~1) | field;
+        vcurrent |= (vcurrent & ~1) | field;
+        vcurrent &= 0x3ff;
+    } else {
+        vcurrent = 0;
+    }
 }

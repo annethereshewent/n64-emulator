@@ -41,17 +41,17 @@ if(BUILD_FOR_IOS)
     set(Vulkan_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/MoltenVK/include)
     set(Vulkan_LIBRARY ${CMAKE_SOURCE_DIR}/MoltenVK/static/MoltenVK.xcframework/ios-arm64/libMoltenVK.a)
 
-    # Location of SDL2.framework inside the .xcframework
-    set(SDL2_FRAMEWORK_PATH ${CMAKE_SOURCE_DIR}/SDL2.xcframework/ios-arm64/SDL2.framework)
+    # Location of SDL3.framework inside the .xcframework
+    set(SDL3_FRAMEWORK_PATH ${CMAKE_SOURCE_DIR}/SDL3.xcframework/ios-arm64/SDL3.framework)
 
     # Add header path
-    include_directories(${SDL2_FRAMEWORK_PATH}/Headers)
+    include_directories(${SDL3_FRAMEWORK_PATH}/Headers)
 
     # Link the framework binary directly
     target_link_libraries(N64Core
         "-framework Foundation"
         "-framework CoreFoundation"
-        "${SDL2_FRAMEWORK_PATH}/SDL2"
+        "${SDL3_FRAMEWORK_PATH}/SDL3"
     )
 
     include_directories(${Vulkan_INCLUDE_DIR})

@@ -9,6 +9,7 @@ profile.json
 *.log
 MoltenVK/
 SDL2.xcframework/
+SDL3.xcframework/
 lib/
 build-mobile.sh
 build.sh

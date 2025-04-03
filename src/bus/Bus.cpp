@@ -1844,11 +1844,10 @@ void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
             std::println("couldn't put samples into stream: {}", SDL_GetError());
         }
 
+        if (SDL_AudioStreamAvailable(stream) >= 2048) {
+            uint8_t buffer[4096];
 
-        if (SDL_AudioStreamAvailable(stream) >= 4096) {
-            uint8_t buffer[8192];
-
-            int len = SDL_AudioStreamGet(stream, buffer, sizeof(buffer));
+            int len = SDL_AudioStreamGet(stream, &buffer, sizeof(buffer));
 
             if (len > 0) {
                 SDL_QueueAudio(device, buffer, len);

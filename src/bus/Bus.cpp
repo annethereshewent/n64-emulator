@@ -1767,27 +1767,54 @@ void Bus::writeValueLE(uint8_t* ptr, uint32_t value, int size) {
 }
 
 void Bus::initAudio() {
-    const SDL_AudioSpec srcspec = { SDL_AUDIO_S16, 2, (int)audioInterface.frequency };
-    SDL_AudioSpec devicespec = { SDL_AUDIO_S16, 2, 48000 };
+    #ifdef USING_SDL3
+        const SDL_AudioSpec srcspec = { SDL_AUDIO_S16, 2, (int)audioInterface.frequency };
+        SDL_AudioSpec devicespec = { SDL_AUDIO_S16, 2, 48000 };
 
-    SDL_AudioDeviceID device = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &devicespec);
+        SDL_AudioDeviceID device = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &devicespec);
 
-    SDL_AudioSpec dstspec;
-    if (!SDL_GetAudioDeviceFormat(device, &dstspec, nullptr)) {
-        std::println("couldn't get audio device format: {}", SDL_GetError());
-    }
+        SDL_AudioSpec dstspec;
+        if (!SDL_GetAudioDeviceFormat(device, &dstspec, nullptr)) {
+            std::println("couldn't get audio device format: {}", SDL_GetError());
+        }
 
-    SDL_AudioStream *stream = SDL_CreateAudioStream(&srcspec, &dstspec);
+        SDL_AudioStream *stream = SDL_CreateAudioStream(&srcspec, &dstspec);
 
-    if (!SDL_BindAudioStream(device, stream)) {
-        std::println("couldn't bind audio stream to device: {}", SDL_GetError());
-    }
+        if (!SDL_BindAudioStream(device, stream)) {
+            std::println("couldn't bind audio stream to device: {}", SDL_GetError());
+        }
 
-    this->stream = stream;
+        this->stream = stream;
+    #else
+        const SDL_AudioSpec srcspec = { (int)audioInterface.frequency, AUDIO_S16, 2 };
+        SDL_AudioSpec devicespec = {48000, AUDIO_S16, 2 };
+
+        SDL_AudioDeviceID device = SDL_OpenAudioDevice(NULL, 0, &devicespec, NULL, 0);
+
+        SDL_AudioSpec dstspec;
+        if (SDL_GetAudioDeviceSpec(0, 0, &dstspec) != 0) {
+            std::println("couldn't get audio device format: {}", SDL_GetError());
+        }
+
+        SDL_PauseAudioDevice(device, 0);
+
+        SDL_AudioStream *stream = SDL_NewAudioStream(AUDIO_S16, 2, srcspec.freq, AUDIO_S16, 2, dstspec.freq);
+
+        if (stream == nullptr) {
+            std::println("SDL_NewAudioStream failed: {}", SDL_GetError());
+        }
+
+        this->stream = stream;
+        this->device = device;
+    #endif
 }
 
 void Bus::restartAudio() {
-    SDL_DestroyAudioStream(stream);
+    #ifdef USING_SDL3
+        SDL_DestroyAudioStream(stream);
+    #else
+        SDL_FreeAudioStream(stream);
+    #endif
     initAudio();
 }
 
@@ -1802,9 +1829,26 @@ void Bus::pushSamples(uint64_t length, uint64_t dramAddress) {
         }
     }
 
-    if (!SDL_PutAudioStreamData(stream, samples, (length / 2) * sizeof(int16_t))) {
-        std::println("couldn't put samples into stream: {}", SDL_GetError());
-    }
+    #ifdef USING_SDL3
+        if (!SDL_PutAudioStreamData(stream, samples, length)) {
+            std::println("couldn't put samples into stream: {}", SDL_GetError());
+        }
+    #else
+        if (SDL_AudioStreamPut(stream, samples, length) != 0) {
+            std::println("couldn't put samples into stream: {}", SDL_GetError());
+        }
+
+
+        if (SDL_AudioStreamAvailable(stream) >= 4096) {
+            uint8_t buffer[8192];
+
+            int len = SDL_AudioStreamGet(stream, buffer, sizeof(buffer));
+
+            if (len > 0) {
+                SDL_QueueAudio(device, buffer, len);
+            }
+        }
+    #endif
 }
 
 void Bus::updateButton(JoypadButton button, bool state) {
@@ -1852,12 +1896,14 @@ void Bus::writeRumblePak(int channel, uint16_t address, int data) {
         // todo: implement more controllers, but for now there's only one.
         if (channel == 0) {
             // todo: check if these values are right or whether they can vary
-            SDL_RumbleGamepad(
-                gamepad,
-                (rumble & 1) * 0xffff,
-                (rumble & 1) * 0xffff,
-                (rumble & 1) * 60000
-            );
+            #ifdef USING_SDL3
+                SDL_RumbleGamepad(
+                    gamepad,
+                    (rumble & 1) * 0xffff,
+                    (rumble & 1) * 0xffff,
+                    (rumble & 1) * 60000
+                );
+            #endif
         }
     }
 }

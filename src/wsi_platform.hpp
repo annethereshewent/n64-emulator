@@ -2,7 +2,7 @@
 
 #include "../parallel-rdp-standalone/vulkan/wsi.hpp"
 #include "config.hpp"
-#if USING_SDL2
+#ifdef USING_SDL2
     #include <SDL2/SDL.h>
 #else
     #include <SDL3/SDL.h>

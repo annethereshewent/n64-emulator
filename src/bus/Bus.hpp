@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "../config.hpp"
-#if USING_SDL2
+#ifdef USING_SDL2
     #include <SDL2/SDL.h>
 #else
     #include <SDL3/SDL.h>
@@ -93,7 +93,11 @@ public:
     char gameId[4];
     std::vector<SaveType> saveTypes = {};
 
-    SDL_Gamepad* gamepad = nullptr;
+    #ifdef USING_SDL3
+        SDL_Gamepad* gamepad = nullptr;
+    #else
+        SDL_AudioDeviceID device;
+    #endif
 
     uint32_t input = 0;
 

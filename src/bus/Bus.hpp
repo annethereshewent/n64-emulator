@@ -111,7 +111,7 @@ public:
 
         consoleBuffer.resize(0x10000);
 
-        rsp.status.value = 1;
+        rsp.status = 1;
 
         for (int i = 0; i < icache.size(); i++) {
             icache[i].index = (uint16_t)(i << 5) & 0xfe0;

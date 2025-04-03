@@ -225,15 +225,15 @@ uint32_t Bus::memRead32(uint64_t actualAddress, bool cached, Width bitWidth, boo
     switch (actualAddress) {
         case 0x4040010:
             cpu.cop0.addCycles(20);
-            return rsp.status.value;
+            return rsp.status;
             break;
         case 0x4040014:
             cpu.cop0.addCycles(20);
-            return rsp.status.dmaFull;
+            return (rsp.status >> SpDmaFull) & 0b1;
             break;
         case 0x4040018:
             cpu.cop0.addCycles(20);
-            return rsp.status.dmaBusy;
+            return (rsp.status >> SpDmaBusy) & 0b1;
             break;
         case 0x4080000:
             cpu.cop0.addCycles(20);
@@ -450,11 +450,11 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             Bus::writeWithMask32(&rsp.dmaRamAddress, value & 0xfffffc, mask);
             break;
         case 0x4040008:
-            Bus::writeWithMask32(&rsp.spReadLength.value, value, mask);
+            Bus::writeWithMask32(&rsp.spReadLength, value, mask);
             rsp.pushDma(DmaDirection::Read);
             break;
         case 0x404000c:
-            Bus::writeWithMask32(&rsp.spWriteLength.value, value, mask);
+            Bus::writeWithMask32(&rsp.spWriteLength, value, mask);
             rsp.pushDma(DmaDirection::Write);
             break;
         case 0x4040010:
@@ -689,16 +689,16 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             Bus::writeWithMask32(&peripheralInterface.dom2Rls, value & 0x3, mask);
             break;
         case 0x4700000:
-            Bus::writeWithMask32(&rdInterface.mode.value, value & 0xf, mask);
+            Bus::writeWithMask32(&rdInterface.mode, value & 0xf, mask);
             break;
         case 0x4700004:
-            Bus::writeWithMask32(&rdInterface.config.value, value & 0x7f, mask);
+            Bus::writeWithMask32(&rdInterface.config, value & 0x7f, mask);
             break;
         case 0x4700008:
             Bus::writeWithMask32(&rdInterface.currentLoad, value, mask);
             break;
         case 0x470000C:
-            Bus::writeWithMask32(&rdInterface.select.value, value & 0xff, mask);
+            Bus::writeWithMask32(&rdInterface.select, value & 0xff, mask);
             break;
         case 0x4800000:
             Bus::writeWithMask32(&serialInterface.dramAddress, value & 0xffffff, mask);

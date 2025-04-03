@@ -5,11 +5,12 @@
 #include "RSPInstructions.cpp"
 #include "../../util/VectorUtils.cpp"
 #include "RSPDisassembler.cpp"
+#include "../../util/BitUtils.cpp"
 
 void RSP::handleDma(SPDma dma) {
-    uint32_t length = ((dma.length.length & 0xfff) | 7) + 1;
-    uint32_t count = dma.length.count + 1;
-    uint32_t skip = dma.length.skip;
+    uint32_t length = (dma.length() | 7) + 1;
+    uint32_t count = dma.count() + 1;
+    uint32_t skip = dma.skip();
 
     uint32_t memAddress = dma.memAddress;
     uint32_t dramAddress = dma.dramAddress;
@@ -52,8 +53,8 @@ void RSP::handleDma(SPDma dma) {
 
     dmaMemAddress = isImem ? memAddress + 0x1000 : memAddress;
     dmaRamAddress = dramAddress;
-    spReadLength.value = 0xff8;
-    spWriteLength.value = 0xff8;
+    spReadLength = 0xff8;
+    spWriteLength = 0xff8;
 
     bus.cpu.scheduler.addEvent(
         Event(
@@ -64,42 +65,42 @@ void RSP::handleDma(SPDma dma) {
 }
 
 void RSP::pushDma(DmaDirection direction) {
-    if (status.dmaFull) {
+    if (((status >> SpDmaFull) & 0b1) == 1) {
         std::cout << "dma fifo is already full\n";
         return;
     }
     SPDma entry;
 
-    entry.length = direction == Read ? spReadLength : spWriteLength;
+    entry.spLength = direction == Read ? spReadLength : spWriteLength;
     entry.direction = direction;
     entry.dramAddress = dmaRamAddress;
     entry.memAddress = dmaMemAddress;
 
-    if (status.dmaBusy) {
+    if (((status >> SpDmaBusy) & 0b1) == 1) {
         fifo[1] = entry;
 
-        status.dmaFull = 1;
+        setBit(&status, SpDmaFull);
     } else {
         fifo[0] = entry;
 
-        status.dmaBusy = 1;
+        setBit(&status, SpDmaBusy);
 
         handleDma(fifo[0]);
     }
 }
 
 void RSP::updateStatus(uint32_t value) {
-    bool previousHalt = status.halted;
+    bool previousHalt = getBit(status, SpHalted);
 
     if ((value & 0b1) == 1 && ((value >> 1) & 0b1) == 0) {
-        status.halted = 0;
+        clearBit(&status, SpHalted);
     }
     if ((value & 0b1) == 0 && ((value >> 1) & 0b1) == 1) {
-        status.halted = 1;
+        setBit(&status, SpHalted);
         bus.cpu.scheduler.removeEvent(EventType::RunRspPc);
     }
     if (((value >> 2) & 0b1) == 1) {
-        status.broke = 0;
+        clearBit(&status, SpBroke);
     }
     if (((value >> 3) & 0b1) == 1 && ((value >> 4) & 0b1) == 0) {
         bus.clearInterrupt(SP_INTERRUPT_FLAG);
@@ -108,67 +109,68 @@ void RSP::updateStatus(uint32_t value) {
         bus.setInterrupt(SP_INTERRUPT_FLAG);
     }
     if (((value >> 5) & 0b1) == 1 && ((value >> 6) & 0b1) == 0) {
-        status.singleStep = 0;
+        // status.singleStep = 0;
+        clearBit(&status, SingleStep);
     }
     if (((value >> 5) & 0b1) == 0 && ((value >> 6) & 0b1) == 1) {
-        status.singleStep = 1;
+        setBit(&status, SingleStep);
     }
     if (((value >> 7) & 0b1) == 1 && ((value >> 8) & 0b1) == 0) {
-        status.intBreak = 0;
+        clearBit(&status, IntBreak);
     }
     if (((value >> 7) & 0b1) == 0 && ((value >> 8) & 0b1) == 1) {
-        status.intBreak = 1;
+        setBit(&status, IntBreak);
     }
     if (((value >> 9) & 0b1) == 1 && ((value >> 10) & 0b1) == 0) {
-        status.flag0 = 0;
+        clearBit(&status, Flag0);
     }
     if (((value >> 9) & 0b1) == 0 && ((value >> 10) & 0b1) == 1) {
-        status.flag0 = 1;
+        setBit(&status, Flag0);
     }
     if (((value >> 11) & 0b1) == 1 && ((value >> 12) & 0b1) == 0) {
-        status.flag1 = 0;
+        clearBit(&status, Flag1);
     }
     if (((value >> 11) & 0b1) == 0 && ((value >> 12) & 0b1) == 1) {
-        status.flag1 = 1;
+        setBit(&status, Flag1);
     }
     if (((value >> 13) & 0b1) == 1 && ((value >> 14) & 0b1) == 0) {
-        status.flag2 = 0;
+        clearBit(&status, Flag2);
     }
     if (((value >> 13) & 0b1) == 0 && ((value >> 14) & 0b1) == 1) {
-        status.flag2 = 1;
+        setBit(&status, Flag2);
     }
     if (((value >> 15) & 0b1) == 1 && ((value >> 16) & 0b1) == 0) {
-        status.flag3 = 0;
+        clearBit(&status, Flag3);
     }
     if (((value >> 15) & 0b1) == 0 && ((value >> 16) & 0b1) == 1) {
-        status.flag3 = 1;
+        setBit(&status, Flag3);
     }
     if (((value >> 17) & 0b1) == 1 && ((value >> 18) & 0b1) == 0) {
-        status.flag4 = 0;
+        clearBit(&status, Flag4);
     }
     if (((value >> 17) & 0b1) == 0 && ((value >> 18) & 0b1) == 1) {
-        status.flag4 = 1;
+        setBit(&status, Flag4);
     }
     if (((value >> 19) & 0b1) == 1 && ((value >> 20) & 0b1) == 0) {
-        status.flag5 = 0;
+        clearBit(&status, Flag5);
     }
     if (((value >> 19) & 0b1) == 0 && ((value >> 20) & 0b1) == 1) {
-        status.flag5 = 1;
+        setBit(&status, Flag5);
     }
     if (((value >> 21) & 0b1) == 1 && ((value >> 22) & 0b1) == 0) {
-        status.flag6 = 0;
+        clearBit(&status, Flag6);
     }
     if (((value >> 21) & 0b1) == 0 && ((value >> 22) & 0b1) == 1) {
-        status.flag6 = 1;
+        setBit(&status, Flag6);
     }
     if (((value >> 23) & 0b1) == 1 && ((value >> 24) & 0b1) == 0) {
-        status.flag7 = 0;
+        clearBit(&status, Flag7);
     }
     if (((value >> 23) & 0b1) == 0 && ((value >> 24) & 0b1) == 1) {
-        status.flag7 = 1;
+        setBit(&status, Flag7);
     }
 
-    if (!status.halted && previousHalt) {
+    if (((status >> SpHalted) & 0b1) == 0 && previousHalt) {
         cpuHalted = false;
         cpuBroken = false;
 
@@ -177,13 +179,13 @@ void RSP::updateStatus(uint32_t value) {
 }
 
 void RSP::popDma() {
-    if (status.dmaFull) {
+    if (((status >> SpDmaFull) & 0b1) == 1) {
         fifo[0] = fifo[1];
 
-        status.dmaFull = 0;
+        clearBit(&status, SpDmaFull);
         handleDma(fifo[0]);
     } else {
-        status.dmaBusy = 0;
+        clearBit(&status, SpDmaBusy);
 
         if (runAfterDma) {
             runAfterDma = false;
@@ -194,7 +196,7 @@ void RSP::popDma() {
 
 void RSP::startRsp() {
     isRunning = true;
-    if (status.dmaBusy) {
+    if (((status >> SpDmaBusy) & 0b1) == 1) {
         runAfterDma = true;
     } else {
         uint64_t cycles = runRsp();
@@ -212,25 +214,25 @@ uint32_t RSP::readRegisters(uint32_t offset) {
             return dmaRamAddress;
             break;
         case 2:
-            return spReadLength.value;
+            return spReadLength;
             break;
         case 3:
-            return spWriteLength.value;
+            return spWriteLength;
             break;
         case 4:
-            if (status.dmaBusy || status.dmaFull || (status.value != 0 && status.value == lastStatus)) {
+            if ((((status) >> SpDmaBusy) & 0b1) == 1 || (((status >> SpDmaFull)) & 0b1) == 1 || (status != 0 && status == lastStatus)) {
                 isRunning = false;
             }
-            lastStatus = status.value;
-            return status.value;
+            lastStatus = status;
+            return status;
             break;
         case 5:
             isRunning = false;
-            return status.dmaFull;
+            return (status >> SpDmaFull) & 0b1;
             break;
         case 6:
             isRunning = false;
-            return status.dmaBusy;
+            return (status >> SpDmaBusy) & 0b1;
             break;
         case 7: {
             isRunning = false;
@@ -257,12 +259,12 @@ void RSP::writeRegisters(uint32_t offset, uint32_t value) {
             dmaRamAddress = value & 0xfffffc;
             break;
         case 2:
-            spReadLength.value = value;
+            spReadLength = value;
 
             pushDma(DmaDirection::Read);
             break;
         case 3:
-            spWriteLength.value = value;
+            spWriteLength = value;
 
             pushDma(DmaDirection::Write);
             break;
@@ -270,7 +272,11 @@ void RSP::writeRegisters(uint32_t offset, uint32_t value) {
             updateStatus(value);
             break;
         case 5:
-            status.dmaFull = value & 0b1;
+            if (value & 0b1) {
+                setBit(&status, SpDmaFull);
+            } else {
+                clearBit(&status, SpDmaFull);
+            }
             break;
         case 7:
             semaphore = 0;
@@ -446,17 +452,17 @@ uint16_t RSP::memRead16(uint32_t address) {
 
 void RSP::restartRsp() {
     if (cpuBroken) {
-        status.broke = 1;
-        status.halted = 1;
+        setBit(&status, SpBroke);
+        setBit(&status, SpHalted);
 
-        if (status.intBreak) {
+        if (((status >> IntBreak) & 0b1) == 1) {
             bus.setInterrupt(SP_INTERRUPT_FLAG);
         }
 
         return;
     }
     if (cpuHalted) {
-        status.halted = 1;
+        setBit(&status, SpHalted);
         return;
     }
 

@@ -1,13 +1,10 @@
 #include <cstdint>
-#include "Config.hpp"
-#include "RDSelect.hpp"
-#include "Mode.hpp"
 
 class RDInterface {
 public:
-    RDSelect select;
-    Config config;
-    Mode mode;
+    uint32_t select = 0;
+    uint32_t config = 0;
+    uint32_t mode = 0;
 
     bool init = false;
 

@@ -5,6 +5,7 @@
 #include <print>
 #include <bit>
 #include "../../cpu/CPU.hpp"
+#include "../../util/BitUtils.cpp"
 
 typedef unsigned __int128 u128;
 typedef __int128 i128;
@@ -227,8 +228,8 @@ void RSP::mtc0(RSP* rsp, uint32_t instruction) {
         rsp->bus.rdp.writeRegisters(rd - NUM_RSP_REGISTERS, rsp->r[rt]);
     }
 
-    if (rsp->status.halted) {
-        rsp->status.halted = 0;
+    if (((rsp->status >> SpHalted) & 0b1) == 1) {
+        clearBit(&rsp->status, SpHalted);
         rsp->cpuHalted = true;
     }
 }

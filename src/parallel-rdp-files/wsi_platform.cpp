@@ -1,5 +1,4 @@
 #include "wsi_platform.hpp"
-#include "config.hpp"
 #include <SDL3/SDL_vulkan.h>
 
 VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance, VkPhysicalDevice gpu)

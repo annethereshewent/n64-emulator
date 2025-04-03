@@ -14,7 +14,7 @@
 #include "rdp/RDPInterface.cpp"
 #include "audio_interface/AudioInterface.cpp"
 #include "video_interface/VideoInterface.cpp"
-#include "../interface.cpp"
+#include "../parallel-rdp-files/interface.cpp"
 
 const uint32_t TLBS = 12;
 const uint32_t TLBL = 8;
@@ -1894,18 +1894,34 @@ std::string Bus::sha256() {
 
     return result.str();
 }
+#ifdef USING_SDL3
+    void Bus::initRdp(SDL_Window* window) {
+        GFX_INFO gfxInfo;
 
-void Bus::initRdp(SDL_Window* window) {
-    GFX_INFO gfxInfo;
+        gfxInfo.RDRAM = &rdram[0];
+        gfxInfo.DMEM = &rsp.dmem[0];
+        gfxInfo.RDRAM_SIZE = rdram.size();
+        gfxInfo.DPC_CURRENT_REG = &rdp.current;
+        gfxInfo.DPC_START_REG = &rdp.start;
+        gfxInfo.DPC_END_REG = &rdp.end;
+        gfxInfo.DPC_STATUS_REG = &rdp.status;
+        gfxInfo.debugOn = &cpu.debugOn;
 
-    gfxInfo.RDRAM = &rdram[0];
-    gfxInfo.DMEM = &rsp.dmem[0];
-    gfxInfo.RDRAM_SIZE = rdram.size();
-    gfxInfo.DPC_CURRENT_REG = &rdp.current;
-    gfxInfo.DPC_START_REG = &rdp.start;
-    gfxInfo.DPC_END_REG = &rdp.end;
-    gfxInfo.DPC_STATUS_REG = &rdp.status;
-    gfxInfo.debugOn = &cpu.debugOn;
+        rdp_init(window, gfxInfo, false, false, false);
+    }
+#else
+    void Bus::initRdp() {
+        GFX_INFO gfxInfo;
 
-    rdp_init(window, gfxInfo, false, false, false);
-}
+        gfxInfo.RDRAM = &rdram[0];
+        gfxInfo.DMEM = &rsp.dmem[0];
+        gfxInfo.RDRAM_SIZE = rdram.size();
+        gfxInfo.DPC_CURRENT_REG = &rdp.current;
+        gfxInfo.DPC_START_REG = &rdp.start;
+        gfxInfo.DPC_END_REG = &rdp.end;
+        gfxInfo.DPC_STATUS_REG = &rdp.status;
+        gfxInfo.debugOn = &cpu.debugOn;
+
+        rdp_init(gfxInfo);
+    }
+#endif

@@ -5,14 +5,7 @@
 #include "rdp_device.cpp"
 #include "interface.hpp"
 #include "spirv.hpp"
-#include "config.hpp"
-#ifdef USING_SDL3
-	#include "wsi_platform.cpp"
-    #include <SDL3/SDL.h>
-	#include <SDL3/SDL_vulkan.h>
-#else
-	#include "ios_wsi_platform.cpp"
-#endif
+#include "../config.hpp"
 #include "command_ring.cpp"
 #include "rdp_dump_write.cpp"
 #include "video_interface.cpp"
@@ -43,11 +36,18 @@
 #include "arena_allocator.cpp"
 #include "query_pool.cpp"
 #include "pipeline_event.cpp"
-#include "../parallel-rdp-standalone/vulkan/texture/texture_format.cpp"
+#include "../../parallel-rdp-standalone/vulkan/texture/texture_format.cpp"
 #include "descriptor_set.cpp"
 #include "cookie.cpp"
 #include "context.cpp"
 #include "volk.c"
+#ifdef USING_SDL3
+	#include "wsi_platform.cpp"
+    #include <SDL3/SDL.h>
+	#include <SDL3/SDL_vulkan.h>
+#else
+	#include "ios_wsi_platform.cpp"
+#endif
 
 using namespace Vulkan;
 
@@ -97,9 +97,10 @@ enum vi_registers
 
 static bool fullscreen;
 static bool integer_scaling;
-static SDL_Window *window;
+
 static RDP::CommandProcessor *processor;
 #ifdef USING_SDL3
+	static SDL_Window *window;
 	static SDL_WSIPlatform *wsi_platform;
 #else
 	static IOS_WSIPlatform *wsi_platform;
@@ -179,42 +180,70 @@ static const unsigned cmd_len_lut[64] = {
 	1,
 };
 
-void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
-{
-	window = _window;
+#ifdef USING_SDL3
+	void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
+	{
+		window = _window;
 
-	gfx_info = _gfx_info;
-	fullscreen = _fullscreen;
-	integer_scaling = _integer_scaling;
-	bool window_vsync = 0;
-	wsi = new WSI;
+		gfx_info = _gfx_info;
+		fullscreen = _fullscreen;
+		integer_scaling = _integer_scaling;
+		bool window_vsync = 0;
+		wsi = new WSI;
 
-	#ifdef USING_SDL3
 		wsi_platform = new SDL_WSIPlatform;
 		wsi_platform->set_window(window);
 		wsi->set_platform(wsi_platform);
-	#else
-		wsi_platform = new IOS_WSI_Platform;
-		wsi->set_platform(wsi_platform);
-	#endif
+
+		wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
+		wsi->set_backbuffer_srgb(false);
+		Context::SystemHandles handles = {};
+		if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
+		{
+			rdp_close();
+		}
+		if (!wsi->init_simple(1, handles))
+		{
+			rdp_close();
+		}
+		RDP::CommandProcessorFlags flags = 0;
+		if (_upscale)
+		{
+			flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
+			flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
+		}
+		processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
+
+		if (!processor->device_is_supported())
+		{
+			delete processor;
+			delete wsi;
+			processor = nullptr;
+			rdp_close();
+		}
+		wsi->begin_frame();
+
+		emu_running = true;
+	}
+#else
+void rdp_init(GFX_INFO _gfx_info)
+{
+	gfx_info = _gfx_info;
+	bool window_vsync = 0;
+	wsi = new WSI;
+
+	wsi_platform = new IOS_WSIPlatform;
+	wsi->set_platform(wsi_platform);
 
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
 	Context::SystemHandles handles = {};
-	if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
-	{
-		rdp_close();
-	}
 	if (!wsi->init_simple(1, handles))
 	{
 		rdp_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
-	if (_upscale)
-	{
-		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
-		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
-	}
+
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 
 	if (!processor->device_is_supported())
@@ -228,6 +257,7 @@ void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _inte
 
 	emu_running = true;
 }
+#endif
 
 void rdp_close()
 {
@@ -256,7 +286,10 @@ static void calculate_viewport(float *x, float *y, float *width, float *height)
 	const int32_t display_height = 240;
 
 	int w, h;
-	SDL_GetWindowSize(window, &w, &h);
+
+	#ifdef USING_SDL3
+		SDL_GetWindowSize(window, &w, &h);
+	#endif
 
 	if (integer_scaling)
 	{

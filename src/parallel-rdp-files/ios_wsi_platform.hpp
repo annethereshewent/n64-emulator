@@ -1,11 +1,8 @@
 #pragma once
 
-#include "../parallel-rdp-standalone/vulkan/wsi.hpp"
-#include "config.hpp"
-#include <SDL3/SDL.h>
+#include "../../parallel-rdp-standalone/vulkan/wsi.hpp"
 
-
-class SDL_WSIPlatform : public Vulkan::WSIPlatform
+class IOS_WSIPlatform : public Vulkan::WSIPlatform
 {
 public:
 	VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice gpu) override;
@@ -16,9 +13,8 @@ public:
 	bool alive(Vulkan::WSI &wsi) override;
 	void poll_input() override;
 	void poll_input_async(Granite::InputTrackerHandler *handler) override;
-	void set_window(SDL_Window *_window);
-	void do_resize();
 
+    void setLayer(void* layer);
 private:
-	SDL_Window *window;
+    void* metalLayer;
 };

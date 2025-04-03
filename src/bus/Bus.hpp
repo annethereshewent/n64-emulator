@@ -150,7 +150,9 @@ public:
 
     MIPSInterface mips;
 
-    SDL_AudioStream* stream;
+    #ifdef USING_SDL3
+        SDL_AudioStream* stream;
+    #endif
 
     uint64_t memRead64(uint64_t address, bool cached);
     uint32_t memRead32(uint64_t address, bool cached, Width bitWidth = Bit32, bool ignoreCycles = false);
@@ -222,7 +224,11 @@ public:
 
     void writeRumblePak(int channel, uint16_t address, int data);
 
-    void initRdp(SDL_Window* window);
+    #ifdef USING_SDL3
+        void initRdp(SDL_Window* window);
+    #else
+        void initRdp();
+    #endif
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);
     static void writeWord(uint8_t* ptr, uint32_t value);

@@ -1,7 +1,7 @@
 #include "RDPInterface.hpp"
 #include <cstdint>
 #include <iostream>
-#include "../../interface.cpp"
+#include "../../parallel-rdp-files/interface.cpp"
 #include "../Bus.hpp"
 #include "../../cpu/CPU.hpp"
 #include "../../util/BitUtils.cpp"

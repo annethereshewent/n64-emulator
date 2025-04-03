@@ -6,8 +6,14 @@
 #include "rdp_device.cpp"
 #include "interface.hpp"
 #include "spirv.hpp"
-#include <SDL3/SDL_vulkan.h>
-#include <SDL3/SDL.h>
+#include "config.hpp"
+#if USING_SDL2
+    #include <SDL2/SDL.h>
+	#include <SDL2/SDL_vulkan.h>
+#else
+    #include <SDL3/SDL.h>
+	#include <SDL3/SDL_vulkan.h>
+#endif
 #include "command_ring.cpp"
 #include "rdp_dump_write.cpp"
 #include "video_interface.cpp"

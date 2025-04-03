@@ -1,7 +1,12 @@
 #pragma once
 
 #include "../parallel-rdp-standalone/vulkan/wsi.hpp"
-#include <SDL3/SDL.h>
+#include "config.hpp"
+#if USING_SDL2
+    #include <SDL2/SDL.h>
+#else
+    #include <SDL3/SDL.h>
+#endif
 
 class SDL_WSIPlatform : public Vulkan::WSIPlatform
 {

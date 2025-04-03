@@ -1,7 +1,12 @@
 #include <iostream>
 #include "cpu/CPU.cpp"
 #include <iterator>
-#include <SDL3/SDL.h>
+#include "config.hpp"
+#if USING_SDL2
+    #include <SDL2/SDL.h>
+#else
+    #include <SDL3/SDL.h>
+#endif
 #include "controller/Controller.hpp"
 #if __APPLE__
     #include <sysdir.h>  // for sysdir_start_search_path_enumeration

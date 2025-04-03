@@ -2,7 +2,12 @@
 
 #include <cstdint>
 #include <vector>
-#include <SDL3/SDL.h>
+#include "../config.hpp"
+#if USING_SDL2
+    #include <SDL2/SDL.h>
+#else
+    #include <SDL3/SDL.h>
+#endif
 #include "peripheral_interface/PeripheralInterface.hpp"
 #include "rsp/RSP.hpp"
 #include "video_interface/VideoInterface.hpp"

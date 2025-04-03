@@ -8,7 +8,7 @@ CMakeFiles/
 profile.json
 *.log
 MoltenVK/
-SDL3.xcframework/
+SDL2.xcframework/
 lib/
 build-mobile.sh
 build.sh

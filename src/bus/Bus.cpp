@@ -1786,19 +1786,25 @@ void Bus::initAudio() {
 
         this->stream = stream;
     #else
-        const SDL_AudioSpec srcspec = { (int)audioInterface.frequency, AUDIO_S16, 2 };
-        SDL_AudioSpec devicespec = {48000, AUDIO_S16, 2 };
+        SDL_AudioSpec srcspec = {};
+        srcspec.freq = (int)audioInterface.frequency;
+        srcspec.format = AUDIO_S16;
+        srcspec.channels = 2;
 
-        SDL_AudioDeviceID device = SDL_OpenAudioDevice(NULL, 0, &devicespec, NULL, 0);
+        SDL_AudioSpec devicespec = {};
+        devicespec.freq = 48000;
+        devicespec.format = AUDIO_S16;
+        devicespec.channels = 2;
 
-        SDL_AudioSpec dstspec;
-        if (SDL_GetAudioDeviceSpec(0, 0, &dstspec) != 0) {
-            std::println("couldn't get audio device format: {}", SDL_GetError());
-        }
+        SDL_AudioSpec obtained = {};
+        SDL_AudioDeviceID device = SDL_OpenAudioDevice(NULL, 0, &devicespec, &obtained, 0);
 
         SDL_PauseAudioDevice(device, 0);
 
-        SDL_AudioStream *stream = SDL_NewAudioStream(AUDIO_S16, 2, srcspec.freq, AUDIO_S16, 2, dstspec.freq);
+        SDL_AudioStream *stream = SDL_NewAudioStream(
+            AUDIO_S16, 2, srcspec.freq,
+            AUDIO_S16, 2, obtained.freq
+        );
 
         if (stream == nullptr) {
             std::println("SDL_NewAudioStream failed: {}", SDL_GetError());

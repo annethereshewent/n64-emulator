@@ -3,7 +3,6 @@
 #include <vector>
 #include <cstdint>
 #include "CPUInstruction.hpp"
-#include "Cop0Status.hpp"
 
 // gotten from https://stackoverflow.com/questions/11611787/convert-a-32-bits-to-float-value
 union convu32 {

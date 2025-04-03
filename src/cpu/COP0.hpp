@@ -4,7 +4,6 @@
 #include <vector>
 #include "CPUInstruction.hpp"
 #include "Scheduler.hpp"
-#include "Cop0Status.hpp"
 
 class CPU;
 

@@ -175,7 +175,7 @@ void RDPInterface::updateStatus(uint32_t value) {
             {
                 start = current = end;
 
-                if (enqueuedCommands.size() > 0) {
+                if (enqueuedWords.size() > 0) {
                     cmdsReady = true;
                 }
 
@@ -183,7 +183,6 @@ void RDPInterface::updateStatus(uint32_t value) {
             }
 
             if (command >= 8) {
-                enqueuedCommands.push_back(command);
                 enqueueCommandWords(cmdLength * 2, &cmdBuffer[2 * currCmd]);
             }
 
@@ -211,7 +210,7 @@ void RDPInterface::updateStatus(uint32_t value) {
         currCmd = 0;
         current = end;
 
-        if (enqueuedCommands.size() > 0) {
+        if (enqueuedWords.size() > 0) {
             cmdsReady = true;
         }
 
@@ -229,6 +228,5 @@ void RDPInterface::updateStatus(uint32_t value) {
 
     void RDPInterface::clearCommands() {
         enqueuedWords.clear();
-        enqueuedCommands.clear();
     }
 #endif

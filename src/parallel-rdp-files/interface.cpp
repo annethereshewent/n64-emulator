@@ -180,73 +180,37 @@ static const unsigned cmd_len_lut[64] = {
 	1,
 };
 
-#ifdef USING_SDL3
-	void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
-	{
-		window = _window;
-
-		gfx_info = _gfx_info;
-		fullscreen = _fullscreen;
-		integer_scaling = _integer_scaling;
-		bool window_vsync = 0;
-		wsi = new WSI;
-
-		wsi_platform = new SDL_WSIPlatform;
-		wsi_platform->set_window(window);
-		wsi->set_platform(wsi_platform);
-
-		wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
-		wsi->set_backbuffer_srgb(false);
-		Context::SystemHandles handles = {};
-		if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
-		{
-			rdp_close();
-		}
-		if (!wsi->init_simple(1, handles))
-		{
-			rdp_close();
-		}
-		RDP::CommandProcessorFlags flags = 0;
-		if (_upscale)
-		{
-			flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
-			flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
-		}
-		processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
-
-		if (!processor->device_is_supported())
-		{
-			delete processor;
-			delete wsi;
-			processor = nullptr;
-			rdp_close();
-		}
-		wsi->begin_frame();
-
-		emu_running = true;
-	}
-#else
-void rdp_init(GFX_INFO _gfx_info)
+void rdp_init(SDL_Window *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
 {
+	window = _window;
+
 	gfx_info = _gfx_info;
+	fullscreen = _fullscreen;
+	integer_scaling = _integer_scaling;
 	bool window_vsync = 0;
 	wsi = new WSI;
 
-	wsi_platform = new IOS_WSIPlatform;
-
-	wsi_platform->setLayer(gfx_info.metalLayer);
-
+	wsi_platform = new SDL_WSIPlatform;
+	wsi_platform->set_window(window);
 	wsi->set_platform(wsi_platform);
 
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
 	Context::SystemHandles handles = {};
-	if (!::Vulkan::Context::init_loader(vkGetInstanceProcAddr) || !wsi->init_simple(1, handles))
+	if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
+	{
+		rdp_close();
+	}
+	if (!wsi->init_simple(1, handles))
 	{
 		rdp_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
-
+	if (_upscale)
+	{
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
+	}
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 
 	if (!processor->device_is_supported())
@@ -260,7 +224,6 @@ void rdp_init(GFX_INFO _gfx_info)
 
 	emu_running = true;
 }
-#endif
 
 void rdp_close()
 {

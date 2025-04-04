@@ -322,7 +322,9 @@ void CPU::step() {
 
         switch (event.eventType) {
             case VideoInterrupt:
-                rdp_update_screen();
+                #ifdef USING_SDL3
+                    rdp_update_screen();
+                #endif
                 bus.rdp.frameFinished = true;
                 bus.setInterrupt(VI_INTERRUPT_FLAG);
 

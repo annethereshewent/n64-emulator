@@ -1,7 +1,10 @@
 #include "RDPInterface.hpp"
 #include <cstdint>
 #include <iostream>
-#include "../../parallel-rdp-files/interface.cpp"
+#include "../../config.hpp"
+#ifdef USING_SDL3
+    #include "../../parallel-rdp-files/interface.cpp"
+#endif
 #include "../Bus.hpp"
 #include "../../cpu/CPU.hpp"
 #include "../../util/BitUtils.cpp"
@@ -47,17 +50,18 @@ void RDPInterface::writeRegisters(uint32_t offset, uint32_t value) {
                 clearBit(&status, StartPending);
             }
             if (((status >> Freeze) & 0b1) == 0) {
-                uint64_t cycles = rdp_process_commands();
+                #ifdef USING_SDL3
+                    uint64_t cycles = rdp_process_commands();
+                    pipeBusy = 0xffffff;
 
-                pipeBusy = 0xffffff;
+                    setBit(&status, Gclk);
+                    setBit(&status, CmdBusy);
+                    setBit(&status, PipeBusy);
 
-                setBit(&status, Gclk);
-                setBit(&status, CmdBusy);
-                setBit(&status, PipeBusy);
-
-                if (cycles > 0) {
-                    bus.cpu.scheduler.addEvent(Event(RDPEvent, bus.cpu.cop0.count + cycles));
-                }
+                    if (cycles > 0) {
+                        bus.cpu.scheduler.addEvent(Event(RDPEvent, bus.cpu.cop0.count + cycles));
+                    }
+                #endif
             } else {
                 isFrozen = true;
             }

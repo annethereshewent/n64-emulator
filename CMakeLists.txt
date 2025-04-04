@@ -26,8 +26,15 @@ if(BUILD_FOR_IOS)
     # Grab all source files
     file(GLOB_RECURSE EMU_SOURCES src/*.cpp)
 
+    foreach(file ${EMU_SOURCES})
+        if("${file}" MATCHES ".*/parallel-rdp-files/.*")
+            list(REMOVE_ITEM EMU_SOURCES ${file})
+        endif()
+    endforeach()
+
     # Remove main.cpp from the list
     list(REMOVE_ITEM EMU_SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp)
+    list(REMOVE_ITEM EMU_SOURCES ${CMAKE_SOURC_DIR}/src/parallel-rdp-files/)
     add_library(N64Core STATIC ${EMU_SOURCES})
 
     set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.1.sdk)
@@ -38,32 +45,10 @@ if(BUILD_FOR_IOS)
     # set(CMAKE_OSX_SYSROOT iphonesimulator)
     # set(CMAKE_OSX_ARCHITECTURES arm64 x86_64)
 
-    set(Vulkan_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/MoltenVK/include)
-    set(Vulkan_LIBRARY ${CMAKE_SOURCE_DIR}/MoltenVK/static/MoltenVK.xcframework/ios-arm64/libMoltenVK.a)
-
-    # Location of SDL3.framework inside the .xcframework
-    set(SDL3_FRAMEWORK_PATH ${CMAKE_SOURCE_DIR}/SDL3.xcframework/ios-arm64/SDL3.framework)
-
-    # Add header path
-    include_directories(${SDL3_FRAMEWORK_PATH}/Headers)
-
     # Link the framework binary directly
     target_link_libraries(N64Core
         "-framework Foundation"
         "-framework CoreFoundation"
-        "${SDL3_FRAMEWORK_PATH}/SDL3"
-    )
-
-    include_directories(${Vulkan_INCLUDE_DIR})
-    target_link_libraries(N64Core ${Vulkan_LIBRARY})
-
-    target_include_directories(
-        N64Core
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/parallel-rdp-standalone/util/
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/parallel-rdp-standalone/volk/
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/parallel-rdp-standalone/vulkan/
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/parallel-rdp-standalone/parallel-rdp/
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/parallel-rdp-standalone/vulkan-headers/include
     )
 
     set_target_properties(N64Core PROPERTIES

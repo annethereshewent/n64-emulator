@@ -4,6 +4,7 @@
 #include <iostream>
 #include <bit>
 #include <regex>
+#include <sstream>
 #include <CommonCrypto/CommonDigest.h>
 #include "pif/PIF.cpp"
 #include "../cpu/CPU.hpp"
@@ -14,7 +15,10 @@
 #include "rdp/RDPInterface.cpp"
 #include "audio_interface/AudioInterface.cpp"
 #include "video_interface/VideoInterface.cpp"
-#include "../parallel-rdp-files/interface.cpp"
+#include "../config.hpp"
+#ifdef USING_SDL3
+    #include "../parallel-rdp-files/interface.cpp"
+#endif
 
 const uint32_t TLBS = 12;
 const uint32_t TLBL = 8;
@@ -493,28 +497,40 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
             // videoInterface.ctrl.unused = 0;
             // TODO: see if this needs to be done
             // clearBit(&videoInterface.ctrl, 10);
-
-            rdp_set_vi_register(0, videoInterface.ctrl);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(0, videoInterface.ctrl);
+            #endif
             break;
         case 0x4400004:
             Bus::writeWithMask32(&videoInterface.origin, value, mask);
-            rdp_set_vi_register(1, videoInterface.origin);
+
+            #ifdef USING_SDL3
+                rdp_set_vi_register(1, videoInterface.origin);
+            #endif
             break;
         case 0x4400008:
             Bus::writeWithMask32(&videoInterface.width, value, mask);
-            rdp_set_vi_register(2, videoInterface.width);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(2, videoInterface.width);
+            #endif
             break;
         case 0x440000c:
             Bus::writeWithMask32(&videoInterface.vInterrupt, value, mask);
-            rdp_set_vi_register(3, videoInterface.vInterrupt);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(3, videoInterface.vInterrupt);
+            #endif
             break;
         case 0x4400010:
-            rdp_set_vi_register(4, value);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(4, value);
+            #endif
             clearInterrupt(VI_INTERRUPT_FLAG);
             break;
         case 0x4400014:
             Bus::writeWithMask32(&videoInterface.viBurst, value, mask);
-            rdp_set_vi_register(5, videoInterface.viBurst);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(5, videoInterface.viBurst);
+            #endif
             break;
         case 0x4400018:
             if (videoInterface.vTotal != value) {
@@ -529,7 +545,9 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
                     cpu.scheduler.addEvent(Event(VideoInterrupt, cpu.cop0.count + videoInterface.delay));
                 }
             }
-            rdp_set_vi_register(6, videoInterface.vTotal);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(6, videoInterface.vTotal);
+            #endif
             break;
         case 0x440001c:
             if (videoInterface.hTotal != value) {
@@ -537,43 +555,57 @@ void Bus::memWrite32(uint64_t actualAddress, uint32_t value, bool cached, bool i
 
                 recalculateDelay();
             }
-            rdp_set_vi_register(7, videoInterface.hTotal);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(7, videoInterface.hTotal);
+            #endif
             break;
         case 0x4400020:
             Bus::writeWithMask32(&videoInterface.hTotalLeap, value, mask);
             // TODO: see if this needs to be done at all, bit 10 is unused
             // clearBit(&videoInterface.hTotalLeap, 10);
 
-            rdp_set_vi_register(0x20 / 4, videoInterface.hTotalLeap);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(0x20 / 4, videoInterface.hTotalLeap);
+            #endif
             break;
         case 0x4400024:
             Bus::writeWithMask32(&videoInterface.hVideo, value, mask);
-            rdp_set_vi_register(0x24 / 4, videoInterface.hVideo);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(0x24 / 4, videoInterface.hVideo);
+            #endif
             break;
         case 0x4400028:
             Bus::writeWithMask32(&videoInterface.vVideo, value, mask);
             // videoInterface.vVideo.unused = 0;
             // TODO: see if these bits need to be 0'd out
             // videoInterface.vVideo &= ~(0x3f << 10);
-            rdp_set_vi_register(0x28 / 4, videoInterface.vVideo);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(0x28 / 4, videoInterface.vVideo);
+            #endif
             break;
         case 0x440002c:
             Bus::writeWithMask32(&videoInterface.vBurst, value, mask);
-            rdp_set_vi_register(0x2c / 4, videoInterface.vBurst);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(0x2c / 4, videoInterface.vBurst);
+            #endif
             break;
         case 0x4400030:
             Bus::writeWithMask32(&videoInterface.xScale, value, mask);
             // videoInterface.xScale.unused = 0;
             // TODO: see if these bits need to be 0'd out
             // videoInterface.xScale &= ~(0xf << 12);
-            rdp_set_vi_register(0x30 / 4, videoInterface.xScale);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(0x30 / 4, videoInterface.xScale);
+            #endif
             break;
         case 0x4400034:
             Bus::writeWithMask32(&videoInterface.yScale, value, mask);
             // videoInterface.yScale.unused = 0;
             // TODO: see if these bits need to be 0'd out
             // videoInterface.yScale &= ~(0xf << 12);
-            rdp_set_vi_register(0x34 / 4, videoInterface.yScale);
+            #ifdef USING_SDL3
+                rdp_set_vi_register(0x34 / 4, videoInterface.yScale);
+            #endif
             break;
         case 0x4500000:
             Bus::writeWithMask32(&audioInterface.dramAddress, value & 0xffffff, mask);
@@ -1909,21 +1941,5 @@ std::string Bus::sha256() {
         gfxInfo.metalLayer = nullptr;
 
         rdp_init(window, gfxInfo, false, false, false);
-    }
-#else
-    void Bus::initRdp(void* metalLayer) {
-        GFX_INFO gfxInfo;
-
-        gfxInfo.RDRAM = &rdram[0];
-        gfxInfo.DMEM = &rsp.dmem[0];
-        gfxInfo.RDRAM_SIZE = rdram.size();
-        gfxInfo.DPC_CURRENT_REG = &rdp.current;
-        gfxInfo.DPC_START_REG = &rdp.start;
-        gfxInfo.DPC_END_REG = &rdp.end;
-        gfxInfo.DPC_STATUS_REG = &rdp.status;
-        gfxInfo.debugOn = &cpu.debugOn;
-        gfxInfo.metalLayer = metalLayer;
-
-        rdp_init(gfxInfo);
     }
 #endif

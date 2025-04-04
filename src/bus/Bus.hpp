@@ -105,7 +105,6 @@ public:
     uint16_t flashSector = 0;
 
     Bus(CPU& cpu): cpu(cpu), rsp(*this), audioInterface(*this), rdp(*this), pif(*this) {
-        // reserve is needed to ensure rdram is aligned for use with parallel-rdp
         rdram.reserve(0x800000);
         rdram.resize(0x800000);
         rdram9.reserve(0x800000);
@@ -226,8 +225,6 @@ public:
 
     #ifdef USING_SDL3
         void initRdp(SDL_Window* window);
-    #else
-        void initRdp(void* metalLayer);
     #endif
 
     static void writeValueLE(uint8_t* ptr, uint32_t value, int size);

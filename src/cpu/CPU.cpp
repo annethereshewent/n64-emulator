@@ -262,26 +262,6 @@ void CPU::step() {
 
     bool oldDelaySlot = inDelaySlot;
 
-    // if (!visited.contains(previousPc) && debugOn) {
-    //     uint32_t actualCommand = command;
-    //     if (command == 0) {
-    //         std::cout << "command is secondary\n";
-    //         actualCommand = opcode & 0x3f;
-    //     } else if (command == 16) {
-    //         std::cout << "command is cop0\n";
-    //         actualCommand = (opcode >> 21) & 0x1f;
-    //     } else if (command == 17) {
-    //         std::cout << "command is cop1\n";
-    //         actualCommand = (opcode >> 21) & 0x1f;
-    //     } else if (command == 1) {
-    //         std::cout << "command is regImm\n";
-    //         actualCommand = (opcode >> 16) & 0x1f;
-    //     }
-    //     std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << ", command = " << std::dec << actualCommand << "\n";
-    //     // std::cout << "pc = " << std::hex << bus.translateAddress(previousPc) << "\n";
-    //     visited.insert(previousPc);
-    // }
-
     if (!visited.contains(debugPc) && debugOn) {
         std::string disassembled = disassemble(this, opcode);
 

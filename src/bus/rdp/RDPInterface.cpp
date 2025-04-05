@@ -126,7 +126,6 @@ void RDPInterface::updateStatus(uint32_t value) {
 
 #ifndef USING_SDL3
     uint64_t RDPInterface::processRdpCommands() {
-        std::println("processing RDP commands");
         uint32_t cycles = 0;
         int length = end - current;
 
@@ -155,8 +154,8 @@ void RDPInterface::updateStatus(uint32_t value) {
             do {
                 offset &= 0xFFFFF8;
 
-                cmdBuffer[2 * cmdPtr] = std::byteswap(*(uint32_t*)&bus.rdram[offset]);
-                cmdBuffer[2 * cmdPtr + 1] = std::byteswap(*(uint32_t*)&bus.rdram[offset + 4]);
+                cmdBuffer[2 * cmdPtr] = *(uint32_t*)&bus.rdram[offset];
+                cmdBuffer[2 * cmdPtr + 1] = *(uint32_t*)&bus.rdram[offset + 4];
                 offset += sizeof(uint64_t);
                 cmdPtr++;
             } while (--length > 0);

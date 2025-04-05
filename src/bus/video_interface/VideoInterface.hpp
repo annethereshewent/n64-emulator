@@ -19,7 +19,7 @@ public:
     uint32_t viBurst = 0;
     uint32_t vTotal = 0;
     uint32_t hTotal = 0;
-    uint32_t hTotalLeap;
+    uint32_t hTotalLeap = 0;
     uint32_t vVideo = 0;
     uint32_t vBurst = 0;
     uint32_t xScale = 0;

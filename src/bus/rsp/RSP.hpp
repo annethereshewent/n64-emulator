@@ -60,7 +60,7 @@ typedef void (*RSPInstruction)(RSP* rsp, uint32_t instruction);
 
 class RSP {
 public:
-    uint32_t status;
+    uint32_t status = 0;
 
     InstructionType lastInstructionType = Scalar;
     InstructionType instructionType = Scalar;
@@ -72,7 +72,7 @@ public:
     uint32_t pc = 0;
     uint32_t nextPc = 0;
 
-    uint32_t semaphore;
+    uint32_t semaphore = 0;
 
     Bus& bus;
 
@@ -389,8 +389,8 @@ public:
 
     uint32_t dmaMemAddress = 0;
     uint32_t dmaRamAddress = 0;
-    uint32_t spReadLength;
-    uint32_t spWriteLength;
+    uint32_t spReadLength = 0;
+    uint32_t spWriteLength = 0;
 
     std::array<SPDma, 2> fifo;
 

@@ -149,7 +149,7 @@ void RDPInterface::updateStatus(uint32_t value) {
                 cmdBuffer[2 * cmdPtr + 1] = std::byteswap(*(uint32_t*)&bus.rsp.dmem[offset + 4]);
                 offset += sizeof(uint64_t);
                 cmdPtr++;
-            } while (--length > 0);
+            } while (--uLength > 0);
         } else {
             do {
                 offset &= 0xFFFFF8;
@@ -158,7 +158,7 @@ void RDPInterface::updateStatus(uint32_t value) {
                 cmdBuffer[2 * cmdPtr + 1] = *(uint32_t*)&bus.rdram[offset + 4];
                 offset += sizeof(uint64_t);
                 cmdPtr++;
-            } while (--length > 0);
+            } while (--uLength > 0);
         }
 
         while (currCmd - cmdPtr < 0)
